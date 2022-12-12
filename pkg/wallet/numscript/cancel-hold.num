@@ -1,0 +1,9 @@
+vars {
+  account $hold
+  account $wallet = meta($hold, "wallet")
+}
+
+send [ASSET *] (
+  source = $hold
+  destination = $wallet
+)

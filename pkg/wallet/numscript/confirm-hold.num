@@ -1,0 +1,10 @@
+vars {
+  account $hold
+  account $dest = meta($hold, "destination")
+  monetary $amount
+}
+
+send $amount (
+  source = $hold
+  destination = $dest
+)
