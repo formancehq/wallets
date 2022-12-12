@@ -24,7 +24,6 @@ const (
 
 var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-
 		if err := bindFlagsToViper(cmd); err != nil {
 			return err
 		}

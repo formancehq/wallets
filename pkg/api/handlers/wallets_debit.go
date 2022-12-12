@@ -16,7 +16,6 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 		// @todo: parse amount from request
 		Amount: core.Monetary{},
 	})
-
 	if err != nil {
 		render.Status(r, http.StatusUnprocessableEntity)
 		render.JSON(w, r, map[string]interface{}{

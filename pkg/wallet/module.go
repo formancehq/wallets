@@ -23,13 +23,13 @@ func Module() fx.Option {
 			},
 			fx.ParamTags(`name:"chart-prefix"`),
 		)),
-		// @todo: replace this with configureable value
+		// @todo: replace this with configurable value
 		fx.Provide(
 			fx.Annotate(func() string {
 				return "wallets-001"
 			}, fx.ResultTags(`name:"ledger-name"`)),
 		),
-		// @todo: replace this with configureable value
+		// @todo: replace this with configurable value
 		fx.Provide(
 			fx.Annotate(func() string {
 				return ""
