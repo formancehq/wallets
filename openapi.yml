@@ -5,35 +5,34 @@ info:
   version: 0.1.0
 
 paths:
-  /api/wallets:
-    parameters:
-      - name: page_size
-        in: query
-        description: 'The maximum number of results to return per page'
-        example: 100
-        schema:
-          type: integer
-          maximum: 1000
-          minimum: 1
-          default: 15
-      - name: after
-        in: query
-        description: Pagination cursor, will return accounts after given address, in descending order.
-        schema:
-          type: string
-          example: users:003
-      - name: pagination_token
-        in: query
-        description: |
-          Parameter used in pagination requests. Maximum page size is set to 15.
-          Set to the value of next for the next page of results.
-          Set to the value of previous for the previous page of results.
-          No other parameters can be set when the pagination token is set.
-        schema:
-          type: string
-          example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
-
+  /wallets:
     get:
+      parameters:
+        - name: page_size
+          in: query
+          description: 'The maximum number of results to return per page'
+          example: 100
+          schema:
+            type: integer
+            maximum: 1000
+            minimum: 1
+            default: 15
+        - name: after
+          in: query
+          description: Pagination cursor, will return accounts after given address, in descending order.
+          schema:
+            type: string
+            example: users:003
+        - name: pagination_token
+          in: query
+          description: |
+            Parameter used in pagination requests. Maximum page size is set to 15.
+            Set to the value of next for the next page of results.
+            Set to the value of previous for the previous page of results.
+            No other parameters can be set when the pagination token is set.
+          schema:
+            type: string
+            example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
       summary: Get all wallets
       operationId: getWallets
       tags:
@@ -70,7 +69,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Wallet'
   
-  /api/wallets/{id}:
+  /wallets/{id}:
     parameters:
       - name: id
         in: path
@@ -109,7 +108,7 @@ paths:
         204:
           description: Wallet successfully updated
   
-  /api/wallets/{id}/debit:
+  /wallets/{id}/debit:
     parameters:
       - name: id
         in: path
@@ -146,7 +145,7 @@ paths:
         204:
           description: Wallet successfully debited
   
-  /api/wallets/{id}/credit:
+  /wallets/{id}/credit:
     parameters:
       - name: id
         in: path
@@ -173,7 +172,7 @@ paths:
         204:
           description: Wallet successfully credited
   
-  /api/wallets/{id}/holds:
+  /wallets/{id}/holds:
     parameters:
       - name: id
         in: path
@@ -194,7 +193,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Hold'
   
-  /api/wallets/{id}/holds/{hold_id}/confirm:
+  /wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
         in: path
@@ -214,7 +213,7 @@ paths:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
   
-  /api/wallets/{id}/holds/{hold_id}/void:
+  /wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id
         in: path
