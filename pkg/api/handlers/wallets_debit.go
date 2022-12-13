@@ -9,18 +9,30 @@ import (
 	"github.com/go-chi/render"
 )
 
+type DebitWalletRequest struct {
+	Amount  core.Monetary `json:"amount"`
+	Pending bool          `json:"pending"`
+}
+
+func (c *DebitWalletRequest) Bind(r *http.Request) error {
+	return nil
+}
+
 func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "wallet_id")
+	data := &DebitWalletRequest{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
 
 	debit := wallet.Debit{
 		WalletID: id,
-		// @todo: parse amount from request
-		Amount: core.Monetary{
-			Asset:  "USD/2",
-			Amount: core.NewMonetaryInt(100),
-		},
-		// @todo: parse pending from request
-		Pending: true,
+		Amount:   data.Amount,
+		Pending:  data.Pending,
 	}
 
 	hold, err := m.funding.Debit(r.Context(), debit)

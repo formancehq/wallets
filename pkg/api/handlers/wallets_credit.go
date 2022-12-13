@@ -9,17 +9,31 @@ import (
 	"github.com/go-chi/render"
 )
 
+type CreditWalletRequest struct {
+	Amount core.Monetary `json:"amount"`
+}
+
+func (c *CreditWalletRequest) Bind(r *http.Request) error {
+	return nil
+}
+
 func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "wallet_id")
+	data := &CreditWalletRequest{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
 
-	err := m.funding.Credit(r.Context(), wallet.Credit{
+	credit := wallet.Credit{
 		WalletID: id,
-		Amount: core.Monetary{
-			// @todo: parse amount from request
-			Amount: core.NewMonetaryInt(100),
-			Asset:  "USD/2",
-		},
-	})
+		Amount:   data.Amount,
+	}
+
+	err := m.funding.Credit(r.Context(), credit)
 	if err != nil {
 		render.Status(r, http.StatusUnprocessableEntity)
 		render.JSON(w, r, map[string]interface{}{
