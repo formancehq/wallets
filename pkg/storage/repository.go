@@ -34,7 +34,7 @@ func (r *Repository) CreateWallet(ctx context.Context) (*core.Wallet, error) {
 		r.ledgerName,
 		r.chart.GetMainAccount(id),
 	).RequestBody(map[string]interface{}{
-		"spec/type": "wallets.wallet",
+		"spec/type": "wallets.subaccount",
 	}).Execute()
 
 	if err != nil {
@@ -47,11 +47,13 @@ func (r *Repository) CreateWallet(ctx context.Context) (*core.Wallet, error) {
 	}, nil
 }
 
+// @todo: add pagination
+// @todo: list wallets, not wallets subaccounts
 func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	wallets := []core.Wallet{}
 
 	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(map[string]interface{}{
-		"spec/type": "wallets.wallet",
+		"spec/type": "wallets.subaccount",
 	}).Execute()
 
 	if err != nil {
@@ -83,6 +85,9 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 	}
 
 	wallet.ID = res.Data.Address
+
+	// @todo: get balances from subaccounts
+	wallet.Balances = make(map[string]core.Monetary)
 
 	return wallet, nil
 }

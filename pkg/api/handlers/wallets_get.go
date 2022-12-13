@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) GetWalletHandler(w http.ResponseWriter, r *http.Request) {
-	wallet, err := m.repository.GetWallet(r.Context(), r.URL.Query().Get("wallet_id"))
+	wallet, err := m.repository.GetWallet(r.Context(), chi.URLParam(r, "wallet_id"))
 
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)

@@ -46,6 +46,7 @@ paths:
                   $ref: '#/components/schemas/Wallet'
     post:
       summary: Create a new wallet
+  
   /api/wallets/{id}:
     parameters:
       - name: id
@@ -64,6 +65,7 @@ paths:
                 $ref: '#/components/schemas/Wallet'
         404:
           description: Wallet not found
+  
   /api/wallets/{id}/debit:
     parameters:
       - name: id
@@ -73,6 +75,7 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+  
   /api/wallets/{id}/credit:
     parameters:
       - name: id
@@ -82,6 +85,7 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+  
   /api/wallets/{id}/holds:
     parameters:
       - name: id
@@ -91,6 +95,7 @@ paths:
           type: string
     get:
       summary: Get all holds for a wallet
+  
   /api/wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
@@ -105,6 +110,7 @@ paths:
           type: string
     post:
       summary: Confirm a hold
+  
   /api/wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id
@@ -143,3 +149,16 @@ components:
           additionalProperties:
             type: number
             description: The balance of the wallet in the specified currency.
+    Hold:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the hold.
+        wallet_id:
+          type: string
+          description: The ID of the wallet the hold is associated with.
+        metadata:
+          type: object
+          description: Metadata associated with the hold.
