@@ -110,6 +110,22 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  $ref: '#/components/schemas/Monetary'
+                pending:
+                  type: boolean
+                  description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
+            example:
+              amount:
+                asset: USD/2
+                amount: 100
+              pending: true
       responses:
         200:
           description: Wallet successfully debited as a pending hold
@@ -129,6 +145,18 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  $ref: '#/components/schemas/Monetary'
+            example:
+              amount:
+                asset: USD/2
+                amount: 100
       responses:
         204:
           description: Wallet successfully credited
@@ -190,6 +218,15 @@ paths:
 
 components:
   schemas:
+    Monetary:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: The asset of the monetary value.
+        amount:
+          type: number
+          description: The amount of the monetary value.
     Wallet:
       type: object
       required:
