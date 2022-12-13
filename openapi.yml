@@ -36,6 +36,8 @@ paths:
     get:
       summary: Get all wallets
       operationId: getWallets
+      tags:
+        - Wallets
       responses:
         '200':
           description: OK
@@ -47,6 +49,8 @@ paths:
                   $ref: '#/components/schemas/Wallet'
     post:
       summary: Create a new wallet
+      tags:
+        - Wallets
       requestBody:
         content:
           application/json:
@@ -75,6 +79,8 @@ paths:
           type: string
     get:
       summary: Get a wallet
+      tags:
+        - Wallets
       responses:
         200:
           description: Wallet
@@ -86,6 +92,8 @@ paths:
           description: Wallet not found
     patch:
       summary: Update a wallet
+      tags:
+        - Wallets
       requestBody:
         content:
           application/json:
@@ -110,6 +118,8 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      tags:
+        - Wallets
       requestBody:
         content:
           application/json:
@@ -145,6 +155,8 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      tags:
+        - Wallets
       requestBody:
         content:
           application/json:
@@ -170,6 +182,8 @@ paths:
           type: string
     get:
       summary: Get all holds for a wallet
+      tags:
+        - Wallets
       responses:
         200:
           description: Holds
@@ -194,6 +208,8 @@ paths:
           type: string
     post:
       summary: Confirm a hold
+      tags:
+        - Wallets
       responses:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
@@ -212,6 +228,8 @@ paths:
           type: string
     post:
       summary: Cancel a hold
+      tags:
+        - Wallets
       responses:
         204:
           description: Hold successfully cancelled, funds returned to wallet
