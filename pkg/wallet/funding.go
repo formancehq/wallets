@@ -76,8 +76,8 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 		_, err := s.client.AccountsApi.
 			AddMetadataToAccount(ctx, s.ledgerName, holdAccount).
 			RequestBody(map[string]interface{}{
-				"spec/type": "wallets.hold",
-				"wallet":    debit.WalletID,
+				"spec/type":       "wallets.hold",
+				"holds/wallet_id": debit.WalletID,
 				"void_destination": map[string]interface{}{
 					"type":  "account",
 					"value": s.chart.GetMainAccount(debit.WalletID),

@@ -26,7 +26,7 @@ func Module() fx.Option {
 		// @todo: replace this with configurable value
 		fx.Provide(
 			fx.Annotate(func() string {
-				return "wallets-001"
+				return "wallets-002"
 			}, fx.ResultTags(`name:"ledger-name"`)),
 		),
 		// @todo: replace this with configurable value

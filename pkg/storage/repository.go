@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
@@ -158,9 +159,13 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Hold, error) {
 	holds := []core.Hold{}
 
-	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(map[string]interface{}{
-		"spec/type": "wallets.hold",
-	}).Execute()
+	filter := core.Metadata{
+		"spec/type":       "wallets.hold",
+		"holds/wallet_id": walletID,
+	}
+	fmt.Println(filter)
+
+	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(filter).Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, err
@@ -169,7 +174,7 @@ func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Hol
 	for _, account := range res.Cursor.Data {
 		hold := core.Hold{
 			ID:       account.Address,
-			WalletID: account.Metadata["wallet"].(string),
+			WalletID: account.Metadata["holds/wallet_id"].(string),
 		}
 		holds = append(holds, hold)
 	}
