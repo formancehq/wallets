@@ -88,7 +88,6 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 				},
 			}).
 			Execute()
-
 		if err != nil {
 			// @todo: log error properly in addition to returning it
 			log.Println(err)
@@ -118,7 +117,6 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 		CreateTransaction(ctx, s.ledgerName).
 		TransactionData(transaction).
 		Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
@@ -163,7 +161,6 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 			"hold": s.chart.GetHoldAccount(debit.HoldID),
 		},
 	}).Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
@@ -177,7 +174,6 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 	res, _, err := s.client.AccountsApi.
 		GetAccount(ctx, s.ledgerName, s.chart.GetHoldAccount(void.HoldID)).
 		Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
@@ -239,7 +235,6 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 		CreateTransaction(ctx, s.ledgerName).
 		TransactionData(transaction).
 		Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return InternalLedgerError

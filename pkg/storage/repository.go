@@ -36,7 +36,6 @@ func (r *Repository) CreateWallet(ctx context.Context) (*core.Wallet, error) {
 	).RequestBody(map[string]interface{}{
 		"spec/type": "wallets.subaccount",
 	}).Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, InternalLedgerError
@@ -55,7 +54,6 @@ func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(map[string]interface{}{
 		"spec/type": "wallets.subaccount",
 	}).Execute()
-
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +76,6 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 		r.ledgerName,
 		r.chart.GetMainAccount(id),
 	).Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, InternalLedgerError
@@ -98,7 +95,6 @@ func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Hol
 	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(map[string]interface{}{
 		"spec/type": "wallets.hold",
 	}).Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, err
@@ -123,7 +119,6 @@ func (r *Repository) GetHold(ctx context.Context, id string) (*core.Hold, error)
 		r.ledgerName,
 		r.chart.GetHoldAccount(id),
 	).Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, err

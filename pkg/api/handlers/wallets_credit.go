@@ -20,7 +20,6 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 			Asset:  "USD/2",
 		},
 	})
-
 	if err != nil {
 		render.Status(r, http.StatusUnprocessableEntity)
 		render.JSON(w, r, map[string]interface{}{

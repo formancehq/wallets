@@ -8,7 +8,6 @@ import (
 
 func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
 	holds, err := m.repository.ListHolds(r.Context(), r.URL.Query().Get("wallet_id"))
-
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, map[string]string{
