@@ -61,6 +61,43 @@ func (r *Repository) CreateWallet(ctx context.Context, data *WalletData) (*core.
 	}, nil
 }
 
+func (r *Repository) UpdateWallet(ctx context.Context, id string, data *WalletData) error {
+	meta := core.Metadata{}
+	custom := core.Metadata{}
+
+	res, _, err := r.client.AccountsApi.GetAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id)).Execute()
+	if err != nil {
+		return WalletNotFound
+	}
+	if res.Data.Metadata["spec/type"] != "wallets.primary" {
+		return WalletNotFound
+	}
+
+	for k, v := range res.Data.Metadata {
+		if k != "wallets/custom_data" {
+			continue
+		}
+		for k, v := range v.(map[string]interface{}) {
+			custom[k] = v
+		}
+	}
+	for k, v := range data.Metadata {
+		custom[k] = v
+	}
+	meta["wallets/custom_data"] = custom
+
+	_, err = r.client.AccountsApi.AddMetadataToAccount(
+		ctx,
+		r.ledgerName,
+		r.chart.GetMainAccount(id),
+	).RequestBody(meta).Execute()
+	if err != nil {
+		return InternalLedgerError
+	}
+
+	return nil
+}
+
 // @todo: add pagination
 func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	wallets := []core.Wallet{}

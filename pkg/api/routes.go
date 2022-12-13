@@ -24,6 +24,7 @@ func NewRouter(
 		r.Post("/", main.CreateWalletHandler)
 		r.Route("/{wallet_id}", func(r chi.Router) {
 			r.Get("/", main.GetWalletHandler)
+			r.Patch("/", main.PatchWalletHandler)
 			r.Post("/debit", main.DebitWalletHandler)
 			r.Post("/credit", main.CreditWalletHandler)
 			r.Route("/holds", func(r chi.Router) {

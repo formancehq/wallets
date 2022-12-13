@@ -12,7 +12,6 @@ type CreateWalletRequest struct {
 	Metadata core.Metadata `json:"metadata"`
 }
 
-// add render bind method to the struct
 func (c *CreateWalletRequest) Bind(r *http.Request) error {
 	return nil
 }
