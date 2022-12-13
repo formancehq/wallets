@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/formancehq/wallets/pkg/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
@@ -11,7 +12,12 @@ func (m *MainHandler) GetWalletHandler(w http.ResponseWriter, r *http.Request) {
 	wallet, err := m.repository.GetWallet(r.Context(), chi.URLParam(r, "wallet_id"))
 
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
+		switch err.Error() {
+		case storage.WalletNotFound.Error():
+			render.Status(r, http.StatusNotFound)
+		default:
+			render.Status(r, http.StatusInternalServerError)
+		}
 		render.JSON(w, r, map[string]string{
 			// @todo: return a proper error
 			"error": err.Error(),

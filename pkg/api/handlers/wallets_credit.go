@@ -29,5 +29,5 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	render.Status(r, http.StatusNoContent)
+	render.NoContent(w, r)
 }

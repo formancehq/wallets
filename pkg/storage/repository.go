@@ -26,33 +26,47 @@ func NewRepository(
 	}
 }
 
-func (r *Repository) CreateWallet(ctx context.Context) (*core.Wallet, error) {
+type WalletData struct {
+	Metadata core.Metadata `json:"metadata"`
+}
+
+func (r *Repository) CreateWallet(ctx context.Context, data *WalletData) (*core.Wallet, error) {
 	id := uuid.NewString()
+
+	meta := core.Metadata{
+		"spec/type":  "wallets.primary",
+		"wallets/id": id,
+	}
+
+	custom := core.Metadata{}
+	for k, v := range data.Metadata {
+		custom[k] = v
+	}
+	meta["wallets/custom_data"] = custom
 
 	_, err := r.client.AccountsApi.AddMetadataToAccount(
 		ctx,
 		r.ledgerName,
 		r.chart.GetMainAccount(id),
-	).RequestBody(map[string]interface{}{
-		"spec/type": "wallets.subaccount",
-	}).Execute()
+	).RequestBody(meta).Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		return nil, InternalLedgerError
 	}
 
 	return &core.Wallet{
-		ID: id,
+		ID:       id,
+		Metadata: custom,
+		Balances: make(map[string]core.Monetary),
 	}, nil
 }
 
 // @todo: add pagination
-// @todo: list wallets, not wallets subaccounts
 func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	wallets := []core.Wallet{}
 
 	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(map[string]interface{}{
-		"spec/type": "wallets.subaccount",
+		"spec/type": "wallets.primary",
 	}).Execute()
 	if err != nil {
 		return nil, err
@@ -60,7 +74,9 @@ func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 
 	for _, account := range res.Cursor.Data {
 		wallet := core.Wallet{
-			ID: account.Address,
+			ID:       account.Metadata["wallets/id"].(string),
+			Balances: make(map[string]core.Monetary),
+			Metadata: core.Metadata{},
 		}
 		wallets = append(wallets, wallet)
 	}
@@ -69,7 +85,12 @@ func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 }
 
 func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, error) {
-	wallet := &core.Wallet{}
+	wallet := &core.Wallet{
+		ID:       id,
+		Metadata: core.Metadata{},
+		// @todo: get balances from subaccounts
+		Balances: make(map[string]core.Monetary),
+	}
 
 	res, _, err := r.client.AccountsApi.GetAccount(
 		ctx,
@@ -81,10 +102,18 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 		return nil, InternalLedgerError
 	}
 
-	wallet.ID = res.Data.Address
+	if res.Data.Metadata["spec/type"] != "wallets.primary" {
+		return nil, WalletNotFound
+	}
 
-	// @todo: get balances from subaccounts
-	wallet.Balances = make(map[string]core.Monetary)
+	for k, v := range res.Data.Metadata {
+		if k != "wallets/custom_data" {
+			continue
+		}
+		for k2, v2 := range v.(map[string]interface{}) {
+			wallet.Metadata[k2] = v2
+		}
+	}
 
 	return wallet, nil
 }

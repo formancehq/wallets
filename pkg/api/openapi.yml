@@ -65,6 +65,11 @@ paths:
                 $ref: '#/components/schemas/Wallet'
         404:
           description: Wallet not found
+    patch:
+      summary: Update a wallet
+      responses:
+        204:
+          description: Wallet successfully updated
   
   /api/wallets/{id}/debit:
     parameters:
@@ -75,6 +80,15 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      responses:
+        200:
+          description: Wallet successfully debited as a pending hold
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hold'
+        204:
+          description: Wallet successfully debited
   
   /api/wallets/{id}/credit:
     parameters:
@@ -85,6 +99,9 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      responses:
+        204:
+          description: Wallet successfully credited
   
   /api/wallets/{id}/holds:
     parameters:
@@ -95,6 +112,15 @@ paths:
           type: string
     get:
       summary: Get all holds for a wallet
+      responses:
+        200:
+          description: Holds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hold'
   
   /api/wallets/{id}/holds/{hold_id}/confirm:
     parameters:
@@ -110,6 +136,9 @@ paths:
           type: string
     post:
       summary: Confirm a hold
+      responses:
+        204:
+          description: Hold successfully confirmed, funds moved back to initial destination
   
   /api/wallets/{id}/holds/{hold_id}/void:
     parameters:
@@ -125,6 +154,9 @@ paths:
           type: string
     post:
       summary: Cancel a hold
+      responses:
+        204:
+          description: Hold successfully cancelled, funds returned to wallet
 
 components:
   schemas:
@@ -137,9 +169,6 @@ components:
           type: string
           format: uuid
           description: The unique ID of the wallet.
-        counterpartyID:
-          type: string
-          description: The ID of the wallet's counterparty.
         metadata:
           type: object
           description: Metadata associated with the wallet.
