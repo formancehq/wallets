@@ -5,17 +5,38 @@ import (
 
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
-func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("wallet_id")
+type DebitWalletRequest struct {
+	Amount  core.Monetary `json:"amount"`
+	Pending bool          `json:"pending"`
+}
 
-	err := m.funding.Debit(r.Context(), wallet.Debit{
+func (c *DebitWalletRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "wallet_id")
+	data := &DebitWalletRequest{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	debit := wallet.Debit{
 		WalletID: id,
-		// @todo: parse amount from request
-		Amount: core.Monetary{},
-	})
+		Amount:   data.Amount,
+		Pending:  data.Pending,
+	}
+
+	hold, err := m.funding.Debit(r.Context(), debit)
+
 	if err != nil {
 		render.Status(r, http.StatusUnprocessableEntity)
 		render.JSON(w, r, map[string]interface{}{
@@ -25,5 +46,13 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.Status(r, http.StatusNoContent)
+	if hold == nil {
+		render.Status(r, http.StatusNoContent)
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, map[string]interface{}{
+		"hold": hold,
+	})
 }

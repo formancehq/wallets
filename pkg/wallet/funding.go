@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"strings"
 
 	sdk "github.com/formancehq/formance-sdk-go"
@@ -58,28 +60,41 @@ type Credit struct {
 	Reference string        `json:"reference"`
 }
 
-func (s *FundingService) Debit(ctx context.Context, debit Debit) error {
+func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, error) {
 	dest := DefaultDebitDest
 	if debit.Destination != "" {
 		dest = debit.Destination
 	}
 
+	var hold *core.Hold
 	if debit.Pending {
-		hold := s.chart.GetHoldAccount(uuid.NewString())
+		hold = &core.Hold{
+			ID:       uuid.NewString(),
+			WalletID: debit.WalletID,
+		}
+		holdAccount := s.chart.GetHoldAccount(hold.ID)
 		_, err := s.client.AccountsApi.
-			AddMetadataToAccount(ctx, s.ledgerName, hold).
+			AddMetadataToAccount(ctx, s.ledgerName, holdAccount).
 			RequestBody(map[string]interface{}{
-				"spec/type":   "wallets.hold",
-				"wallet":      s.chart.GetMainAccount(debit.WalletID),
-				"destination": dest,
+				"spec/type":       "wallets.hold",
+				"holds/wallet_id": debit.WalletID,
+				"void_destination": map[string]interface{}{
+					"type":  "account",
+					"value": s.chart.GetMainAccount(debit.WalletID),
+				},
+				"destination": map[string]interface{}{
+					"type":  "account",
+					"value": dest,
+				},
 			}).
 			Execute()
 		if err != nil {
 			// @todo: log error properly in addition to returning it
-			return InternalLedgerError
+			log.Println(err)
+			return nil, InternalLedgerError
 		}
 
-		dest = hold
+		dest = holdAccount
 	}
 
 	transaction := sdk.TransactionData{
@@ -104,28 +119,51 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) error {
 		Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
-		return InternalLedgerError
+		log.Println(err)
+		return nil, InternalLedgerError
 	}
 
-	return nil
+	return hold, nil
 }
 
 func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) error {
-	_, _, err := s.client.ScriptApi.RunScript(
+	holdAccount := s.chart.GetHoldAccount(debit.HoldID)
+
+	res, _, err := s.client.AccountsApi.
+		GetAccount(ctx, s.ledgerName, holdAccount).
+		Execute()
+
+	if err != nil {
+		// @todo: log error properly in addition to returning it
+		log.Println(err)
+		return InternalLedgerError
+	}
+
+	if res.Data.Metadata["spec/type"] != "wallets.hold" {
+		// @todo: log error properly in addition to returning it
+		return InternalLedgerError
+	}
+
+	var asset string
+	for key := range *res.Data.Balances {
+		asset = key
+		break
+	}
+
+	script := strings.Replace(numscript.ConfirmHold, "ASSET", asset, -1)
+
+	_, _, err = s.client.ScriptApi.RunScript(
 		ctx,
 		s.ledgerName,
 	).Script(sdk.Script{
-		Plain: numscript.ConfirmHold,
+		Plain: script,
 		Vars: map[string]interface{}{
 			"hold": s.chart.GetHoldAccount(debit.HoldID),
-			"amount": map[string]interface{}{
-				"amount": debit.Amount.Amount.Uint64(),
-				"asset":  debit.Amount.Asset,
-			},
 		},
 	}).Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
+		log.Println(err)
 		return InternalLedgerError
 	}
 
@@ -138,6 +176,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
+		log.Println(err)
 		return InternalLedgerError
 	}
 
@@ -147,15 +186,23 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		break
 	}
 
-	script := strings.Replace(numscript.CancelHold, "ASSET", asset, 1)
+	script := strings.Replace(numscript.CancelHold, "ASSET", asset, -1)
+
+	fmt.Println(script)
 
 	_, _, err = s.client.ScriptApi.RunScript(
 		ctx,
 		s.ledgerName,
-	).Script(*sdk.NewScript(script)).Execute()
+	).Script(sdk.Script{
+		Plain: script,
+		Vars: map[string]interface{}{
+			"hold": s.chart.GetHoldAccount(void.HoldID),
+		},
+	}).Execute()
 
 	if err != nil {
 		// @todo: log error properly in addition to returning it
+		log.Println(err)
 		return InternalLedgerError
 	}
 

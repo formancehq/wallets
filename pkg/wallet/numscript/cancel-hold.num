@@ -1,9 +1,9 @@
 vars {
   account $hold
-  account $wallet = meta($hold, "wallet")
+  account $dest = meta($hold, "void_destination")
 }
 
 send [ASSET *] (
   source = $hold
-  destination = $wallet
+  destination = $dest
 )

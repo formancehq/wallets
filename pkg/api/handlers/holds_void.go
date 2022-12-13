@@ -21,5 +21,5 @@ func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Status(r, http.StatusNoContent)
+	render.NoContent(w, r)
 }

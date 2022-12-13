@@ -1,4 +1,5 @@
-openapi: 3.1.0
+openapi: 3.0.0
+
 info:
   title: Formance Simple Wallets Service API
   version: 0.1.0
@@ -46,6 +47,25 @@ paths:
                   $ref: '#/components/schemas/Wallet'
     post:
       summary: Create a new wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                  description: Custom metadata to attach to this wallet.
+                  additionalProperties:
+                    type: string
+      responses:
+        201:
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+  
   /api/wallets/{id}:
     parameters:
       - name: id
@@ -64,6 +84,23 @@ paths:
                 $ref: '#/components/schemas/Wallet'
         404:
           description: Wallet not found
+    patch:
+      summary: Update a wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                  description: Custom metadata to attach to this wallet.
+                  additionalProperties:
+                    type: string
+      responses:
+        204:
+          description: Wallet successfully updated
+  
   /api/wallets/{id}/debit:
     parameters:
       - name: id
@@ -73,6 +110,16 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      responses:
+        200:
+          description: Wallet successfully debited as a pending hold
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hold'
+        204:
+          description: Wallet successfully debited
+  
   /api/wallets/{id}/credit:
     parameters:
       - name: id
@@ -82,6 +129,10 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      responses:
+        204:
+          description: Wallet successfully credited
+  
   /api/wallets/{id}/holds:
     parameters:
       - name: id
@@ -91,6 +142,16 @@ paths:
           type: string
     get:
       summary: Get all holds for a wallet
+      responses:
+        200:
+          description: Holds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hold'
+  
   /api/wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
@@ -105,6 +166,10 @@ paths:
           type: string
     post:
       summary: Confirm a hold
+      responses:
+        204:
+          description: Hold successfully confirmed, funds moved back to initial destination
+  
   /api/wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id
@@ -119,6 +184,9 @@ paths:
           type: string
     post:
       summary: Cancel a hold
+      responses:
+        204:
+          description: Hold successfully cancelled, funds returned to wallet
 
 components:
   schemas:
@@ -131,9 +199,6 @@ components:
           type: string
           format: uuid
           description: The unique ID of the wallet.
-        counterpartyID:
-          type: string
-          description: The ID of the wallet's counterparty.
         metadata:
           type: object
           description: Metadata associated with the wallet.
@@ -143,3 +208,16 @@ components:
           additionalProperties:
             type: number
             description: The balance of the wallet in the specified currency.
+    Hold:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the hold.
+        wallet_id:
+          type: string
+          description: The ID of the wallet the hold is associated with.
+        metadata:
+          type: object
+          description: Metadata associated with the hold.
