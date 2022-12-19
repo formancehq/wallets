@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 
@@ -36,7 +35,7 @@ func NewFundingService(
 }
 
 type Debit struct {
-	WalletID    string        `json:"wallet_id"`
+	WalletID    string        `json:"walletID"`
 	Amount      core.Monetary `json:"amount"`
 	Destination string        `json:"destination"`
 	Reference   string        `json:"reference"`
@@ -44,17 +43,17 @@ type Debit struct {
 }
 
 type ConfirmHold struct {
-	HoldID    string `json:"hold_id"`
+	HoldID    string `json:"holdID"`
 	Amount    core.Monetary
 	Reference string
 }
 
 type VoidHold struct {
-	HoldID string `json:"hold_id"`
+	HoldID string `json:"holdID"`
 }
 
 type Credit struct {
-	WalletID  string        `json:"wallet_id"`
+	WalletID  string        `json:"walletID"`
 	Source    string        `json:"source"`
 	Amount    core.Monetary `json:"amount"`
 	Reference string        `json:"reference"`
@@ -76,6 +75,8 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 		_, err := s.client.AccountsApi.
 			AddMetadataToAccount(ctx, s.ledgerName, holdAccount).
 			RequestBody(map[string]interface{}{
+				//nolint:godox
+				// TODO: Use defined namespace on ledger
 				"spec/type":       "wallets.hold",
 				"holds/wallet_id": debit.WalletID,
 				"void_destination": map[string]interface{}{
@@ -91,7 +92,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 		if err != nil {
 			// @todo: log error properly in addition to returning it
 			log.Println(err)
-			return nil, InternalLedgerError
+			return nil, ErrLedgerInternal
 		}
 
 		dest = holdAccount
@@ -120,7 +121,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.Hold, er
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
-		return nil, InternalLedgerError
+		return nil, ErrLedgerInternal
 	}
 
 	return hold, nil
@@ -132,16 +133,15 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	res, _, err := s.client.AccountsApi.
 		GetAccount(ctx, s.ledgerName, holdAccount).
 		Execute()
-
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	if res.Data.Metadata["spec/type"] != "wallets.hold" {
 		// @todo: log error properly in addition to returning it
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	var asset string
@@ -150,7 +150,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 		break
 	}
 
-	script := strings.Replace(numscript.ConfirmHold, "ASSET", asset, -1)
+	script := strings.ReplaceAll(numscript.ConfirmHold, "ASSET", asset)
 
 	_, _, err = s.client.ScriptApi.RunScript(
 		ctx,
@@ -164,7 +164,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	return nil
@@ -177,7 +177,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	var asset string
@@ -186,9 +186,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		break
 	}
 
-	script := strings.Replace(numscript.CancelHold, "ASSET", asset, -1)
-
-	fmt.Println(script)
+	script := strings.ReplaceAll(numscript.CancelHold, "ASSET", asset)
 
 	_, _, err = s.client.ScriptApi.RunScript(
 		ctx,
@@ -203,7 +201,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 	if err != nil {
 		// @todo: log error properly in addition to returning it
 		log.Println(err)
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	return nil
@@ -237,7 +235,7 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 		Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	return nil

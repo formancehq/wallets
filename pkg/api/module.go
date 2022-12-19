@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -16,17 +16,12 @@ func Module() fx.Option {
 		fx.Invoke(func(lc fx.Lifecycle, router *chi.Mux) {
 			lc.Append(fx.Hook{
 				OnStart: func(context context.Context) error {
-					fmt.Println("Starting API...")
 					go func() {
 						err := http.ListenAndServe(":8082", router)
-						if err != nil {
-							return
+						if err != nil && errors.Is(err, http.ErrServerClosed) {
+							panic(err)
 						}
 					}()
-					return nil
-				},
-				OnStop: func(context.Context) error {
-					fmt.Println("Stopping API...")
 					return nil
 				},
 			})

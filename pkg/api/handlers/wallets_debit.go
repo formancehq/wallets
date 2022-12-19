@@ -19,7 +19,6 @@ func (c *DebitWalletRequest) Bind(r *http.Request) error {
 }
 
 func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "wallet_id")
 	data := &DebitWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
 		render.Status(r, http.StatusBadRequest)
@@ -29,6 +28,8 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	id := chi.URLParam(r, "wallet_id")
+
 	debit := wallet.Debit{
 		WalletID: id,
 		Amount:   data.Amount,
@@ -36,7 +37,6 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	hold, err := m.funding.Debit(r.Context(), debit)
-
 	if err != nil {
 		render.Status(r, http.StatusUnprocessableEntity)
 		render.JSON(w, r, map[string]interface{}{

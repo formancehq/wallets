@@ -18,9 +18,7 @@ func Module() fx.Option {
 			fx.ParamTags(`name:"ledger-name"`),
 		)),
 		fx.Provide(fx.Annotate(
-			func(prefix string) *core.Chart {
-				return core.NewChart(prefix)
-			},
+			core.NewChart,
 			fx.ParamTags(`name:"chart-prefix"`),
 		)),
 		// @todo: replace this with configurable value

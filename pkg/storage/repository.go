@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
@@ -52,7 +51,7 @@ func (r *Repository) CreateWallet(ctx context.Context, data *WalletData) (*core.
 	).RequestBody(meta).Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
-		return nil, InternalLedgerError
+		return nil, ErrLedgerInternal
 	}
 
 	return &core.Wallet{
@@ -68,10 +67,10 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *WalletDa
 
 	res, _, err := r.client.AccountsApi.GetAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id)).Execute()
 	if err != nil {
-		return WalletNotFound
+		return ErrWalletNotFound
 	}
 	if res.Data.Metadata["spec/type"] != "wallets.primary" {
-		return WalletNotFound
+		return ErrWalletNotFound
 	}
 
 	for k, v := range res.Data.Metadata {
@@ -93,13 +92,13 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *WalletDa
 		r.chart.GetMainAccount(id),
 	).RequestBody(meta).Execute()
 	if err != nil {
-		return InternalLedgerError
+		return ErrLedgerInternal
 	}
 
 	return nil
 }
 
-// @todo: add pagination
+// @todo: add pagination.
 func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	wallets := []core.Wallet{}
 
@@ -137,11 +136,11 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 	).Execute()
 	if err != nil {
 		// @todo: log error properly in addition to returning it
-		return nil, InternalLedgerError
+		return nil, ErrLedgerInternal
 	}
 
 	if res.Data.Metadata["spec/type"] != "wallets.primary" {
-		return nil, WalletNotFound
+		return nil, ErrWalletNotFound
 	}
 
 	for k, v := range res.Data.Metadata {
@@ -163,7 +162,6 @@ func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Hol
 		"spec/type":       "wallets.hold",
 		"holds/wallet_id": walletID,
 	}
-	fmt.Println(filter)
 
 	res, _, err := r.client.AccountsApi.ListAccounts(ctx, r.ledgerName).Metadata(filter).Execute()
 	if err != nil {

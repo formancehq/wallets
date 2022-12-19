@@ -32,7 +32,7 @@ func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request)
 	})
 	if err != nil {
 		switch err.Error() {
-		case storage.WalletNotFound.Error():
+		case storage.ErrWalletNotFound.Error():
 			render.Status(r, http.StatusNotFound)
 			render.JSON(w, r, map[string]string{
 				"error": err.Error(),

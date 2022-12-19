@@ -69,7 +69,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Wallet'
-  
+
   /api/wallets/{id}:
     parameters:
       - name: id
@@ -108,7 +108,7 @@ paths:
       responses:
         204:
           description: Wallet successfully updated
-  
+
   /api/wallets/{id}/debit:
     parameters:
       - name: id
@@ -145,7 +145,7 @@ paths:
                 $ref: '#/components/schemas/Hold'
         204:
           description: Wallet successfully debited
-  
+
   /api/wallets/{id}/credit:
     parameters:
       - name: id
@@ -172,7 +172,7 @@ paths:
       responses:
         204:
           description: Wallet successfully credited
-  
+
   /api/wallets/{id}/holds:
     parameters:
       - name: id
@@ -193,7 +193,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Hold'
-  
+
   /api/wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
@@ -213,7 +213,7 @@ paths:
       responses:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
-  
+
   /api/wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id

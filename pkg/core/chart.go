@@ -8,7 +8,7 @@ type Address []string
 
 func (addr Address) String() string {
 	s := strings.Join(addr, ":")
-	s = strings.Replace(s, "-", "", -1)
+	s = strings.ReplaceAll(s, "-", "")
 
 	return s
 }
@@ -33,17 +33,17 @@ func (c *Chart) BasePath() Address {
 	return addr
 }
 
-func (c *Chart) GetMainAccount(walletId string) string {
+func (c *Chart) GetMainAccount(walletID string) string {
 	addr := c.BasePath()
-	addr = append(addr, walletId, "main")
+	addr = append(addr, walletID, "main")
 
 	return addr.String()
 }
 
-func (c *Chart) GetHoldAccount(holdId string) string {
+func (c *Chart) GetHoldAccount(holdID string) string {
 	addr := c.BasePath()
 	addr = append(addr, "holds")
-	addr = append(addr, holdId)
+	addr = append(addr, holdID)
 
 	return addr.String()
 }
