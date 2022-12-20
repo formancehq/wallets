@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"net/http"
@@ -47,12 +47,10 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if hold == nil {
-		render.Status(r, http.StatusNoContent)
+		render.NoContent(w, r)
 		return
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, map[string]interface{}{
-		"hold": hold,
-	})
+	render.JSON(w, r, hold)
 }

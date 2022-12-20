@@ -1,8 +1,6 @@
 package api
 
 import (
-	"github.com/formancehq/wallets/pkg/api/handlers"
-	"github.com/formancehq/wallets/pkg/storage"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,14 +8,14 @@ import (
 
 func NewRouter(
 	funding *wallet.FundingService,
-	repository *storage.Repository,
+	repository *wallet.Repository,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.AllowContentType("application/json"))
 	r.Use(middleware.Logger)
 
-	main := handlers.NewMainHandler(funding, repository)
+	main := NewMainHandler(funding, repository)
 
 	r.Route("/wallets", func(r chi.Router) {
 		r.Get("/", main.ListWalletsHandler)

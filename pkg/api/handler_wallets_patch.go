@@ -1,10 +1,10 @@
-package handlers
+package api
 
 import (
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/storage"
+	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
@@ -27,12 +27,12 @@ func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &storage.WalletData{
+	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &wallet.WalletData{
 		Metadata: data.Metadata,
 	})
 	if err != nil {
 		switch err.Error() {
-		case storage.ErrWalletNotFound.Error():
+		case wallet.ErrWalletNotFound.Error():
 			render.Status(r, http.StatusNotFound)
 			render.JSON(w, r, map[string]string{
 				"error": err.Error(),

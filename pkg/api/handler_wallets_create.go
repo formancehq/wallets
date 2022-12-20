@@ -1,10 +1,10 @@
-package handlers
+package api
 
 import (
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/storage"
+	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/render"
 )
 
@@ -18,15 +18,17 @@ func (c *CreateWalletRequest) Bind(r *http.Request) error {
 
 func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &CreateWalletRequest{}
-	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
-		return
+	if r.ContentLength > 0 {
+		if err := render.Bind(r, data); err != nil {
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
 	}
 
-	wallet, err := m.repository.CreateWallet(r.Context(), &storage.WalletData{
+	wallet, err := m.repository.CreateWallet(r.Context(), &wallet.WalletData{
 		Metadata: data.Metadata,
 	})
 	if err != nil {

@@ -17,7 +17,7 @@ func Module() fx.Option {
 			lc.Append(fx.Hook{
 				OnStart: func(context context.Context) error {
 					go func() {
-						err := http.ListenAndServe(":8082", router)
+						err := http.ListenAndServe(":8080", router)
 						if err != nil && errors.Is(err, http.ErrServerClosed) {
 							panic(err)
 						}

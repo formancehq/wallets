@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"net/http"
@@ -21,5 +21,5 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.Status(r, http.StatusNoContent)
+	render.NoContent(w, r)
 }

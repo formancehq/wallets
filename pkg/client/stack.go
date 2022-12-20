@@ -3,37 +3,32 @@ package client
 import (
 	"context"
 	"net/http"
-	"os"
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-func GetAuthenticatedClient(ctx context.Context) (*http.Client, error) {
-	id := os.Getenv("STACK_CLIENT_ID")
-	secret := os.Getenv("STACK_CLIENT_SECRET")
-	endpoint := os.Getenv("STACK_URL")
-
-	if id == "" || secret == "" {
+func GetAuthenticatedClient(ctx context.Context, clientID, clientSecret, stackURL string) (*http.Client, error) {
+	if clientID == "" || clientSecret == "" {
 		return nil, errors.New("STACK_CLIENT_ID and STACK_CLIENT_SECRET must be set")
 	}
 
 	clientCredentialsConfig := clientcredentials.Config{
-		ClientID:     id,
-		ClientSecret: secret,
-		TokenURL:     endpoint + "/api/auth/oauth/token",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		TokenURL:     stackURL + "/api/auth/oauth/token",
 	}
 	return clientCredentialsConfig.Client(ctx), nil
 }
 
-func NewStackClient() (*sdk.APIClient, error) {
+func NewStackClient(clientID, clientSecret, stackURL string) (*sdk.APIClient, error) {
 	config := sdk.NewConfiguration()
 	config.Servers = sdk.ServerConfigurations{{
-		URL: os.Getenv("STACK_URL"),
+		URL: stackURL,
 	}}
 
-	httpClient, err := GetAuthenticatedClient(context.Background())
+	httpClient, err := GetAuthenticatedClient(context.Background(), clientID, clientSecret, stackURL)
 	if err != nil {
 		return nil, err
 	}

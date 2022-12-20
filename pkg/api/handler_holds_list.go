@@ -1,13 +1,14 @@
-package handlers
+package api
 
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
-func (m *MainHandler) GetHoldHandler(w http.ResponseWriter, r *http.Request) {
-	hold, err := m.repository.GetHold(r.Context(), r.URL.Query().Get("hold_id"))
+func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
+	holds, err := m.repository.ListHolds(r.Context(), chi.URLParam(r, "wallet_id"))
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, map[string]string{
@@ -17,5 +18,5 @@ func (m *MainHandler) GetHoldHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, r, hold)
+	render.JSON(w, r, holds)
 }

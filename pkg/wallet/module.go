@@ -2,36 +2,21 @@ package wallet
 
 import (
 	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/storage"
 	"go.uber.org/fx"
 )
 
-func Module() fx.Option {
+func Module(ledgerName, chartPrefix string) fx.Option {
 	return fx.Module(
 		"wallet",
-		fx.Provide(fx.Annotate(
-			NewFundingService,
-			fx.ParamTags(`name:"ledger-name"`),
-		)),
-		fx.Provide(fx.Annotate(
-			storage.NewRepository,
-			fx.ParamTags(`name:"ledger-name"`),
-		)),
-		fx.Provide(fx.Annotate(
-			core.NewChart,
-			fx.ParamTags(`name:"chart-prefix"`),
-		)),
-		// @todo: replace this with configurable value
-		fx.Provide(
-			fx.Annotate(func() string {
-				return "wallets-002"
-			}, fx.ResultTags(`name:"ledger-name"`)),
-		),
-		// @todo: replace this with configurable value
-		fx.Provide(
-			fx.Annotate(func() string {
-				return ""
-			}, fx.ResultTags(`name:"chart-prefix"`)),
-		),
+		fx.Provide(fx.Annotate(NewDefaultLedger, fx.As(new(Ledger)))),
+		fx.Provide(func() *core.Chart {
+			return core.NewChart(chartPrefix)
+		}),
+		fx.Provide(func(ledger Ledger, chart *core.Chart) *FundingService {
+			return NewFundingService(ledgerName, ledger, chart)
+		}),
+		fx.Provide(func(ledger Ledger, chart *core.Chart) *Repository {
+			return NewRepository(ledgerName, ledger, chart)
+		}),
 	)
 }

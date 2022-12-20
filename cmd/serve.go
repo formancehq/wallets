@@ -5,19 +5,29 @@ import (
 
 	"github.com/formancehq/go-libs/sharedotlp/pkg/sharedotlptraces"
 	"github.com/formancehq/wallets/pkg"
+	"github.com/formancehq/wallets/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
+const (
+	clientIDFlag     = "client-id"
+	clientSecretFlag = "client-secret"
+	tokenURLFlag     = "token-url"
+)
+
 var serveCmd = &cobra.Command{
-	Use: "server",
+	Use: "serve",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		return bindFlagsToViper(cmd)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options := []fx.Option{
-			pkg.Module(),
+			fx.NopLogger,
+			// TODO: Make configurable
+			pkg.Module("wallets-002", ""),
+			client.NewModule(viper.GetString(clientIDFlag), viper.GetString(clientSecretFlag), viper.GetString(tokenURLFlag)),
 			sharedotlptraces.CLITracesModule(viper.GetViper()),
 		}
 
@@ -37,5 +47,8 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
+	serveCmd.Flags().String(clientIDFlag, "", "Client ID")
+	serveCmd.Flags().String(clientSecretFlag, "", "Client Secret")
+	serveCmd.Flags().String(tokenURLFlag, "", "Token URL")
 	rootCmd.AddCommand(serveCmd)
 }
