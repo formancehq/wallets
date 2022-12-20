@@ -28,15 +28,11 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	wallet, err := m.repository.CreateWallet(r.Context(), &wallet.WalletData{
+	wallet, err := m.repository.CreateWallet(r.Context(), &wallet.Data{
 		Metadata: data.Metadata,
 	})
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.JSON(w, r, map[string]string{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 

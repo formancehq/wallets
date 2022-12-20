@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/wallet"
@@ -13,11 +14,12 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 		HoldID: chi.URLParam(r, "hold_id"),
 	})
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]string{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		switch {
+		case errors.Is(err, wallet.ErrHoldNotFound):
+			notFound(w)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 

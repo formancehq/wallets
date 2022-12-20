@@ -3,8 +3,8 @@ package wallet
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/wallets/pkg/core"
+	"github.com/pkg/errors"
 )
 
 type Repository struct {
@@ -25,12 +25,11 @@ func NewRepository(
 	}
 }
 
-type WalletData struct {
+type Data struct {
 	Metadata core.Metadata `json:"metadata"`
 }
 
-func (r *Repository) CreateWallet(ctx context.Context, data *WalletData) (*core.Wallet, error) {
-
+func (r *Repository) CreateWallet(ctx context.Context, data *Data) (*core.Wallet, error) {
 	wallet := core.NewWallet(data.Metadata)
 
 	if err := r.client.AddMetadataToAccount(
@@ -39,14 +38,13 @@ func (r *Repository) CreateWallet(ctx context.Context, data *WalletData) (*core.
 		r.chart.GetMainAccount(wallet.ID),
 		wallet.LedgerMetadata(),
 	); err != nil {
-		sharedlogging.GetLogger(ctx).Error(err)
-		return nil, ErrLedgerInternal
+		return nil, errors.Wrap(err, "adding metadata to account")
 	}
 
 	return &wallet, nil
 }
 
-func (r *Repository) UpdateWallet(ctx context.Context, id string, data *WalletData) error {
+func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) error {
 	meta := core.Metadata{}
 	custom := core.Metadata{}
 
@@ -77,7 +75,7 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *WalletDa
 		r.chart.GetMainAccount(id),
 		meta,
 	); err != nil {
-		return ErrLedgerInternal
+		return errors.Wrap(err, "adding metadata to account")
 	}
 
 	return nil
@@ -113,8 +111,7 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 		r.chart.GetMainAccount(id),
 	)
 	if err != nil {
-		// @todo: log error properly in addition to returning it
-		return nil, ErrLedgerInternal
+		return nil, errors.Wrap(err, "getting account")
 	}
 
 	if account.Metadata[core.MetadataKeySpecType] != core.PrimaryWallet {
@@ -139,8 +136,7 @@ func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Deb
 
 	accounts, err := r.client.ListAccountsWithMetadata(ctx, r.ledgerName, filter)
 	if err != nil {
-		// @todo: log error properly in addition to returning it
-		return nil, err
+		return nil, errors.Wrap(err, "listing accounts")
 	}
 
 	for _, account := range accounts {

@@ -38,11 +38,7 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 
 	hold, err := m.funding.Debit(r.Context(), debit)
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]interface{}{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 
@@ -51,6 +47,5 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, hold)
+	created(w, hold)
 }

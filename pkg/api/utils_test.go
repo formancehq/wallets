@@ -23,12 +23,14 @@ func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 }
 
 func bufFromObject(t *testing.T, v any) *bytes.Buffer {
+	t.Helper()
 	data, err := json.Marshal(v)
 	require.NoError(t, err)
 	return bytes.NewBuffer(data)
 }
 
 func newRequest(t *testing.T, method, path string, object any) *http.Request {
+	t.Helper()
 	var reader io.Reader
 	if object != nil {
 		reader = bufFromObject(t, object)
@@ -67,12 +69,13 @@ func newTestEnv(opts ...Option) *testEnv {
 	return ret
 }
 
-
-type addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata core.Metadata) error
-type getAccountFn func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
-type listAccountsWithMetadataFn func(ctx context.Context, name string, m map[string]any) ([]sdk.Account, error)
-type createTransactionFn func(ctx context.Context, name string, transaction sdk.TransactionData) error
-type runScriptFn func(ctx context.Context, name string, script sdk.Script) error
+type (
+	addMetadataToAccountFn     func(ctx context.Context, ledger, account string, metadata core.Metadata) error
+	getAccountFn               func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
+	listAccountsWithMetadataFn func(ctx context.Context, name string, m map[string]any) ([]sdk.Account, error)
+	createTransactionFn        func(ctx context.Context, name string, transaction sdk.TransactionData) error
+	runScriptFn                func(ctx context.Context, name string, script sdk.Script) error
+)
 
 type LedgerMock struct {
 	addMetadataToAccount     addMetadataToAccountFn

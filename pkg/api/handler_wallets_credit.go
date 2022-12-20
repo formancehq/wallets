@@ -35,11 +35,7 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 
 	err := m.funding.Credit(r.Context(), credit)
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]interface{}{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 

@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	clientIDFlag     = "client-id"
-	clientSecretFlag = "client-secret"
-	tokenURLFlag     = "token-url"
+	clientIDFlag      = "client-id"
+	clientSecretFlag  = "client-secret"
+	tokenURLFlag      = "token-url"
+	ledgerNameFlag    = "ledger"
+	accountPrefixFlag = "account-prefix"
 )
 
 var serveCmd = &cobra.Command{
@@ -25,8 +27,7 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options := []fx.Option{
 			fx.NopLogger,
-			// TODO: Make configurable
-			pkg.Module("wallets-002", ""),
+			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag)),
 			client.NewModule(viper.GetString(clientIDFlag), viper.GetString(clientSecretFlag), viper.GetString(tokenURLFlag)),
 			sharedotlptraces.CLITracesModule(viper.GetViper()),
 		}
@@ -50,5 +51,7 @@ func init() {
 	serveCmd.Flags().String(clientIDFlag, "", "Client ID")
 	serveCmd.Flags().String(clientSecretFlag, "", "Client Secret")
 	serveCmd.Flags().String(tokenURLFlag, "", "Token URL")
+	serveCmd.Flags().String(ledgerNameFlag, "wallets-002", "Target ledger")
+	serveCmd.Flags().String(accountPrefixFlag, "", "Account prefix flag")
 	rootCmd.AddCommand(serveCmd)
 }

@@ -9,7 +9,7 @@ type DebitHold struct {
 	ID          string `json:"id"`
 	WalletID    string `json:"walletID"`
 	Destination string `json:"destination"`
-	Asset string `json:"asset"`
+	Asset       string `json:"asset"`
 }
 
 func (h DebitHold) LedgerMetadata(chart *Chart) Metadata {

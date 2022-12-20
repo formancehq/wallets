@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/wallet"
@@ -11,16 +12,12 @@ import (
 func (m *MainHandler) GetWalletHandler(wr http.ResponseWriter, r *http.Request) {
 	w, err := m.repository.GetWallet(r.Context(), chi.URLParam(r, "wallet_id"))
 	if err != nil {
-		switch err.Error() {
-		case wallet.ErrWalletNotFound.Error():
-			render.Status(r, http.StatusNotFound)
+		switch {
+		case errors.Is(err, wallet.ErrWalletNotFound):
+			notFound(wr)
 		default:
-			render.Status(r, http.StatusInternalServerError)
+			internalError(wr, r, err)
 		}
-		// @todo: return a proper error from go-libs
-		render.JSON(wr, r, map[string]string{
-			"error": err.Error(),
-		})
 		return
 	}
 

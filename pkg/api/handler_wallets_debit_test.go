@@ -73,8 +73,7 @@ func TestWalletsDebitWithHold(t *testing.T) {
 		metadata        core.Metadata
 		transactionData sdk.TransactionData
 	)
-	var testEnv *testEnv
-	testEnv = newTestEnv(
+	testEnv := newTestEnv(
 		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m core.Metadata) error {
 			ledger = l
 			account = a

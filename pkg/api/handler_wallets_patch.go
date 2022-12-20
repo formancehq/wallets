@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/core"
@@ -27,24 +28,17 @@ func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &wallet.WalletData{
+	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &wallet.Data{
 		Metadata: data.Metadata,
 	})
 	if err != nil {
-		switch err.Error() {
-		case wallet.ErrWalletNotFound.Error():
-			render.Status(r, http.StatusNotFound)
-			render.JSON(w, r, map[string]string{
-				"error": err.Error(),
-			})
-			return
+		switch {
+		case errors.Is(err, wallet.ErrWalletNotFound):
+			notFound(w)
 		default:
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, map[string]string{
-				"error": err.Error(),
-			})
-			return
+			internalError(w, r, err)
 		}
+		return
 	}
 
 	render.NoContent(w, r)

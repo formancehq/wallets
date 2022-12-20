@@ -20,6 +20,9 @@ linters:
     - gosec
     - gochecknoinits
     - funlen
+    - testpackage
+    - lll
+    - dupl
 
 issues: {}
 

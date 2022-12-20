@@ -13,11 +13,7 @@ func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
 		HoldID: chi.URLParam(r, "hold_id"),
 	})
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]string{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 
