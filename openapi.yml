@@ -92,6 +92,7 @@ paths:
           description: Wallet not found
     patch:
       summary: Update a wallet
+      operationId: updateWallet
       tags:
         - Wallets
       requestBody:
