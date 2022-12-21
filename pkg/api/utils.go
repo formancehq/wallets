@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/formancehq/go-libs/sharedapi"
@@ -43,7 +44,7 @@ func created(w http.ResponseWriter, v any) {
 	ok(w, v)
 }
 
-func ok(w http.ResponseWriter, v any) {
+func ok(w io.Writer, v any) {
 	if err := json.NewEncoder(w).Encode(sharedapi.BaseResponse[any]{
 		Data: &v,
 	}); err != nil {
