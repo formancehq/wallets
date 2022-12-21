@@ -4,7 +4,8 @@ go 1.19
 
 require (
 	github.com/formancehq/formance-sdk-go v0.0.0-20221207112631-0ef6595efe5b
-	github.com/formancehq/go-libs v1.2.0
+	github.com/formancehq/go-libs v1.3.0
+	github.com/formancehq/go-libs/sharedapi v0.0.0-20221216091331-d43b8d37bc84
 	github.com/formancehq/go-libs/sharedotlp v0.0.0-20221123112229-2c8ab193c63c
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2

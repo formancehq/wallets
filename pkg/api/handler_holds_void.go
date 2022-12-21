@@ -5,7 +5,6 @@ import (
 
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,5 +16,5 @@ func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.NoContent(w, r)
+	noContent(w)
 }

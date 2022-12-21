@@ -7,9 +7,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -19,7 +21,9 @@ import (
 
 func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 	t.Helper()
-	require.NoError(t, json.NewDecoder(rec.Body).Decode(to))
+	ret := &sharedapi.BaseResponse[T]{}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(ret))
+	reflect.ValueOf(to).Elem().Set(reflect.ValueOf(*ret.Data).Elem())
 }
 
 func bufFromObject(t *testing.T, v any) *bytes.Buffer {

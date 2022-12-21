@@ -74,8 +74,10 @@ github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021/go.
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/formancehq/formance-sdk-go v0.0.0-20221207112631-0ef6595efe5b h1:rNnDaX7995wjIvqfoyBuCBLg+c7kRwEy28wC63aswuo=
 github.com/formancehq/formance-sdk-go v0.0.0-20221207112631-0ef6595efe5b/go.mod h1:8/3set1MEjevx4epBHjwBQxDrXVeliF7kzHFOzZC/yI=
-github.com/formancehq/go-libs v1.2.0 h1:tiPl3usXJD1stSXBonpu1lL/ACD+m6Qh/rinptc9qag=
-github.com/formancehq/go-libs v1.2.0/go.mod h1:9pIcaXQR4O1biXDfhFurYJZw1piU6sJk+0Vqvu+92ng=
+github.com/formancehq/go-libs v1.3.0 h1:Ogs/B9FcoGHl2yF0TeTrBoGejKQk0G7XH6pFwgCod3U=
+github.com/formancehq/go-libs v1.3.0/go.mod h1:9pIcaXQR4O1biXDfhFurYJZw1piU6sJk+0Vqvu+92ng=
+github.com/formancehq/go-libs/sharedapi v0.0.0-20221216091331-d43b8d37bc84 h1:9mgfYd6l5bHj7xhbbLKLupKknjQvVlF+r7fMacxoqDM=
+github.com/formancehq/go-libs/sharedapi v0.0.0-20221216091331-d43b8d37bc84/go.mod h1:PMf25p7rXNJkc/LIwvf0AmGfAo1NqwQG+5emONMrurA=
 github.com/formancehq/go-libs/sharedotlp v0.0.0-20221123112229-2c8ab193c63c h1:xzGPlzwbAzotpvY6rU0/OtYruK/4VDJpMX+QcagbYJM=
 github.com/formancehq/go-libs/sharedotlp v0.0.0-20221123112229-2c8ab193c63c/go.mod h1:6Pj/5A7XODoIyN/k5qauu1GAHex/A5P4j+7FmkD2TGI=
 github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=

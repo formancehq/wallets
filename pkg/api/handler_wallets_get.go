@@ -6,7 +6,6 @@ import (
 
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) GetWalletHandler(wr http.ResponseWriter, r *http.Request) {
@@ -21,5 +20,5 @@ func (m *MainHandler) GetWalletHandler(wr http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	render.JSON(wr, r, w)
+	ok(wr, w)
 }

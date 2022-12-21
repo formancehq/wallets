@@ -2,8 +2,6 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) ListWalletsHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,5 +11,5 @@ func (m *MainHandler) ListWalletsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.JSON(w, r, wallets)
+	ok(w, wallets)
 }

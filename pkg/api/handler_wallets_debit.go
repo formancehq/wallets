@@ -21,10 +21,7 @@ func (c *DebitWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &DebitWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
+		badRequest(w, err)
 		return
 	}
 
@@ -43,7 +40,7 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if hold == nil {
-		render.NoContent(w, r)
+		noContent(w)
 		return
 	}
 

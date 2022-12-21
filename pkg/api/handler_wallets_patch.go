@@ -21,10 +21,7 @@ func (c *PatchWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &PatchWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
+		badRequest(w, err)
 		return
 	}
 
@@ -41,5 +38,5 @@ func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	render.NoContent(w, r)
+	noContent(w)
 }

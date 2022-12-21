@@ -20,10 +20,7 @@ func (c *CreditWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &CreditWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
+		badRequest(w, err)
 		return
 	}
 
@@ -39,5 +36,5 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	render.NoContent(w, r)
+	noContent(w)
 }

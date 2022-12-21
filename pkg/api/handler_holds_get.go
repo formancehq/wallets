@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) GetHoldHandler(w http.ResponseWriter, r *http.Request) {
@@ -14,5 +13,5 @@ func (m *MainHandler) GetHoldHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, r, hold)
+	ok(w, hold)
 }

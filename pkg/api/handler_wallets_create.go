@@ -20,10 +20,7 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 	data := &CreateWalletRequest{}
 	if r.ContentLength > 0 {
 		if err := render.Bind(r, data); err != nil {
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, map[string]string{
-				"error": err.Error(),
-			})
+			badRequest(w, err)
 			return
 		}
 	}
@@ -36,5 +33,5 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	render.JSON(w, r, wallet)
+	ok(w, wallet)
 }

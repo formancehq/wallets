@@ -44,9 +44,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/GetWalletsResponse'
     post:
       summary: Create a new wallet
       tags:
@@ -68,7 +66,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/CreateWalletResponse'
 
   /api/wallets/{id}:
     parameters:
@@ -87,7 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/GetWalletResponse'
         404:
           description: Wallet not found
     patch:
@@ -142,7 +140,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hold'
+                $ref: '#/components/schemas/DebitWalletResponse'
         204:
           description: Wallet successfully debited
 
@@ -190,9 +188,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Hold'
+                $ref: '#/components/schemas/GetHoldsResponse'
 
   /api/wallets/{id}/holds/{hold_id}/confirm:
     parameters:
@@ -276,3 +272,32 @@ components:
         metadata:
           type: object
           description: Metadata associated with the hold.
+    GetWalletsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+    CreateWalletResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Wallet'
+    GetWalletResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Wallet'
+    DebitWalletResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Hold'
+    GetHoldsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hold'
