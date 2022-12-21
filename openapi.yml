@@ -5,7 +5,7 @@ info:
   version: 0.1.0
 
 paths:
-  /api/wallets:
+  /wallets:
     parameters:
       - name: page_size
         in: query
@@ -68,7 +68,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateWalletResponse'
 
-  /api/wallets/{id}:
+  /wallets/{id}:
     parameters:
       - name: id
         in: path
@@ -107,7 +107,7 @@ paths:
         204:
           description: Wallet successfully updated
 
-  /api/wallets/{id}/debit:
+  /wallets/{id}/debit:
     parameters:
       - name: id
         in: path
@@ -144,7 +144,7 @@ paths:
         204:
           description: Wallet successfully debited
 
-  /api/wallets/{id}/credit:
+  /wallets/{id}/credit:
     parameters:
       - name: id
         in: path
@@ -171,7 +171,7 @@ paths:
         204:
           description: Wallet successfully credited
 
-  /api/wallets/{id}/holds:
+  /wallets/{id}/holds:
     parameters:
       - name: id
         in: path
@@ -190,7 +190,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetHoldsResponse'
 
-  /api/wallets/{id}/holds/{hold_id}/confirm:
+  /wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
         in: path
@@ -210,7 +210,7 @@ paths:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
 
-  /api/wallets/{id}/holds/{hold_id}/void:
+  /wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id
         in: path
