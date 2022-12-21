@@ -47,6 +47,7 @@ paths:
                 $ref: '#/components/schemas/GetWalletsResponse'
     post:
       summary: Create a new wallet
+      operationId: createWallet
       tags:
         - Wallets
       requestBody:
@@ -77,6 +78,7 @@ paths:
           type: string
     get:
       summary: Get a wallet
+      operationId: getWallet
       tags:
         - Wallets
       responses:
@@ -116,6 +118,7 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      operationId: debitWallet
       tags:
         - Wallets
       requestBody:
@@ -153,6 +156,7 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      operationId: creditWallet
       tags:
         - Wallets
       requestBody:
@@ -182,6 +186,7 @@ paths:
       summary: Get all holds for a wallet
       tags:
         - Wallets
+      operationId: getHolds
       responses:
         200:
           description: Holds
@@ -206,6 +211,7 @@ paths:
       summary: Confirm a hold
       tags:
         - Wallets
+      operationId: confirmHold
       responses:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
@@ -224,6 +230,7 @@ paths:
           type: string
     post:
       summary: Cancel a hold
+      operationId: voidHold
       tags:
         - Wallets
       responses:
