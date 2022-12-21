@@ -120,6 +120,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - amount
               properties:
                 amount:
                   $ref: '#/components/schemas/Monetary'
@@ -158,6 +160,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - amount
               properties:
                 amount:
                   $ref: '#/components/schemas/Monetary'
@@ -235,6 +239,9 @@ components:
   schemas:
     Monetary:
       type: object
+      required:
+      - asset
+      - amount
       properties:
         asset:
           type: string
@@ -246,6 +253,9 @@ components:
       type: object
       required:
         - name
+        - id
+        - balances
+        - metadata
       properties:
         id:
           type: string
@@ -260,8 +270,14 @@ components:
           additionalProperties:
             type: number
             description: The balance of the wallet in the specified currency.
+        name:
+          type: string
     Hold:
       type: object
+      required:
+      - id
+      - wallet_id
+      - metadata
       properties:
         id:
           type: string
@@ -275,6 +291,8 @@ components:
           description: Metadata associated with the hold.
     GetWalletsResponse:
       type: object
+      required:
+      - data
       properties:
         data:
           type: array
@@ -282,21 +300,29 @@ components:
             $ref: '#/components/schemas/Wallet'
     CreateWalletResponse:
       type: object
+      required:
+      - data
       properties:
         data:
           $ref: '#/components/schemas/Wallet'
     GetWalletResponse:
       type: object
+      required:
+      - data
       properties:
         data:
           $ref: '#/components/schemas/Wallet'
     DebitWalletResponse:
       type: object
+      required:
+      - data
       properties:
         data:
           $ref: '#/components/schemas/Hold'
     GetHoldsResponse:
       type: object
+      required:
+      - data
       properties:
         data:
           type: array
@@ -304,6 +330,8 @@ components:
             $ref: '#/components/schemas/Hold'
     CreateWalletRequest:
       type: object
+      required:
+      - name
       properties:
         metadata:
           type: object
