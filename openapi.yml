@@ -97,8 +97,7 @@ paths:
                 metadata:
                   type: object
                   description: Custom metadata to attach to this wallet.
-                  additionalProperties:
-                    type: string
+                  additionalProperties: {}
       responses:
         204:
           description: Wallet successfully updated
@@ -264,6 +263,7 @@ components:
         metadata:
           type: object
           description: Metadata associated with the wallet.
+          additionalProperties: {}
         balances:
           type: object
           description: The balances of the wallet.
@@ -289,6 +289,7 @@ components:
         metadata:
           type: object
           description: Metadata associated with the hold.
+          additionalProperties: {}
     GetWalletsResponse:
       type: object
       required:
@@ -336,7 +337,6 @@ components:
         metadata:
           type: object
           description: Custom metadata to attach to this wallet.
-          additionalProperties:
-            type: string
+          additionalProperties: {}
         name:
           type: string
