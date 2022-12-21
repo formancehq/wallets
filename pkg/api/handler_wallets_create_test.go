@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/wallets/pkg/core"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,6 +18,7 @@ func TestWalletsCreate(t *testing.T) {
 		Metadata: map[string]interface{}{
 			"foo": "bar",
 		},
+		Name: uuid.NewString(),
 	}
 
 	req := newRequest(t, http.MethodPost, "/wallets", createWalletRequest)
@@ -44,4 +46,5 @@ func TestWalletsCreate(t *testing.T) {
 	require.Equal(t, account, testEnv.Chart().GetMainAccount(wallet.ID))
 	require.Equal(t, wallet.LedgerMetadata(), metadata)
 	require.Equal(t, wallet.Metadata, createWalletRequest.Metadata)
+	require.Equal(t, wallet.Name, createWalletRequest.Name)
 }

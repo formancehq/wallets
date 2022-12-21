@@ -53,13 +53,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                metadata:
-                  type: object
-                  description: Custom metadata to attach to this wallet.
-                  additionalProperties:
-                    type: string
+              $ref: '#/components/schemas/CreateWalletRequest'
       responses:
         201:
           description: Wallet created
@@ -308,3 +302,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Hold'
+    CreateWalletRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          description: Custom metadata to attach to this wallet.
+          additionalProperties:
+            type: string
+        name:
+          type: string

@@ -27,10 +27,11 @@ func NewRepository(
 
 type Data struct {
 	Metadata core.Metadata `json:"metadata"`
+	Name     string        `json:"name"`
 }
 
 func (r *Repository) CreateWallet(ctx context.Context, data *Data) (*core.Wallet, error) {
-	wallet := core.NewWallet(data.Metadata)
+	wallet := core.NewWallet(data.Name, data.Metadata)
 
 	if err := r.client.AddMetadataToAccount(
 		ctx,
@@ -83,7 +84,7 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) er
 
 // @todo: add pagination.
 func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
-	wallets := []core.Wallet{}
+	wallets := make([]core.Wallet, 0)
 
 	accounts, err := r.client.ListAccountsWithMetadata(ctx, r.ledgerName, map[string]interface{}{
 		core.MetadataKeySpecType: core.PrimaryWallet,
@@ -93,12 +94,8 @@ func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	}
 
 	for _, account := range accounts {
-		wallet := core.Wallet{
-			ID:       account.Metadata[core.MetadataKeyWalletID].(string),
-			Balances: make(map[string]core.Monetary),
-			Metadata: core.Metadata{},
-		}
-		wallets = append(wallets, wallet)
+		//nolint:scopelint
+		wallets = append(wallets, core.WalletFromAccount(&account))
 	}
 
 	return wallets, nil
@@ -118,12 +115,9 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 		return nil, ErrWalletNotFound
 	}
 
-	return &core.Wallet{
-		ID:       id,
-		Metadata: account.Metadata[core.MetadataKeyWalletCustomData].(map[string]any),
-		// @todo: get balances from subaccounts
-		Balances: make(map[string]core.Monetary),
-	}, nil
+	w := core.WalletFromAccount(account)
+
+	return &w, nil
 }
 
 func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.DebitHold, error) {

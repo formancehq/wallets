@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func TestWalletsList(t *testing.T) {
 
 	var wallets []core.Wallet
 	for i := 0; i < 3; i++ {
-		wallets = append(wallets, core.NewWallet(core.Metadata{}))
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), core.Metadata{}))
 	}
 
 	var testEnv *testEnv

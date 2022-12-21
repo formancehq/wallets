@@ -8,13 +8,14 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWalletsPatch(t *testing.T) {
 	t.Parallel()
 
-	wallet := core.NewWallet(core.Metadata{
+	wallet := core.NewWallet(uuid.NewString(), core.Metadata{
 		"foo": "bar",
 	})
 	patchWalletRequest := PatchWalletRequest{

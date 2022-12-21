@@ -10,6 +10,7 @@ import (
 
 type CreateWalletRequest struct {
 	Metadata core.Metadata `json:"metadata"`
+	Name     string        `json:"name"`
 }
 
 func (c *CreateWalletRequest) Bind(r *http.Request) error {
@@ -27,6 +28,7 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 
 	wallet, err := m.repository.CreateWallet(r.Context(), &wallet.Data{
 		Metadata: data.Metadata,
+		Name:     data.Name,
 	})
 	if err != nil {
 		internalError(w, r, err)
