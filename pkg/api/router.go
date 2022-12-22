@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -20,6 +22,12 @@ func NewRouter(
 		r.Use(otelchi.Middleware("wallets"))
 		r.Use(middleware.Logger)
 		r.Use(middleware.AllowContentType("application/json"))
+		r.Use(func(handler http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				handler.ServeHTTP(w, r)
+			})
+		})
 		main := NewMainHandler(funding, repository)
 
 		r.Route("/wallets", func(r chi.Router) {
