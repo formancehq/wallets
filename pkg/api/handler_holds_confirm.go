@@ -1,11 +1,11 @@
-package handlers
+package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 )
 
 func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,13 +13,14 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 		HoldID: chi.URLParam(r, "hold_id"),
 	})
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]string{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		switch {
+		case errors.Is(err, wallet.ErrHoldNotFound):
+			notFound(w)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 
-	render.Status(r, http.StatusNoContent)
+	noContent(w)
 }

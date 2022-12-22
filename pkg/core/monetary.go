@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"math/big"
 )
 
@@ -113,13 +112,4 @@ func (a *MonetaryInt) UnmarshalText(b []byte) error {
 
 func NewMonetaryInt(i int64) *MonetaryInt {
 	return (*MonetaryInt)(big.NewInt(i))
-}
-
-func ParseMonetaryInt(s string) (*MonetaryInt, error) {
-	i, ok := big.NewInt(0).SetString(s, 10)
-	if !ok {
-		return nil, errors.New("invalid monetary int")
-	}
-
-	return (*MonetaryInt)(i), nil
 }

@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"net/http"
@@ -18,16 +18,13 @@ func (c *CreditWalletRequest) Bind(r *http.Request) error {
 }
 
 func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "wallet_id")
 	data := &CreditWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
+		badRequest(w, err)
 		return
 	}
 
+	id := chi.URLParam(r, "wallet_id")
 	credit := wallet.Credit{
 		WalletID: id,
 		Amount:   data.Amount,
@@ -35,13 +32,9 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 
 	err := m.funding.Credit(r.Context(), credit)
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]interface{}{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 
-	render.NoContent(w, r)
+	noContent(w)
 }

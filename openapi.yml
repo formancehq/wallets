@@ -5,8 +5,11 @@ info:
   version: 0.1.0
 
 paths:
-  /api/wallets:
-    parameters:
+  /wallets:
+    get:
+      summary: Get all wallets
+      operationId: getWallets
+      parameters:
       - name: page_size
         in: query
         description: 'The maximum number of results to return per page'
@@ -32,10 +35,6 @@ paths:
         schema:
           type: string
           example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
-
-    get:
-      summary: Get all wallets
-      operationId: getWallets
       tags:
         - Wallets
       responses:
@@ -44,33 +43,26 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/GetWalletsResponse'
     post:
       summary: Create a new wallet
+      operationId: createWallet
       tags:
         - Wallets
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                metadata:
-                  type: object
-                  description: Custom metadata to attach to this wallet.
-                  additionalProperties:
-                    type: string
+              $ref: '#/components/schemas/CreateWalletRequest'
       responses:
         201:
           description: Wallet created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Wallet'
-  
-  /api/wallets/{id}:
+                $ref: '#/components/schemas/CreateWalletResponse'
+
+  /wallets/{id}:
     parameters:
       - name: id
         in: path
@@ -79,6 +71,7 @@ paths:
           type: string
     get:
       summary: Get a wallet
+      operationId: getWallet
       tags:
         - Wallets
       responses:
@@ -87,11 +80,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Wallet'
+                $ref: '#/components/schemas/GetWalletResponse'
         404:
           description: Wallet not found
     patch:
       summary: Update a wallet
+      operationId: updateWallet
       tags:
         - Wallets
       requestBody:
@@ -103,13 +97,12 @@ paths:
                 metadata:
                   type: object
                   description: Custom metadata to attach to this wallet.
-                  additionalProperties:
-                    type: string
+                  additionalProperties: {}
       responses:
         204:
           description: Wallet successfully updated
-  
-  /api/wallets/{id}/debit:
+
+  /wallets/{id}/debit:
     parameters:
       - name: id
         in: path
@@ -118,6 +111,7 @@ paths:
           type: string
     post:
       summary: Debit a wallet
+      operationId: debitWallet
       tags:
         - Wallets
       requestBody:
@@ -125,6 +119,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - amount
               properties:
                 amount:
                   $ref: '#/components/schemas/Monetary'
@@ -142,11 +138,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hold'
+                $ref: '#/components/schemas/DebitWalletResponse'
         204:
           description: Wallet successfully debited
-  
-  /api/wallets/{id}/credit:
+
+  /wallets/{id}/credit:
     parameters:
       - name: id
         in: path
@@ -155,6 +151,7 @@ paths:
           type: string
     post:
       summary: Credit a wallet
+      operationId: creditWallet
       tags:
         - Wallets
       requestBody:
@@ -162,6 +159,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - amount
               properties:
                 amount:
                   $ref: '#/components/schemas/Monetary'
@@ -172,8 +171,8 @@ paths:
       responses:
         204:
           description: Wallet successfully credited
-  
-  /api/wallets/{id}/holds:
+
+  /wallets/{id}/holds:
     parameters:
       - name: id
         in: path
@@ -184,17 +183,16 @@ paths:
       summary: Get all holds for a wallet
       tags:
         - Wallets
+      operationId: getHolds
       responses:
         200:
           description: Holds
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Hold'
-  
-  /api/wallets/{id}/holds/{hold_id}/confirm:
+                $ref: '#/components/schemas/GetHoldsResponse'
+
+  /wallets/{id}/holds/{hold_id}/confirm:
     parameters:
       - name: id
         in: path
@@ -210,11 +208,12 @@ paths:
       summary: Confirm a hold
       tags:
         - Wallets
+      operationId: confirmHold
       responses:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
-  
-  /api/wallets/{id}/holds/{hold_id}/void:
+
+  /wallets/{id}/holds/{hold_id}/void:
     parameters:
       - name: id
         in: path
@@ -228,6 +227,7 @@ paths:
           type: string
     post:
       summary: Cancel a hold
+      operationId: voidHold
       tags:
         - Wallets
       responses:
@@ -238,6 +238,9 @@ components:
   schemas:
     Monetary:
       type: object
+      required:
+      - asset
+      - amount
       properties:
         asset:
           type: string
@@ -249,6 +252,9 @@ components:
       type: object
       required:
         - name
+        - id
+        - balances
+        - metadata
       properties:
         id:
           type: string
@@ -257,14 +263,21 @@ components:
         metadata:
           type: object
           description: Metadata associated with the wallet.
+          additionalProperties: {}
         balances:
           type: object
           description: The balances of the wallet.
           additionalProperties:
             type: number
             description: The balance of the wallet in the specified currency.
+        name:
+          type: string
     Hold:
       type: object
+      required:
+      - id
+      - wallet_id
+      - metadata
       properties:
         id:
           type: string
@@ -276,3 +289,54 @@ components:
         metadata:
           type: object
           description: Metadata associated with the hold.
+          additionalProperties: {}
+    GetWalletsResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+    CreateWalletResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Wallet'
+    GetWalletResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Wallet'
+    DebitWalletResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Hold'
+    GetHoldsResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hold'
+    CreateWalletRequest:
+      type: object
+      required:
+      - name
+      properties:
+        metadata:
+          type: object
+          description: Custom metadata to attach to this wallet.
+          additionalProperties: {}
+        name:
+          type: string

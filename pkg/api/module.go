@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 
+	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 )
@@ -13,20 +14,16 @@ func Module() fx.Option {
 	return fx.Module(
 		"api",
 		fx.Provide(NewRouter),
+		sharedhealth.Module(),
 		fx.Invoke(func(lc fx.Lifecycle, router *chi.Mux) {
 			lc.Append(fx.Hook{
 				OnStart: func(context context.Context) error {
-					fmt.Println("Starting API...")
 					go func() {
-						err := http.ListenAndServe(":8082", router)
-						if err != nil {
-							return
+						err := http.ListenAndServe(":8080", router)
+						if err != nil && errors.Is(err, http.ErrServerClosed) {
+							panic(err)
 						}
 					}()
-					return nil
-				},
-				OnStop: func(context.Context) error {
-					fmt.Println("Stopping API...")
 					return nil
 				},
 			})

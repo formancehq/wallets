@@ -1,19 +1,33 @@
+linters-settings:
+  tagliatelle:
+    case:
+      rules:
+        json: goCamel
+
+issues:
+  exclude-rules:
+  - path: '(.+)_test\.go'
+    linters:
+    - bodyclose
+
 linters:
-  enable:
-    - gofmt
-    - gci
-    - goimports
-
-  presets:
-    - bugs
-    - comment
-    - error
-    - format
-    - import
-    - unused
-
+  enable-all: true
   disable:
-    - contextcheck
+    - wrapcheck
+    - varnamelen
+    - nlreturn
+    - ireturn
+    - gochecknoglobals
+    - forcetypeassert
+    - exhaustivestruct
+    - exhaustruct
+    - wsl
+    - gosec
+    - gochecknoinits
+    - funlen
+    - testpackage
+    - lll
+    - dupl
 
 run:
   timeout: 5m

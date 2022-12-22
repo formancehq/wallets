@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"net/http"
@@ -19,15 +19,13 @@ func (c *DebitWalletRequest) Bind(r *http.Request) error {
 }
 
 func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "wallet_id")
 	data := &DebitWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, map[string]string{
-			"error": err.Error(),
-		})
+		badRequest(w, err)
 		return
 	}
+
+	id := chi.URLParam(r, "wallet_id")
 
 	debit := wallet.Debit{
 		WalletID: id,
@@ -36,23 +34,15 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	hold, err := m.funding.Debit(r.Context(), debit)
-
 	if err != nil {
-		render.Status(r, http.StatusUnprocessableEntity)
-		render.JSON(w, r, map[string]interface{}{
-			// @todo: return a proper error
-			"error": err.Error(),
-		})
+		internalError(w, r, err)
 		return
 	}
 
 	if hold == nil {
-		render.Status(r, http.StatusNoContent)
+		noContent(w)
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, map[string]interface{}{
-		"hold": hold,
-	})
+	created(w, hold)
 }
