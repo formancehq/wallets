@@ -22,7 +22,7 @@ func TestHoldsList(t *testing.T) {
 
 	holds := make([]core.DebitHold, 0)
 	for i := 0; i < 3; i++ {
-		holds = append(holds, core.NewDebitHold(walletID, "bank"))
+		holds = append(holds, core.NewDebitHold(walletID, "bank", "USD"))
 	}
 
 	var testEnv *testEnv

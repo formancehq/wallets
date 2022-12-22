@@ -10,6 +10,7 @@ const (
 	MetadataKeyWalletName       = "wallets/name"
 	MetadataKeyWalletCustomData = "wallets/custom_data"
 	MetadataKeyHoldWalletID     = "holds/wallet_id"
+	MetadataKeyAsset            = "holds/asset"
 	MetadataKeyHoldID           = "holds/id"
 
 	PrimaryWallet = "wallets.primary"

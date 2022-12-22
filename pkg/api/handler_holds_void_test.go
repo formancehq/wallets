@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet/numscript"
@@ -18,7 +19,7 @@ func TestHoldsVoid(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank")
+	hold := core.NewDebitHold(walletID, "bank", "USD")
 
 	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/void", nil)
 	rec := httptest.NewRecorder()
@@ -28,13 +29,10 @@ func TestHoldsVoid(t *testing.T) {
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
-			balances := map[string]int32{
-				"USD": 100,
-			}
+			spew.Dump(hold.LedgerMetadata(testEnv.Chart()))
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
 				Metadata: hold.LedgerMetadata(testEnv.Chart()),
-				Balances: &balances,
 			}, nil
 		}),
 		WithRunScript(func(ctx context.Context, name string, script sdk.Script) error {

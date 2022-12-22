@@ -16,7 +16,7 @@ func TestHoldsGet(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank")
+	hold := core.NewDebitHold(walletID, "bank", "USD")
 
 	req := newRequest(t, http.MethodGet, "/wallets/"+walletID+"/holds/"+hold.ID, nil)
 	rec := httptest.NewRecorder()
@@ -26,9 +26,13 @@ func TestHoldsGet(t *testing.T) {
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
+			balances := map[string]int32{
+				"USD": 100,
+			}
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
 				Metadata: hold.LedgerMetadata(testEnv.Chart()),
+				Balances: &balances,
 			}, nil
 		}),
 	)

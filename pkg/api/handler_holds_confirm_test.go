@@ -18,7 +18,7 @@ func TestHoldsConfirm(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank")
+	hold := core.NewDebitHold(walletID, "bank", "USD")
 
 	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", nil)
 	rec := httptest.NewRecorder()

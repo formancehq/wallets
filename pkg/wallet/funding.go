@@ -66,7 +66,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 
 	var hold *core.DebitHold
 	if debit.Pending {
-		newHold := core.NewDebitHold(debit.WalletID, dest)
+		newHold := core.NewDebitHold(debit.WalletID, dest, debit.Amount.Asset)
 		hold = &newHold
 
 		holdAccount := s.chart.GetHoldAccount(hold.ID)
@@ -146,17 +146,13 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		return errors.Wrap(err, "getting account")
 	}
 
-	var asset string
-	for key := range *account.Balances {
-		asset = key
-		break
-	}
+	hold := core.DebitHoldFromLedgerAccount(account)
 
 	if err := s.client.RunScript(
 		ctx,
 		s.ledgerName,
 		sdk.Script{
-			Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", asset),
+			Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", hold.Asset),
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(void.HoldID),
 			},

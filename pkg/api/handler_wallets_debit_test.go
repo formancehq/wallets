@@ -94,6 +94,8 @@ func TestWalletsDebitWithHold(t *testing.T) {
 
 	require.Equal(t, testEnv.LedgerName(), ledger)
 	require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
+	require.Equal(t, walletID, hold.WalletID)
+	require.Equal(t, debitWalletRequest.Amount.Asset, hold.Asset)
 	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), metadata)
 	require.Equal(t, sdk.TransactionData{
 		Postings: []sdk.Posting{{

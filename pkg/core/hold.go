@@ -1,7 +1,6 @@
 package core
 
 import (
-	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/google/uuid"
 )
 
@@ -19,6 +18,7 @@ func (h DebitHold) LedgerMetadata(chart *Chart) Metadata {
 		MetadataKeySpecType:     "wallets.hold",
 		MetadataKeyHoldWalletID: h.WalletID,
 		MetadataKeyHoldID:       h.ID,
+		MetadataKeyAsset:        h.Asset,
 		"void_destination": map[string]interface{}{
 			"type":  "account",
 			"value": chart.GetMainAccount(h.WalletID),
@@ -30,18 +30,23 @@ func (h DebitHold) LedgerMetadata(chart *Chart) Metadata {
 	}
 }
 
-func NewDebitHold(walletID, destination string) DebitHold {
+func NewDebitHold(walletID, destination, asset string) DebitHold {
 	return DebitHold{
 		ID:          uuid.NewString(),
 		WalletID:    walletID,
 		Destination: destination,
+		Asset:       asset,
 	}
 }
 
-func DebitHoldFromLedgerAccount(account sdk.AccountWithVolumesAndBalances) DebitHold {
+func DebitHoldFromLedgerAccount(account interface {
+	GetMetadata() map[string]any
+},
+) DebitHold {
 	hold := DebitHold{}
-	hold.ID = account.Metadata[MetadataKeyHoldID].(string)
-	hold.WalletID = account.Metadata[MetadataKeyHoldWalletID].(string)
-	hold.Destination = account.Metadata["destination"].(map[string]any)["value"].(string)
+	hold.ID = account.GetMetadata()[MetadataKeyHoldID].(string)
+	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
+	hold.Destination = account.GetMetadata()["destination"].(map[string]any)["value"].(string)
+	hold.Asset = account.GetMetadata()[MetadataKeyAsset].(string)
 	return hold
 }

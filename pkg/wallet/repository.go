@@ -134,11 +134,8 @@ func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.Deb
 	}
 
 	for _, account := range accounts {
-		holds = append(holds, core.DebitHold{
-			ID:          account.Metadata[core.MetadataKeyHoldID].(string),
-			WalletID:    account.Metadata[core.MetadataKeyHoldWalletID].(string),
-			Destination: account.Metadata["destination"].(map[string]any)["value"].(string),
-		})
+		account := account // Create a scoped variable
+		holds = append(holds, core.DebitHoldFromLedgerAccount(&account))
 	}
 
 	return holds, nil
@@ -151,7 +148,7 @@ func (r *Repository) GetHold(ctx context.Context, id string) (*core.DebitHold, e
 		return nil, err
 	}
 
-	hold := core.DebitHoldFromLedgerAccount(*account)
+	hold := core.DebitHoldFromLedgerAccount(account)
 
 	return &hold, nil
 }
