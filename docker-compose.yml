@@ -62,7 +62,7 @@ services:
 
   app:
     image: golang:1.19-alpine
-    command: go run main.go serve
+    command: go run main.go server
     volumes:
     - .:/src
     working_dir: /src

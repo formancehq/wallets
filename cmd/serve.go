@@ -20,7 +20,7 @@ const (
 )
 
 var serveCmd = &cobra.Command{
-	Use: "serve",
+	Use: "server",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		return bindFlagsToViper(cmd)
 	},
