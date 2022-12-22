@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/sharedapi"
+	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -69,7 +70,7 @@ func newTestEnv(opts ...Option) *testEnv {
 	ret.ledgerName = uuid.NewString()
 	fundingService := wallet.NewFundingService(ret.ledgerName, ledgerMock, ret.chart)
 	repository := wallet.NewRepository(ret.ledgerName, ledgerMock, ret.chart)
-	ret.router = NewRouter(fundingService, repository)
+	ret.router = NewRouter(fundingService, repository, &sharedhealth.HealthController{})
 	return ret
 }
 
