@@ -14,7 +14,7 @@ import (
 const (
 	clientIDFlag      = "client-id"
 	clientSecretFlag  = "client-secret"
-	tokenURLFlag      = "token-url"
+	stackURLFlag      = "stack-url"
 	ledgerNameFlag    = "ledger"
 	accountPrefixFlag = "account-prefix"
 )
@@ -28,7 +28,7 @@ var serveCmd = &cobra.Command{
 		options := []fx.Option{
 			fx.NopLogger,
 			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag)),
-			client.NewModule(viper.GetString(clientIDFlag), viper.GetString(clientSecretFlag), viper.GetString(tokenURLFlag)),
+			client.NewModule(viper.GetString(clientIDFlag), viper.GetString(clientSecretFlag), viper.GetString(stackURLFlag)),
 			sharedotlptraces.CLITracesModule(viper.GetViper()),
 		}
 
@@ -50,7 +50,7 @@ var serveCmd = &cobra.Command{
 func init() {
 	serveCmd.Flags().String(clientIDFlag, "", "Client ID")
 	serveCmd.Flags().String(clientSecretFlag, "", "Client Secret")
-	serveCmd.Flags().String(tokenURLFlag, "", "Token URL")
+	serveCmd.Flags().String(stackURLFlag, "", "Token URL")
 	serveCmd.Flags().String(ledgerNameFlag, "wallets-002", "Target ledger")
 	serveCmd.Flags().String(accountPrefixFlag, "", "Account prefix flag")
 	rootCmd.AddCommand(serveCmd)
