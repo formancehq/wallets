@@ -27,6 +27,13 @@ func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 	reflect.ValueOf(to).Elem().Set(reflect.ValueOf(*ret.Data).Elem())
 }
 
+func readCursor[T any](t *testing.T, rec *httptest.ResponseRecorder, to *sharedapi.Cursor[T]) {
+	t.Helper()
+	ret := &sharedapi.BaseResponse[T]{}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(ret))
+	reflect.ValueOf(to).Elem().Set(reflect.ValueOf(ret.Cursor).Elem())
+}
+
 func bufFromObject(t *testing.T, v any) *bytes.Buffer {
 	t.Helper()
 	data, err := json.Marshal(v)
@@ -75,19 +82,19 @@ func newTestEnv(opts ...Option) *testEnv {
 }
 
 type (
-	addMetadataToAccountFn     func(ctx context.Context, ledger, account string, metadata core.Metadata) error
-	getAccountFn               func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
-	listAccountsWithMetadataFn func(ctx context.Context, name string, m map[string]any) ([]sdk.Account, error)
-	createTransactionFn        func(ctx context.Context, name string, transaction sdk.TransactionData) error
-	runScriptFn                func(ctx context.Context, name string, script sdk.Script) error
+	addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata core.Metadata) error
+	getAccountFn           func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
+	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error)
+	createTransactionFn    func(ctx context.Context, name string, transaction sdk.TransactionData) error
+	runScriptFn            func(ctx context.Context, name string, script sdk.Script) error
 )
 
 type LedgerMock struct {
-	addMetadataToAccount     addMetadataToAccountFn
-	getAccount               getAccountFn
-	listAccountsWithMetadata listAccountsWithMetadataFn
-	createTransaction        createTransactionFn
-	runScript                runScriptFn
+	addMetadataToAccount addMetadataToAccountFn
+	getAccount           getAccountFn
+	listAccounts         listAccountsFn
+	createTransaction    createTransactionFn
+	runScript            runScriptFn
 }
 
 func (l *LedgerMock) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error {
@@ -98,8 +105,8 @@ func (l *LedgerMock) GetAccount(ctx context.Context, ledger, account string) (*s
 	return l.getAccount(ctx, ledger, account)
 }
 
-func (l *LedgerMock) ListAccountsWithMetadata(ctx context.Context, name string, m map[string]any) ([]sdk.Account, error) {
-	return l.listAccountsWithMetadata(ctx, name, m)
+func (l *LedgerMock) ListAccounts(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+	return l.listAccounts(ctx, ledger, query)
 }
 
 func (l *LedgerMock) CreateTransaction(ctx context.Context, name string, transaction sdk.TransactionData) error {
@@ -138,9 +145,9 @@ func WithCreateTransaction(fn createTransactionFn) Option {
 	}
 }
 
-func WithListAccountsWithMetadata(fn listAccountsWithMetadataFn) Option {
+func WithListAccounts(fn listAccountsFn) Option {
 	return func(mock *LedgerMock) {
-		mock.listAccountsWithMetadata = fn
+		mock.listAccounts = fn
 	}
 }
 
