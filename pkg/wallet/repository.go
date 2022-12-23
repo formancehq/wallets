@@ -101,7 +101,7 @@ func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
 	return wallets, nil
 }
 
-func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, error) {
+func (r *Repository) GetWallet(ctx context.Context, id string) (*core.WalletWithBalances, error) {
 	account, err := r.client.GetAccount(
 		ctx,
 		r.ledgerName,
@@ -115,7 +115,7 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.Wallet, er
 		return nil, ErrWalletNotFound
 	}
 
-	w := core.WalletFromAccount(account)
+	w := core.WalletWithBalancesFromAccount(account)
 
 	return &w, nil
 }

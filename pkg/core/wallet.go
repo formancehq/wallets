@@ -18,10 +18,14 @@ const (
 )
 
 type Wallet struct {
-	ID       string              `json:"id"`
-	Balances map[string]Monetary `json:"balances"`
-	Metadata Metadata            `json:"metadata"`
-	Name     string              `json:"name"`
+	ID       string   `json:"id"`
+	Metadata Metadata `json:"metadata"`
+	Name     string   `json:"name"`
+}
+
+type WalletWithBalances struct {
+	Wallet
+	Balances map[string]int32 `json:"balances"`
 }
 
 func (w Wallet) LedgerMetadata() Metadata {
@@ -41,7 +45,6 @@ func NewWallet(name string, metadata Metadata) Wallet {
 		ID:       uuid.NewString(),
 		Metadata: metadata,
 		Name:     name,
-		Balances: make(map[string]Monetary),
 	}
 }
 
@@ -52,8 +55,17 @@ func WalletFromAccount(account interface {
 	return Wallet{
 		ID:       account.GetMetadata()[MetadataKeyWalletID].(string),
 		Metadata: account.GetMetadata()[MetadataKeyWalletCustomData].(map[string]any),
-		// @todo: get balances from subaccounts
-		Balances: make(map[string]Monetary),
 		Name:     account.GetMetadata()[MetadataKeyWalletName].(string),
+	}
+}
+
+func WalletWithBalancesFromAccount(account interface {
+	GetMetadata() map[string]any
+	GetBalances() map[string]int32
+},
+) WalletWithBalances {
+	return WalletWithBalances{
+		Wallet:   WalletFromAccount(account),
+		Balances: account.GetBalances(),
 	}
 }
