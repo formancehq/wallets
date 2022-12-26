@@ -18,8 +18,8 @@ const (
 	HoldWallet    = "wallets.hold"
 )
 
-func WalletTransactionBaseMetadata() map[string]interface{} {
-	return map[string]interface{}{
+func WalletTransactionBaseMetadata() Metadata {
+	return Metadata{
 		MetadataKeyWalletTransaction: true,
 	}
 }

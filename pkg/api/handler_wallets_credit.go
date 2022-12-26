@@ -17,7 +17,8 @@ const (
 )
 
 type CreditWalletRequest struct {
-	Amount core.Monetary `json:"amount"`
+	Amount   core.Monetary `json:"amount"`
+	Metadata core.Metadata `json:"metadata"`
 }
 
 func (c *CreditWalletRequest) Bind(r *http.Request) error {
@@ -35,6 +36,7 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 	credit := wallet.Credit{
 		WalletID: id,
 		Amount:   data.Amount,
+		Metadata: data.Metadata,
 	}
 
 	err := m.funding.Credit(r.Context(), credit)

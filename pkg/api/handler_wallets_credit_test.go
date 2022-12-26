@@ -21,6 +21,9 @@ func TestWalletsCredit(t *testing.T) {
 			Amount: core.NewMonetaryInt(100),
 			Asset:  "USD",
 		},
+		Metadata: map[string]interface{}{
+			"foo": "bar",
+		},
 	}
 
 	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/credit", creditWalletRequest)
@@ -48,6 +51,8 @@ func TestWalletsCredit(t *testing.T) {
 			Destination: testEnv.Chart().GetMainAccount(walletID),
 			Source:      "world",
 		}},
-		Metadata: core.WalletTransactionBaseMetadata(),
+		Metadata: core.WalletTransactionBaseMetadata().Merge(core.Metadata{
+			core.MetadataKeyWalletCustomData: creditWalletRequest.Metadata,
+		}),
 	}, transactionData)
 }

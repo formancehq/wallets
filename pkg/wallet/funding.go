@@ -57,6 +57,7 @@ type Credit struct {
 	Source    string        `json:"source"`
 	Amount    core.Monetary `json:"amount"`
 	Reference string        `json:"reference"`
+	Metadata  core.Metadata `json:"metadata"`
 }
 
 func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHold, error) {
@@ -202,7 +203,9 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 				Destination: s.chart.GetMainAccount(credit.WalletID),
 			},
 		},
-		Metadata: core.WalletTransactionBaseMetadata(),
+		Metadata: core.WalletTransactionBaseMetadata().Merge(core.Metadata{
+			core.MetadataKeyWalletCustomData: credit.Metadata,
+		}),
 	}
 
 	if credit.Reference != "" {
