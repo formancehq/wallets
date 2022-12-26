@@ -7,12 +7,18 @@ import (
 	"github.com/formancehq/wallets/pkg/core"
 )
 
+type ListAccountQuery struct {
+	PaginationToken string
+	Limit           int
+	Metadata        map[string]any
+}
+
 type Ledger interface {
 	AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error
 	GetAccount(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
-	ListAccountsWithMetadata(ctx context.Context, name string, m map[string]any) ([]sdk.Account, error)
-	CreateTransaction(ctx context.Context, name string, transaction sdk.TransactionData) error
-	RunScript(ctx context.Context, name string, script sdk.Script) error
+	ListAccounts(ctx context.Context, ledger string, query ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error)
+	CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error
+	RunScript(ctx context.Context, ledger string, script sdk.Script) error
 }
 
 type DefaultLedger struct {
@@ -29,12 +35,26 @@ func (d DefaultLedger) GetAccount(ctx context.Context, ledger, account string) (
 	return &ret.Data, err
 }
 
-func (d DefaultLedger) ListAccountsWithMetadata(ctx context.Context, ledger string, m map[string]any) ([]sdk.Account, error) {
-	ret, _, err := d.client.AccountsApi.ListAccounts(ctx, ledger).Metadata(m).Execute()
+func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, query ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+	var (
+		ret *sdk.ListAccounts200Response
+		err error
+	)
+	if query.PaginationToken == "" {
+		ret, _, err = d.client.AccountsApi.ListAccounts(ctx, ledger).
+			Metadata(query.Metadata).
+			PageSize(int32(query.Limit)).
+			Execute()
+	} else {
+		ret, _, err = d.client.AccountsApi.ListAccounts(ctx, ledger).
+			PaginationToken(query.PaginationToken).
+			Execute()
+	}
 	if err != nil {
 		return nil, err
 	}
-	return ret.Cursor.Data, nil
+
+	return &ret.Cursor, nil
 }
 
 func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error {

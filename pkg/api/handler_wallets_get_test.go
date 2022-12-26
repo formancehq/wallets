@@ -16,6 +16,9 @@ func TestWalletsGet(t *testing.T) {
 	t.Parallel()
 
 	wallet := core.NewWallet(uuid.NewString(), core.Metadata{})
+	balances := map[string]int32{
+		"USD": 100,
+	}
 
 	req := newRequest(t, http.MethodGet, "/wallets/"+wallet.ID, nil)
 	rec := httptest.NewRecorder()
@@ -28,10 +31,17 @@ func TestWalletsGet(t *testing.T) {
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  account,
 				Metadata: wallet.LedgerMetadata(),
+				Balances: &balances,
 			}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	walletWithBalances := core.WalletWithBalances{}
+	readResponse(t, rec, &walletWithBalances)
+	require.Equal(t, core.WalletWithBalances{
+		Wallet:   wallet,
+		Balances: balances,
+	}, walletWithBalances)
 }

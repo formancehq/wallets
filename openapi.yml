@@ -272,6 +272,17 @@ components:
             description: The balance of the wallet in the specified currency.
         name:
           type: string
+    WalletWithBalances:
+      allOf:
+      - $ref: '#/components/schemas/Wallet'
+      - type: object
+        required:
+        - balances
+        properties:
+          balances:
+            type: object
+            additionalProperties:
+              type: number
     Hold:
       type: object
       required:
@@ -312,7 +323,7 @@ components:
       - data
       properties:
         data:
-          $ref: '#/components/schemas/Wallet'
+          $ref: '#/components/schemas/WalletWithBalances'
     DebitWalletResponse:
       type: object
       required:
