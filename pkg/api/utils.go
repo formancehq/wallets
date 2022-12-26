@@ -22,10 +22,10 @@ func noContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func badRequest(w http.ResponseWriter, err error) {
+func badRequest(w http.ResponseWriter, code string, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
-		ErrorCode:    "INTERNAL_ERROR",
+		ErrorCode:    code,
 		ErrorMessage: err.Error(),
 	}); err != nil {
 		panic(err)

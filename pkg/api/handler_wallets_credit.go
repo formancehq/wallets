@@ -9,6 +9,12 @@ import (
 	"github.com/go-chi/render"
 )
 
+const (
+	ErrorCodeInternal         = "INTERNAL"
+	ErrorCodeInsufficientFund = "INSUFFICIENT_FUND"
+	ErrorCodeValidation       = "VALIDATION"
+)
+
 type CreditWalletRequest struct {
 	Amount core.Monetary `json:"amount"`
 }
@@ -20,7 +26,7 @@ func (c *CreditWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &CreditWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		badRequest(w, err)
+		badRequest(w, ErrorCodeValidation, err)
 		return
 	}
 

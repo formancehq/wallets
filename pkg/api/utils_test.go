@@ -20,6 +20,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func readErrorResponse(t *testing.T, rec *httptest.ResponseRecorder) *sharedapi.ErrorResponse {
+	t.Helper()
+	ret := &sharedapi.ErrorResponse{}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(ret))
+	return ret
+}
+
 func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 	t.Helper()
 	ret := &sharedapi.BaseResponse[T]{}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/core"
@@ -21,7 +22,7 @@ func (c *DebitWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &DebitWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		badRequest(w, err)
+		badRequest(w, ErrorCodeValidation, err)
 		return
 	}
 
@@ -35,7 +36,12 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 
 	hold, err := m.funding.Debit(r.Context(), debit)
 	if err != nil {
-		internalError(w, r, err)
+		switch {
+		case errors.Is(err, wallet.ErrInsufficientFundError):
+			badRequest(w, ErrorCodeInsufficientFund, wallet.ErrInsufficientFundError)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 

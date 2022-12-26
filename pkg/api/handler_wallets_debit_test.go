@@ -53,6 +53,50 @@ func TestWalletsDebit(t *testing.T) {
 	}, transactionData)
 }
 
+type genericError struct {
+	errorCode sdk.ErrorCode
+}
+
+func (e genericError) Error() string {
+	return ""
+}
+
+func (e genericError) Model() interface{} {
+	return e
+}
+
+func (e genericError) GetErrorCode() sdk.ErrorCode {
+	return e.errorCode
+}
+
+func TestWalletsDebitWithInsufficientFund(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	debitWalletRequest := DebitWalletRequest{
+		Amount: core.Monetary{
+			Amount: core.NewMonetaryInt(100),
+			Asset:  "USD",
+		},
+	}
+
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", debitWalletRequest)
+	rec := httptest.NewRecorder()
+
+	testEnv := newTestEnv(
+		WithCreateTransaction(func(ctx context.Context, l string, t sdk.TransactionData) error {
+			return &genericError{
+				errorCode: sdk.INSUFFICIENT_FUND,
+			}
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeInsufficientFund, errorResponse.ErrorCode)
+}
+
 func TestWalletsDebitWithHold(t *testing.T) {
 	t.Parallel()
 

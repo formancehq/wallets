@@ -96,7 +96,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 	}
 
 	if err := s.client.CreateTransaction(ctx, s.ledgerName, transaction); err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
+		return nil, handleScriptError(err)
 	}
 
 	return hold, nil
@@ -116,7 +116,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	}
 
 	if mType, ok := mType.(string); !ok || mType != core.HoldWallet {
-		return NewErrMismatchType(core.HoldWallet, mType)
+		return newErrMismatchType(core.HoldWallet, mType)
 	}
 
 	var asset string
@@ -136,7 +136,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 			Metadata: core.WalletTransactionBaseMetadata(),
 		},
 	); err != nil {
-		return errors.Wrap(err, "running script")
+		return handleScriptError(err)
 	}
 
 	return nil
@@ -161,7 +161,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 			Metadata: core.WalletTransactionBaseMetadata(),
 		},
 	); err != nil {
-		return errors.Wrap(err, "running script")
+		return handleScriptError(err)
 	}
 
 	return nil
@@ -195,4 +195,21 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 	}
 
 	return nil
+}
+
+func handleScriptError(err error) error {
+	//nolint:errorlint
+	if err, ok := err.(interface {
+		error
+		Model() interface{}
+	}); ok {
+		if err, ok := err.(interface {
+			GetErrorCode() sdk.ErrorCode
+		}); ok {
+			if err.GetErrorCode() == sdk.INSUFFICIENT_FUND {
+				return ErrInsufficientFundError
+			}
+		}
+	}
+	return errors.Wrap(err, "running script")
 }

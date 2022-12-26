@@ -93,7 +93,10 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, query Li
 }
 
 func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error {
-	_, _, err := d.client.TransactionsApi.CreateTransaction(ctx, ledger).TransactionData(transaction).Execute()
+	_, _, err := d.client.TransactionsApi.
+		CreateTransaction(ctx, ledger).
+		TransactionData(transaction).
+		Execute()
 	return err
 }
 

@@ -21,7 +21,7 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 	data := &CreateWalletRequest{}
 	if r.ContentLength > 0 {
 		if err := render.Bind(r, data); err != nil {
-			badRequest(w, err)
+			badRequest(w, ErrorCodeValidation, err)
 			return
 		}
 	}

@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	ErrWalletNotFound = errors.New("wallet_not_found")
-	ErrHoldNotFound   = errors.New("hold_not_found")
+	ErrWalletNotFound        = errors.New("wallet_not_found")
+	ErrHoldNotFound          = errors.New("hold_not_found")
+	ErrInsufficientFundError = errors.New("insufficient fund")
 )
 
 type MismatchTypeError struct {
@@ -18,7 +19,7 @@ func (t MismatchTypeError) Error() string {
 	return fmt.Sprintf("unexpected type, got '%s', but '%s' was expected", t.got, t.expected)
 }
 
-func NewErrMismatchType(expected, got string) MismatchTypeError {
+func newErrMismatchType(expected, got string) MismatchTypeError {
 	return MismatchTypeError{
 		expected: expected,
 		got:      got,
