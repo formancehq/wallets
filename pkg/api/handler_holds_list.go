@@ -8,13 +8,11 @@ import (
 )
 
 func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
-	query := wallet.ListQuery[wallet.ListHolds]{
-		Payload: wallet.ListHolds{
+	query := readPaginatedRequest(r, func(r *http.Request) wallet.ListHolds {
+		return wallet.ListHolds{
 			WalletID: chi.URLParam(r, "wallet_id"),
-		},
-		Limit:           parseLimit(r),
-		PaginationToken: parsePaginationToken(r),
-	}
+		}
+	})
 
 	holds, err := m.repository.ListHolds(r.Context(), query)
 	if err != nil {

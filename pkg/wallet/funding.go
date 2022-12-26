@@ -88,6 +88,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 				Destination: dest,
 			},
 		},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}
 
 	if debit.Reference != "" {
@@ -132,6 +133,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(debit.HoldID),
 			},
+			Metadata: core.WalletTransactionBaseMetadata(),
 		},
 	); err != nil {
 		return errors.Wrap(err, "running script")
@@ -156,6 +158,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(void.HoldID),
 			},
+			Metadata: core.WalletTransactionBaseMetadata(),
 		},
 	); err != nil {
 		return errors.Wrap(err, "running script")
@@ -180,6 +183,7 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 				Destination: s.chart.GetMainAccount(credit.WalletID),
 			},
 		},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}
 
 	if credit.Reference != "" {

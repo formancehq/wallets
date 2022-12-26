@@ -30,7 +30,7 @@ func TestHoldsList(t *testing.T) {
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
-		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 			if query.PaginationToken != "" {
 				page, err := strconv.ParseInt(query.PaginationToken, 10, 64)
 				if err != nil {

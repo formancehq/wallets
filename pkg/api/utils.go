@@ -11,6 +11,8 @@ import (
 	"github.com/formancehq/wallets/pkg/wallet"
 )
 
+const defaultLimit = 15
+
 func notFound(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
 }
@@ -76,8 +78,6 @@ func parsePaginationToken(r *http.Request) string {
 	return r.URL.Query().Get("cursor")
 }
 
-const defaultLimit = 15
-
 func parseLimit(r *http.Request) int {
 	limit := r.URL.Query().Get("limit")
 	if limit == "" {
@@ -89,4 +89,16 @@ func parseLimit(r *http.Request) int {
 		panic(err)
 	}
 	return int(v)
+}
+
+func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) wallet.ListQuery[T] {
+	var payload T
+	if f != nil {
+		payload = f(r)
+	}
+	return wallet.ListQuery[T]{
+		Limit:           parseLimit(r),
+		PaginationToken: parsePaginationToken(r),
+		Payload:         payload,
+	}
 }

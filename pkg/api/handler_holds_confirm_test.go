@@ -43,6 +43,7 @@ func TestHoldsConfirm(t *testing.T) {
 				Vars: map[string]interface{}{
 					"hold": testEnv.Chart().GetHoldAccount(hold.ID),
 				},
+				Metadata: core.WalletTransactionBaseMetadata(),
 			}, script)
 			return nil
 		}),

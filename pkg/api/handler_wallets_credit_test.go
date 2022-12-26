@@ -42,12 +42,12 @@ func TestWalletsCredit(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
 	require.Equal(t, testEnv.LedgerName(), ledger)
 	require.Equal(t, sdk.TransactionData{
-		Timestamp: nil,
 		Postings: []sdk.Posting{{
 			Amount:      100,
 			Asset:       "USD",
 			Destination: testEnv.Chart().GetMainAccount(walletID),
 			Source:      "world",
 		}},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}, transactionData)
 }

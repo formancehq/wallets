@@ -48,6 +48,9 @@ func NewRouter(
 				})
 			})
 		})
+		r.Route("/transactions", func(r chi.Router) {
+			r.Get("/", main.ListTransactions)
+		})
 	})
 
 	return r

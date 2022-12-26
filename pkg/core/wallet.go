@@ -5,17 +5,24 @@ import (
 )
 
 const (
-	MetadataKeySpecType         = "spec/type"
-	MetadataKeyWalletID         = "wallets/id"
-	MetadataKeyWalletName       = "wallets/name"
-	MetadataKeyWalletCustomData = "wallets/custom_data"
-	MetadataKeyHoldWalletID     = "holds/wallet_id"
-	MetadataKeyAsset            = "holds/asset"
-	MetadataKeyHoldID           = "holds/id"
+	MetadataKeyWalletTransaction = "wallets"
+	MetadataKeySpecType          = "spec/type"
+	MetadataKeyWalletID          = "wallets/id"
+	MetadataKeyWalletName        = "wallets/name"
+	MetadataKeyWalletCustomData  = "wallets/custom_data"
+	MetadataKeyHoldWalletID      = "holds/wallet_id"
+	MetadataKeyAsset             = "holds/asset"
+	MetadataKeyHoldID            = "holds/id"
 
 	PrimaryWallet = "wallets.primary"
 	HoldWallet    = "wallets.hold"
 )
+
+func WalletTransactionBaseMetadata() map[string]interface{} {
+	return map[string]interface{}{
+		MetadataKeyWalletTransaction: true,
+	}
+}
 
 type Wallet struct {
 	ID       string   `json:"id"`

@@ -14,37 +14,37 @@ type ListResponse[T any] struct {
 	HasMore        bool
 }
 
-func newListResponse[T any](cursor *sdk.ListAccounts200ResponseCursor, mapper func(account sdk.Account) T) *ListResponse[T] {
-	ret := make([]T, 0)
-	for _, item := range cursor.Data {
-		ret = append(ret, mapper(item))
-	}
-
-	return &ListResponse[T]{
-		Data: ret,
-		Next: func() string {
-			if cursor.Next == nil {
-				return ""
-			}
-			return *cursor.Next
-		}(),
-		Previous: func() string {
-			if cursor.Previous == nil {
-				return ""
-			}
-			return *cursor.Previous
-		}(),
-		HasMore: *cursor.HasMore,
-	}
-}
-
 type ListQuery[T any] struct {
 	Payload         T
 	Limit           int
 	PaginationToken string
 }
 
+func newListResponse[SRC any, DST any](cursor interface {
+	GetData() []SRC
+	GetNext() string
+	GetPrevious() string
+	GetHasMore() bool
+}, mapper func(src SRC) DST,
+) *ListResponse[DST] {
+	ret := make([]DST, 0)
+	for _, item := range cursor.GetData() {
+		ret = append(ret, mapper(item))
+	}
+
+	return &ListResponse[DST]{
+		Data:     ret,
+		Next:     cursor.GetNext(),
+		Previous: cursor.GetPrevious(),
+		HasMore:  cursor.GetHasMore(),
+	}
+}
+
 type ListHolds struct {
+	WalletID string
+}
+
+type ListTransactions struct {
 	WalletID string
 }
 
@@ -129,14 +129,14 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[struct{}])
 		err      error
 	)
 	if query.PaginationToken == "" {
-		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit: query.Limit,
 			Metadata: map[string]interface{}{
 				core.MetadataKeySpecType: core.PrimaryWallet,
 			},
 		})
 	} else {
-		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			PaginationToken: query.PaginationToken,
 		})
 	}
@@ -144,7 +144,7 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[struct{}])
 		return nil, err
 	}
 
-	return newListResponse(response, func(account sdk.Account) core.Wallet {
+	return newListResponse[sdk.Account, core.Wallet](response, func(account sdk.Account) core.Wallet {
 		return core.WalletFromAccount(&account)
 	}), nil
 }
@@ -174,7 +174,7 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 		err      error
 	)
 	if query.PaginationToken == "" {
-		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit: query.Limit,
 			Metadata: core.Metadata{
 				core.MetadataKeySpecType:     core.HoldWallet,
@@ -182,7 +182,7 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 			},
 		})
 	} else {
-		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			PaginationToken: query.PaginationToken,
 		})
 	}
@@ -190,8 +190,33 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 		return nil, errors.Wrap(err, "listing accounts")
 	}
 
-	return newListResponse(response, func(account sdk.Account) core.DebitHold {
+	return newListResponse[sdk.Account, core.DebitHold](response, func(account sdk.Account) core.DebitHold {
 		return core.DebitHoldFromLedgerAccount(&account)
+	}), nil
+}
+
+func (r *Repository) ListTransactions(ctx context.Context, query ListQuery[ListTransactions]) (*ListResponse[sdk.Transaction], error) {
+	var (
+		response *sdk.ListTransactions200ResponseCursor
+		err      error
+	)
+	if query.PaginationToken == "" {
+		response, err = r.client.ListTransactions(ctx, r.ledgerName, ListTransactionsQuery{
+			Limit:    query.Limit,
+			Account:  r.chart.GetMainAccount(query.Payload.WalletID),
+			Metadata: core.WalletTransactionBaseMetadata(),
+		})
+	} else {
+		response, err = r.client.ListTransactions(ctx, r.ledgerName, ListTransactionsQuery{
+			PaginationToken: query.PaginationToken,
+		})
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "listing transactions")
+	}
+
+	return newListResponse[sdk.Transaction, sdk.Transaction](response, func(tx sdk.Transaction) sdk.Transaction {
+		return tx
 	}), nil
 }
 

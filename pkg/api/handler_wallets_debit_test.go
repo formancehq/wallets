@@ -49,6 +49,7 @@ func TestWalletsDebit(t *testing.T) {
 			Source:      testEnv.Chart().GetMainAccount(walletID),
 			Destination: "world",
 		}},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}, transactionData)
 }
 
@@ -104,5 +105,6 @@ func TestWalletsDebitWithHold(t *testing.T) {
 			Source:      testEnv.Chart().GetMainAccount(walletID),
 			Destination: testEnv.Chart().GetHoldAccount(hold.ID),
 		}},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}, transactionData)
 }
