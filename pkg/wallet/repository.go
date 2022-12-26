@@ -48,6 +48,10 @@ type ListTransactions struct {
 	WalletID string
 }
 
+type ListWallets struct {
+	Metadata core.Metadata
+}
+
 type Repository struct {
 	ledgerName string
 	chart      *core.Chart
@@ -123,17 +127,23 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) er
 	return nil
 }
 
-func (r *Repository) ListWallets(ctx context.Context, query ListQuery[struct{}]) (*ListResponse[core.Wallet], error) {
+func (r *Repository) ListWallets(ctx context.Context, query ListQuery[ListWallets]) (*ListResponse[core.Wallet], error) {
 	var (
 		response *sdk.ListAccounts200ResponseCursor
 		err      error
 	)
 	if query.PaginationToken == "" {
+		metadata := map[string]interface{}{
+			core.MetadataKeySpecType: core.PrimaryWallet,
+		}
+		if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
+			for k, v := range query.Payload.Metadata {
+				metadata[core.MetadataKeyWalletCustomData+"."+k] = v
+			}
+		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
-			Limit: query.Limit,
-			Metadata: map[string]interface{}{
-				core.MetadataKeySpecType: core.PrimaryWallet,
-			},
+			Limit:    query.Limit,
+			Metadata: metadata,
 		})
 	} else {
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{

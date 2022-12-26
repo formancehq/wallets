@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -101,4 +102,16 @@ func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) wal
 		PaginationToken: parsePaginationToken(r),
 		Payload:         payload,
 	}
+}
+
+func getQueryMap(m map[string][]string, key string) map[string]any {
+	dicts := make(map[string]any)
+	for k, v := range m {
+		if i := strings.IndexByte(k, '['); i >= 1 && k[0:i] == key {
+			if j := strings.IndexByte(k[i+1:], ']'); j >= 1 {
+				dicts[k[i+1:][:j]] = v[0]
+			}
+		}
+	}
+	return dicts
 }
