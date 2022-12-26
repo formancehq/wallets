@@ -3,9 +3,50 @@ package wallet
 import (
 	"context"
 
+	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/pkg/errors"
 )
+
+type ListResponse[T any] struct {
+	Data           []T
+	Next, Previous string
+	HasMore        bool
+}
+
+func newListResponse[T any](cursor *sdk.ListAccounts200ResponseCursor, mapper func(account sdk.Account) T) *ListResponse[T] {
+	ret := make([]T, 0)
+	for _, item := range cursor.Data {
+		ret = append(ret, mapper(item))
+	}
+
+	return &ListResponse[T]{
+		Data: ret,
+		Next: func() string {
+			if cursor.Next == nil {
+				return ""
+			}
+			return *cursor.Next
+		}(),
+		Previous: func() string {
+			if cursor.Previous == nil {
+				return ""
+			}
+			return *cursor.Previous
+		}(),
+		HasMore: *cursor.HasMore,
+	}
+}
+
+type ListQuery[T any] struct {
+	Payload         T
+	Limit           int
+	PaginationToken string
+}
+
+type ListHolds struct {
+	WalletID string
+}
 
 type Repository struct {
 	ledgerName string
@@ -82,23 +123,30 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) er
 	return nil
 }
 
-// @todo: add pagination.
-func (r *Repository) ListWallets(ctx context.Context) ([]core.Wallet, error) {
-	wallets := make([]core.Wallet, 0)
-
-	accounts, err := r.client.ListAccountsWithMetadata(ctx, r.ledgerName, map[string]interface{}{
-		core.MetadataKeySpecType: core.PrimaryWallet,
-	})
+func (r *Repository) ListWallets(ctx context.Context, query ListQuery[struct{}]) (*ListResponse[core.Wallet], error) {
+	var (
+		response *sdk.ListAccounts200ResponseCursor
+		err      error
+	)
+	if query.PaginationToken == "" {
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+			Limit: query.Limit,
+			Metadata: map[string]interface{}{
+				core.MetadataKeySpecType: core.PrimaryWallet,
+			},
+		})
+	} else {
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+			PaginationToken: query.PaginationToken,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	for _, account := range accounts {
-		//nolint:scopelint
-		wallets = append(wallets, core.WalletFromAccount(&account))
-	}
-
-	return wallets, nil
+	return newListResponse(response, func(account sdk.Account) core.Wallet {
+		return core.WalletFromAccount(&account)
+	}), nil
 }
 
 func (r *Repository) GetWallet(ctx context.Context, id string) (*core.WalletWithBalances, error) {
@@ -120,25 +168,31 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.WalletWith
 	return &w, nil
 }
 
-func (r *Repository) ListHolds(ctx context.Context, walletID string) ([]core.DebitHold, error) {
-	holds := make([]core.DebitHold, 0)
-
-	filter := core.Metadata{
-		core.MetadataKeySpecType:     core.HoldWallet,
-		core.MetadataKeyHoldWalletID: walletID,
+func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) (*ListResponse[core.DebitHold], error) {
+	var (
+		response *sdk.ListAccounts200ResponseCursor
+		err      error
+	)
+	if query.PaginationToken == "" {
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+			Limit: query.Limit,
+			Metadata: core.Metadata{
+				core.MetadataKeySpecType:     core.HoldWallet,
+				core.MetadataKeyHoldWalletID: query.Payload.WalletID,
+			},
+		})
+	} else {
+		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountQuery{
+			PaginationToken: query.PaginationToken,
+		})
 	}
-
-	accounts, err := r.client.ListAccountsWithMetadata(ctx, r.ledgerName, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing accounts")
 	}
 
-	for _, account := range accounts {
-		account := account // Create a scoped variable
-		holds = append(holds, core.DebitHoldFromLedgerAccount(&account))
-	}
-
-	return holds, nil
+	return newListResponse(response, func(account sdk.Account) core.DebitHold {
+		return core.DebitHoldFromLedgerAccount(&account)
+	}), nil
 }
 
 func (r *Repository) GetHold(ctx context.Context, id string) (*core.DebitHold, error) {
