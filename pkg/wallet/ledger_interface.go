@@ -28,7 +28,7 @@ type Ledger interface {
 	ListAccounts(ctx context.Context, ledger string, query ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	ListTransactions(ctx context.Context, ledger string, query ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
 	CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error
-	RunScript(ctx context.Context, ledger string, script sdk.Script) error
+	RunScript(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error)
 }
 
 type DefaultLedger struct {
@@ -100,9 +100,9 @@ func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger string, tra
 	return err
 }
 
-func (d DefaultLedger) RunScript(ctx context.Context, ledger string, script sdk.Script) error {
-	_, _, err := d.client.ScriptApi.RunScript(ctx, ledger).Script(script).Execute()
-	return err
+func (d DefaultLedger) RunScript(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
+	ret, _, err := d.client.ScriptApi.RunScript(ctx, ledger).Script(script).Execute()
+	return ret, err
 }
 
 var _ Ledger = &DefaultLedger{}

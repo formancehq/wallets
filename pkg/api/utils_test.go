@@ -94,7 +94,7 @@ type (
 	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	listTransactionsFn     func(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
 	createTransactionFn    func(ctx context.Context, name string, transaction sdk.TransactionData) error
-	runScriptFn            func(ctx context.Context, name string, script sdk.Script) error
+	runScriptFn            func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error)
 )
 
 type LedgerMock struct {
@@ -122,7 +122,7 @@ func (l *LedgerMock) CreateTransaction(ctx context.Context, name string, transac
 	return l.createTransaction(ctx, name, transaction)
 }
 
-func (l *LedgerMock) RunScript(ctx context.Context, name string, script sdk.Script) error {
+func (l *LedgerMock) RunScript(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 	return l.runScript(ctx, name, script)
 }
 

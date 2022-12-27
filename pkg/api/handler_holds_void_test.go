@@ -34,7 +34,7 @@ func TestHoldsVoid(t *testing.T) {
 				Metadata: hold.LedgerMetadata(testEnv.Chart()),
 			}, nil
 		}),
-		WithRunScript(func(ctx context.Context, name string, script sdk.Script) error {
+		WithRunScript(func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.Equal(t, sdk.Script{
 				Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", "USD"),
 				Vars: map[string]interface{}{
@@ -42,7 +42,7 @@ func TestHoldsVoid(t *testing.T) {
 				},
 				Metadata: core.WalletTransactionBaseMetadata(),
 			}, script)
-			return nil
+			return &sdk.ScriptResult{}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)
