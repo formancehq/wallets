@@ -43,7 +43,7 @@ type Debit struct {
 
 type ConfirmHold struct {
 	HoldID    string `json:"holdID"`
-	Amount    core.Monetary
+	Amount    core.MonetaryInt
 	Reference string
 }
 
@@ -119,19 +119,31 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 		return newErrMismatchType(core.HoldWallet, mType)
 	}
 
-	var asset string
-	for key := range *account.Balances {
+	var (
+		asset   string
+		balance int32
+	)
+	for key, value := range *account.Balances {
 		asset = key
+		balance = value
 		break
+	}
+
+	amount := uint64(balance)
+	if debit.Amount.Uint64() != 0 {
+		amount = debit.Amount.Uint64()
 	}
 
 	if err := s.client.RunScript(
 		ctx,
 		s.ledgerName,
 		sdk.Script{
-			Plain: strings.ReplaceAll(numscript.ConfirmHold, "ASSET", asset),
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(debit.HoldID),
+				"amount": map[string]any{
+					"amount": amount,
+					"asset":  asset,
+				},
 			},
 			Metadata: core.WalletTransactionBaseMetadata(),
 		},
