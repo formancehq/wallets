@@ -365,6 +365,14 @@ components:
           type: object
           description: Metadata associated with the hold.
           additionalProperties: {}
+        remaining:
+          type: number
+          description: Remaining amount on hold
+          example: 10
+        originalAmount:
+          type: number
+          description: Original amount on hold
+          example: 100
     GetWalletsResponse:
       type: object
       required:
