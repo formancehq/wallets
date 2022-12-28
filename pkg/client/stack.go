@@ -6,6 +6,8 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -19,7 +21,11 @@ func GetAuthenticatedClient(ctx context.Context, clientID, clientSecret, stackUR
 		ClientSecret: clientSecret,
 		TokenURL:     stackURL + "/api/auth/oauth/token",
 	}
-	return clientCredentialsConfig.Client(ctx), nil
+	underlyingHTTPClient := &http.Client{
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+	}
+
+	return clientCredentialsConfig.Client(context.WithValue(ctx, oauth2.HTTPClient, underlyingHTTPClient)), nil
 }
 
 func NewStackClient(clientID, clientSecret, stackURL string) (*sdk.APIClient, error) {
