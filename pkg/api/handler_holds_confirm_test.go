@@ -19,7 +19,7 @@ func TestHoldsConfirm(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", nil)
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", nil)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
@@ -62,7 +62,7 @@ func TestHoldsPartialConfirm(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 50,
 	})
 	rec := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestHoldsConfirmWithTooHighAmount(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 500,
 	})
 	rec := httptest.NewRecorder()
@@ -152,7 +152,7 @@ func TestHoldsConfirmWithClosedHold(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{})
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{})
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
@@ -189,7 +189,7 @@ func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 50,
 		Final:  true,
 	})

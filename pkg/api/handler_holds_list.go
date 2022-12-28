@@ -4,13 +4,12 @@ import (
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/wallet"
-	"github.com/go-chi/chi/v5"
 )
 
 func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
 	query := readPaginatedRequest(r, func(r *http.Request) wallet.ListHolds {
 		return wallet.ListHolds{
-			WalletID: chi.URLParam(r, "walletID"),
+			WalletID: r.URL.Query().Get("walletID"),
 		}
 	})
 

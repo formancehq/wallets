@@ -38,18 +38,18 @@ func NewRouter(
 				r.Patch("/", main.PatchWalletHandler)
 				r.Post("/debit", main.DebitWalletHandler)
 				r.Post("/credit", main.CreditWalletHandler)
-				r.Route("/holds", func(r chi.Router) {
-					r.Get("/", main.ListHoldsHandler)
-					r.Route("/{holdID}", func(r chi.Router) {
-						r.Get("/", main.GetHoldHandler)
-						r.Post("/confirm", main.ConfirmHoldHandler)
-						r.Post("/void", main.VoidHoldHandler)
-					})
-				})
 			})
 		})
 		r.Route("/transactions", func(r chi.Router) {
 			r.Get("/", main.ListTransactions)
+		})
+		r.Route("/holds", func(r chi.Router) {
+			r.Get("/", main.ListHoldsHandler)
+			r.Route("/{holdID}", func(r chi.Router) {
+				r.Get("/", main.GetHoldHandler)
+				r.Post("/confirm", main.ConfirmHoldHandler)
+				r.Post("/void", main.VoidHoldHandler)
+			})
 		})
 	})
 

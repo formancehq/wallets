@@ -184,12 +184,15 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 		err      error
 	)
 	if query.PaginationToken == "" {
+		metadata := core.Metadata{
+			core.MetadataKeySpecType: core.HoldWallet,
+		}
+		if query.Payload.WalletID != "" {
+			metadata[core.MetadataKeyHoldWalletID] = query.Payload.WalletID
+		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
-			Limit: query.Limit,
-			Metadata: core.Metadata{
-				core.MetadataKeySpecType:     core.HoldWallet,
-				core.MetadataKeyHoldWalletID: query.Payload.WalletID,
-			},
+			Limit:    query.Limit,
+			Metadata: metadata,
 		})
 	} else {
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{

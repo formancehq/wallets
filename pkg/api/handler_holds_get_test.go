@@ -18,7 +18,7 @@ func TestHoldsGet(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodGet, "/wallets/"+walletID+"/holds/"+hold.ID, nil)
+	req := newRequest(t, http.MethodGet, "/holds/"+hold.ID, nil)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
