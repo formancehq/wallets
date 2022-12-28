@@ -252,7 +252,8 @@ paths:
                 $ref: '#/components/schemas/GetHoldsResponse'
 
   /wallets/{id}/holds/{hold_id}/confirm:
-    parameters:
+    post:
+      parameters:
       - name: id
         in: path
         required: true
@@ -263,7 +264,11 @@ paths:
         required: true
         schema:
           type: string
-    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmHoldRequest'
       summary: Confirm a hold
       tags:
         - Wallets
@@ -550,3 +555,14 @@ components:
           input: 100
           output: 10
           balance: 90
+    ConfirmHoldRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          example: 100
+          description: Define the amount to transfer.
+        final:
+          type: boolean
+          example: true
+          description: Define a final confirmation. Remaining funds will be returned to the wallet.

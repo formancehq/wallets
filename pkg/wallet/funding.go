@@ -45,6 +45,7 @@ type ConfirmHold struct {
 	HoldID    string `json:"holdID"`
 	Amount    core.MonetaryInt
 	Reference string
+	Final     bool
 }
 
 type VoidHold struct {
@@ -137,20 +138,34 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	}
 
 	var (
-		asset string
+		asset   string
+		balance int32
 	)
-	for key := range *account.Balances {
+	for key, value := range *account.Balances {
 		asset = key
+		balance = value
 		break
 	}
 
-	return s.runScript(ctx, sdk.Script{
-		Plain: strings.ReplaceAll(numscript.ConfirmHold, "ASSET", asset),
-		Vars: map[string]interface{}{
-			"hold": s.chart.GetHoldAccount(debit.HoldID),
+	amount := uint64(balance)
+	if debit.Amount.Uint64() != 0 {
+		amount = debit.Amount.Uint64()
+	}
+
+	return s.runScript(
+		ctx,
+		sdk.Script{
+			Plain: numscript.BuildConfirmHoldScript(debit.Final, asset),
+			Vars: map[string]interface{}{
+				"hold": s.chart.GetHoldAccount(debit.HoldID),
+				"amount": map[string]any{
+					"amount": amount,
+					"asset":  asset,
+				},
+			},
+			Metadata: core.WalletTransactionBaseMetadata(),
 		},
-		Metadata: core.WalletTransactionBaseMetadata(),
-	})
+	)
 }
 
 func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {

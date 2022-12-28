@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
@@ -39,9 +38,13 @@ func TestHoldsConfirm(t *testing.T) {
 		}),
 		WithRunScript(func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.EqualValues(t, sdk.Script{
-				Plain: strings.ReplaceAll(numscript.ConfirmHold, "ASSET", "USD"),
+				Plain: numscript.BuildConfirmHoldScript(false, "USD"),
 				Vars: map[string]interface{}{
 					"hold": testEnv.Chart().GetHoldAccount(hold.ID),
+					"amount": map[string]any{
+						"amount": uint64(100),
+						"asset":  "USD",
+					},
 				},
 				Metadata: core.WalletTransactionBaseMetadata(),
 			}, script)

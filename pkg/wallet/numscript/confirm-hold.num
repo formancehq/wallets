@@ -1,6 +1,9 @@
 vars {
   account $hold
   account $dest = meta($hold, "destination")
+  {{- if .Final }}
+  account $void_destination = meta($hold, "void_destination")
+  {{- end }}
   monetary $amount
 }
 
@@ -8,3 +11,10 @@ send $amount (
   source = $hold
   destination = $dest
 )
+
+{{- if .Final }}
+send [{{.Asset}} *] (
+  source = $hold
+  destination = $void_destination
+)
+{{- end }}

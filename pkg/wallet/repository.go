@@ -212,8 +212,13 @@ func (r *Repository) ListTransactions(ctx context.Context, query ListQuery[ListT
 	)
 	if query.PaginationToken == "" {
 		response, err = r.client.ListTransactions(ctx, r.ledgerName, ListTransactionsQuery{
-			Limit:    query.Limit,
-			Account:  r.chart.GetMainAccount(query.Payload.WalletID),
+			Limit: query.Limit,
+			Account: func() string {
+				if query.Payload.WalletID != "" {
+					return r.chart.GetMainAccount(query.Payload.WalletID)
+				}
+				return ""
+			}(),
 			Metadata: core.WalletTransactionBaseMetadata(),
 		})
 	} else {

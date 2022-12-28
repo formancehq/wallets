@@ -12,6 +12,7 @@ import (
 
 type ConfirmHoldRequest struct {
 	Amount int64 `json:"amount"`
+	Final  bool  `json:"final"`
 }
 
 func (c ConfirmHoldRequest) Bind(r *http.Request) error {
@@ -30,6 +31,7 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 	err := m.funding.ConfirmHold(r.Context(), wallet.ConfirmHold{
 		HoldID: chi.URLParam(r, "hold_id"),
 		Amount: *core.NewMonetaryInt(data.Amount),
+		Final:  data.Final,
 	})
 	if err != nil {
 		switch {
