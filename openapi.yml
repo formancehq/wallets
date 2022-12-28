@@ -211,7 +211,7 @@ paths:
         204:
           description: Wallet successfully credited
 
-  /wallets/{id}/holds:
+  /holds:
     parameters:
       - name: id
         in: path
@@ -233,6 +233,12 @@ paths:
           maximum: 1000
           minimum: 1
           default: 15
+      - name: walletID
+        in: query
+        description: 'The wallet to filter on'
+        example: wallet1
+        schema:
+          type: string
       - name: cursor
         in: query
         description: |
@@ -251,7 +257,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetHoldsResponse'
 
-  /wallets/{id}/holds/{hold_id}/confirm:
+  /holds/{hold_id}/confirm:
     post:
       parameters:
       - name: id
@@ -277,7 +283,7 @@ paths:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
 
-  /wallets/{id}/holds/{hold_id}/void:
+  /holds/{hold_id}/void:
     parameters:
       - name: id
         in: path
