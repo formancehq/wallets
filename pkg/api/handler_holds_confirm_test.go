@@ -107,6 +107,82 @@ func TestHoldsPartialConfirm(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
 }
 
+func TestHoldsConfirmWithTooHighAmount(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	hold := core.NewDebitHold(walletID, "bank", "USD")
+
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
+		Amount: 500,
+	})
+	rec := httptest.NewRecorder()
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
+			balances := map[string]int32{
+				"USD": 100,
+			}
+			volumes := map[string]map[string]int32{
+				"USD": {
+					"input": 100,
+				},
+			}
+			return &sdk.AccountWithVolumesAndBalances{
+				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
+				Metadata: hold.LedgerMetadata(testEnv.Chart()),
+				Balances: &balances,
+				Volumes:  &volumes,
+			}, nil
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeInsufficientFund, errorResponse.ErrorCode)
+}
+
+func TestHoldsConfirmWithClosedHold(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	hold := core.NewDebitHold(walletID, "bank", "USD")
+
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{})
+	rec := httptest.NewRecorder()
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
+			balances := map[string]int32{
+				"USD": 0,
+			}
+			volumes := map[string]map[string]int32{
+				"USD": {
+					"input": 100,
+				},
+			}
+			return &sdk.AccountWithVolumesAndBalances{
+				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
+				Metadata: hold.LedgerMetadata(testEnv.Chart()),
+				Balances: &balances,
+				Volumes:  &volumes,
+			}, nil
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeClosedHold, errorResponse.ErrorCode)
+}
+
 func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 	t.Parallel()
 

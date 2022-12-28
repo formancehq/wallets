@@ -235,14 +235,13 @@ func (r *Repository) ListTransactions(ctx context.Context, query ListQuery[ListT
 	}), nil
 }
 
-func (r *Repository) GetHold(ctx context.Context, id string) (*core.DebitHold, error) {
+func (r *Repository) GetHold(ctx context.Context, id string) (*core.ExpandedDebitHold, error) {
 	account, err := r.client.GetAccount(ctx, r.ledgerName, r.chart.GetHoldAccount(id))
 	if err != nil {
-		// @todo: log error properly in addition to returning it
 		return nil, err
 	}
 
-	hold := core.DebitHoldFromLedgerAccount(account)
+	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
 
 	return &hold, nil
 }

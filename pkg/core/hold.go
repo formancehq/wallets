@@ -11,11 +11,17 @@ type DebitHold struct {
 	Asset       string `json:"asset"`
 }
 
+type ExpandedDebitHold struct {
+	DebitHold
+	OriginalAmount MonetaryInt `json:"originalAmount"`
+	Remaining      MonetaryInt `json:"remaining"`
+}
+
 func (h DebitHold) LedgerMetadata(chart *Chart) Metadata {
 	return Metadata{
 		//nolint:godox
 		// TODO: Use defined namespace on ledger
-		MetadataKeySpecType:     "wallets.hold",
+		MetadataKeySpecType:     HoldWallet,
 		MetadataKeyHoldWalletID: h.WalletID,
 		MetadataKeyHoldID:       h.ID,
 		MetadataKeyAsset:        h.Asset,
@@ -48,5 +54,19 @@ func DebitHoldFromLedgerAccount(account interface {
 	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
 	hold.Destination = account.GetMetadata()["destination"].(map[string]any)["value"].(string)
 	hold.Asset = account.GetMetadata()[MetadataKeyAsset].(string)
+	return hold
+}
+
+func ExpandedDebitHoldFromLedgerAccount(account interface {
+	GetMetadata() map[string]any
+	GetVolumes() map[string]map[string]int32
+	GetBalances() map[string]int32
+},
+) ExpandedDebitHold {
+	hold := ExpandedDebitHold{
+		DebitHold: DebitHoldFromLedgerAccount(account),
+	}
+	hold.OriginalAmount = *NewMonetaryInt(int64(account.GetVolumes()[hold.Asset]["input"]))
+	hold.Remaining = *NewMonetaryInt(int64(account.GetBalances()[hold.Asset]))
 	return hold
 }

@@ -127,7 +127,6 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	if err != nil {
 		return errors.Wrap(err, "getting account")
 	}
-
 	mType, ok := account.Metadata[core.MetadataKeySpecType]
 	if !ok {
 		return ErrHoldNotFound
@@ -137,30 +136,29 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 		return newErrMismatchType(core.HoldWallet, mType)
 	}
 
-	var (
-		asset   string
-		balance int32
-	)
-	for key, value := range *account.Balances {
-		asset = key
-		balance = value
-		break
+	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
+
+	if hold.Remaining.Uint64() == 0 {
+		return ErrClosedHold
 	}
 
-	amount := uint64(balance)
+	amount := hold.Remaining.Uint64()
 	if debit.Amount.Uint64() != 0 {
+		if debit.Amount.Uint64() > amount {
+			return ErrInsufficientFundError
+		}
 		amount = debit.Amount.Uint64()
 	}
 
 	return s.runScript(
 		ctx,
 		sdk.Script{
-			Plain: numscript.BuildConfirmHoldScript(debit.Final, asset),
+			Plain: numscript.BuildConfirmHoldScript(debit.Final, hold.Asset),
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(debit.HoldID),
 				"amount": map[string]any{
 					"amount": amount,
-					"asset":  asset,
+					"asset":  hold.Asset,
 				},
 			},
 			Metadata: core.WalletTransactionBaseMetadata(),
@@ -174,7 +172,10 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		return errors.Wrap(err, "getting account")
 	}
 
-	hold := core.DebitHoldFromLedgerAccount(account)
+	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
+	if hold.Remaining.Uint64() == 0 {
+		return ErrClosedHold
+	}
 
 	return s.runScript(ctx, sdk.Script{
 		Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", hold.Asset),

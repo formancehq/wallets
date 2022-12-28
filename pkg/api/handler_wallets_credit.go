@@ -13,6 +13,7 @@ const (
 	ErrorCodeInternal         = "INTERNAL"
 	ErrorCodeInsufficientFund = "INSUFFICIENT_FUND"
 	ErrorCodeValidation       = "VALIDATION"
+	ErrorCodeClosedHold       = "HOLD_CLOSED"
 )
 
 type CreditWalletRequest struct {

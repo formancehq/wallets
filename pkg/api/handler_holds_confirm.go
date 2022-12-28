@@ -37,6 +37,10 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 		switch {
 		case errors.Is(err, wallet.ErrHoldNotFound):
 			notFound(w)
+		case errors.Is(err, wallet.ErrInsufficientFundError):
+			badRequest(w, ErrorCodeInsufficientFund, err)
+		case errors.Is(err, wallet.ErrClosedHold):
+			badRequest(w, ErrorCodeClosedHold, err)
 		default:
 			internalError(w, r, err)
 		}

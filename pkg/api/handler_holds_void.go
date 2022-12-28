@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/wallets/pkg/wallet"
@@ -12,7 +13,12 @@ func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
 		HoldID: chi.URLParam(r, "hold_id"),
 	})
 	if err != nil {
-		internalError(w, r, err)
+		switch {
+		case errors.Is(err, wallet.ErrClosedHold):
+			badRequest(w, ErrorCodeClosedHold, err)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 

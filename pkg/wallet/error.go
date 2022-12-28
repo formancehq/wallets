@@ -9,6 +9,7 @@ var (
 	ErrWalletNotFound        = errors.New("wallet_not_found")
 	ErrHoldNotFound          = errors.New("hold_not_found")
 	ErrInsufficientFundError = errors.New("insufficient fund")
+	ErrClosedHold            = errors.New("closed hold")
 )
 
 type MismatchTypeError struct {
