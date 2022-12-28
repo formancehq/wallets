@@ -31,7 +31,7 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	id := chi.URLParam(r, "wallet_id")
+	id := chi.URLParam(r, "walletID")
 	credit := wallet.Credit{
 		WalletID: id,
 		Amount:   data.Amount,

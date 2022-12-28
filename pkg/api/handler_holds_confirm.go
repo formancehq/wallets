@@ -29,7 +29,7 @@ func (m *MainHandler) ConfirmHoldHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	err := m.funding.ConfirmHold(r.Context(), wallet.ConfirmHold{
-		HoldID: chi.URLParam(r, "hold_id"),
+		HoldID: chi.URLParam(r, "holdID"),
 		Amount: *core.NewMonetaryInt(data.Amount),
 		Final:  data.Final,
 	})

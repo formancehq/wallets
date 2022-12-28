@@ -33,14 +33,14 @@ func NewRouter(
 		r.Route("/wallets", func(r chi.Router) {
 			r.Get("/", main.ListWalletsHandler)
 			r.Post("/", main.CreateWalletHandler)
-			r.Route("/{wallet_id}", func(r chi.Router) {
+			r.Route("/{walletID}", func(r chi.Router) {
 				r.Get("/", main.GetWalletHandler)
 				r.Patch("/", main.PatchWalletHandler)
 				r.Post("/debit", main.DebitWalletHandler)
 				r.Post("/credit", main.CreditWalletHandler)
 				r.Route("/holds", func(r chi.Router) {
 					r.Get("/", main.ListHoldsHandler)
-					r.Route("/{hold_id}", func(r chi.Router) {
+					r.Route("/{holdID}", func(r chi.Router) {
 						r.Get("/", main.GetHoldHandler)
 						r.Post("/confirm", main.ConfirmHoldHandler)
 						r.Post("/void", main.VoidHoldHandler)

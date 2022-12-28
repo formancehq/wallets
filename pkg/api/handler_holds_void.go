@@ -10,7 +10,7 @@ import (
 
 func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
 	err := m.funding.VoidHold(r.Context(), wallet.VoidHold{
-		HoldID: chi.URLParam(r, "hold_id"),
+		HoldID: chi.URLParam(r, "holdID"),
 	})
 	if err != nil {
 		switch {

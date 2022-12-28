@@ -9,7 +9,7 @@ import (
 func (m *MainHandler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	query := readPaginatedRequest[wallet.ListTransactions](r, func(r *http.Request) wallet.ListTransactions {
 		return wallet.ListTransactions{
-			WalletID: r.URL.Query().Get("wallet_id"),
+			WalletID: r.URL.Query().Get("walletID"),
 		}
 	})
 	transactions, err := m.repository.ListTransactions(r.Context(), query)

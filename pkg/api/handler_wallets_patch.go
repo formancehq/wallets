@@ -25,7 +25,7 @@ func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &wallet.Data{
+	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "walletID"), &wallet.Data{
 		Metadata: data.Metadata,
 	})
 	if err != nil {

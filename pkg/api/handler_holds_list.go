@@ -10,7 +10,7 @@ import (
 func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
 	query := readPaginatedRequest(r, func(r *http.Request) wallet.ListHolds {
 		return wallet.ListHolds{
-			WalletID: chi.URLParam(r, "wallet_id"),
+			WalletID: chi.URLParam(r, "walletID"),
 		}
 	})
 

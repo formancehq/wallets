@@ -76,7 +76,7 @@ func TestTransactionsList(t *testing.T) {
 		}),
 	)
 
-	req := newRequest(t, http.MethodGet, fmt.Sprintf("/transactions?limit=%d&wallet_id=%s", pageSize, w.ID), nil)
+	req := newRequest(t, http.MethodGet, fmt.Sprintf("/transactions?limit=%d&walletID=%s", pageSize, w.ID), nil)
 	rec := httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
 
