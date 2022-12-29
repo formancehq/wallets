@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
+	sharedhealth "github.com/formancehq/go-libs/health"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 )

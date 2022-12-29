@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/sharedotlp/pkg/sharedotlptraces"
+	"github.com/formancehq/go-libs/otlp/otlptraces"
 	"github.com/formancehq/wallets/pkg"
 	"github.com/formancehq/wallets/pkg/client"
 	"github.com/spf13/cobra"
@@ -29,7 +29,7 @@ var serveCmd = &cobra.Command{
 			fx.NopLogger,
 			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag)),
 			client.NewModule(viper.GetString(stackClientIDFlag), viper.GetString(stackClientSecretFlag), viper.GetString(stackURLFlag)),
-			sharedotlptraces.CLITracesModule(viper.GetViper()),
+			otlptraces.CLITracesModule(viper.GetViper()),
 		}
 
 		app := fx.New(options...)

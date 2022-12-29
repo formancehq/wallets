@@ -479,15 +479,15 @@ components:
     Cursor:
       type: object
       required:
-      - page_size
+      - pageSize
       properties:
-        page_size:
+        pageSize:
           type: integer
           format: int64
           minimum: 1
           maximum: 1000
           example: 15
-        has_more:
+        hasMore:
           type: boolean
           example: false
         previous:

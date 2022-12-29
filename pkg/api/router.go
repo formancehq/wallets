@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
+	sharedhealth "github.com/formancehq/go-libs/health"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
