@@ -77,8 +77,8 @@ github.com/felixge/httpsnoop v1.0.3 h1:s/nj+GCswXYzN5v2DpNMuMQYe+0DDwt5WVCU6CWBd
 github.com/felixge/httpsnoop v1.0.3/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/formancehq/formance-sdk-go v1.0.0-rc.1.0.20221227110945-2ed7cd120caa h1:UdEpzlAkUXbjtXLDkU2Aq7GxwxU5wuvuUDFOOvHBhsw=
 github.com/formancehq/formance-sdk-go v1.0.0-rc.1.0.20221227110945-2ed7cd120caa/go.mod h1:8/3set1MEjevx4epBHjwBQxDrXVeliF7kzHFOzZC/yI=
-github.com/formancehq/go-libs v1.4.0 h1:adSuKecERZl8KbIQoFfyQmvpzd3HNECRcg6Ed1oZXxU=
-github.com/formancehq/go-libs v1.4.0/go.mod h1:IK1zDIGRPi/o8sSApIc1W0VC1Y0DGdADzxvpbqlD8fk=
+github.com/formancehq/go-libs v1.4.1-0.20221229171134-b99a53af183e h1:inGpTGW/brmqyXpUgtaiR3ibd+H+ecksh7H5+eZYaDI=
+github.com/formancehq/go-libs v1.4.1-0.20221229171134-b99a53af183e/go.mod h1:iqSU/mqPxdJdnS9EF1qrGjQpUQnEtV6SRTMFRu/0LcE=
 github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=

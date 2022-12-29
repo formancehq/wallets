@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
 )
 
@@ -18,16 +19,16 @@ const (
 	HoldWallet    = "wallets.hold"
 )
 
-func WalletTransactionBaseMetadata() Metadata {
-	return Metadata{
+func WalletTransactionBaseMetadata() metadata.Metadata {
+	return metadata.Metadata{
 		MetadataKeyWalletTransaction: true,
 	}
 }
 
 type Wallet struct {
-	ID       string   `json:"id"`
-	Metadata Metadata `json:"metadata"`
-	Name     string   `json:"name"`
+	ID       string            `json:"id"`
+	Metadata metadata.Metadata `json:"metadata"`
+	Name     string            `json:"name"`
 }
 
 type WalletWithBalances struct {
@@ -35,8 +36,8 @@ type WalletWithBalances struct {
 	Balances map[string]int32 `json:"balances"`
 }
 
-func (w Wallet) LedgerMetadata() Metadata {
-	return Metadata{
+func (w Wallet) LedgerMetadata() metadata.Metadata {
+	return metadata.Metadata{
 		MetadataKeySpecType:         PrimaryWallet,
 		MetadataKeyWalletID:         w.ID,
 		MetadataKeyWalletCustomData: map[string]any(w.Metadata),
@@ -44,13 +45,13 @@ func (w Wallet) LedgerMetadata() Metadata {
 	}
 }
 
-func NewWallet(name string, metadata Metadata) Wallet {
-	if metadata == nil {
-		metadata = Metadata{}
+func NewWallet(name string, m metadata.Metadata) Wallet {
+	if m == nil {
+		m = metadata.Metadata{}
 	}
 	return Wallet{
 		ID:       uuid.NewString(),
-		Metadata: metadata,
+		Metadata: m,
 		Name:     name,
 	}
 }

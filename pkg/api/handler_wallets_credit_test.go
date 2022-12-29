@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -51,7 +52,7 @@ func TestWalletsCredit(t *testing.T) {
 			Destination: testEnv.Chart().GetMainAccount(walletID),
 			Source:      "world",
 		}},
-		Metadata: core.WalletTransactionBaseMetadata().Merge(core.Metadata{
+		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
 			core.MetadataKeyWalletCustomData: creditWalletRequest.Metadata,
 		}),
 	}, transactionData)

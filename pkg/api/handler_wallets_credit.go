@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -17,8 +18,8 @@ const (
 )
 
 type CreditWalletRequest struct {
-	Amount   core.Monetary `json:"amount"`
-	Metadata core.Metadata `json:"metadata"`
+	Amount   core.Monetary     `json:"amount"`
+	Metadata metadata.Metadata `json:"metadata"`
 }
 
 func (c *CreditWalletRequest) Bind(r *http.Request) error {

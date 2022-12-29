@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -25,15 +26,15 @@ func TestWalletsCreate(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	var (
-		ledger   string
-		account  string
-		metadata core.Metadata
+		ledger  string
+		account string
+		md      metadata.Metadata
 	)
 	testEnv := newTestEnv(
-		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m core.Metadata) error {
+		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m metadata.Metadata) error {
 			ledger = l
 			account = a
-			metadata = m
+			md = m
 			return nil
 		}),
 	)
@@ -44,7 +45,7 @@ func TestWalletsCreate(t *testing.T) {
 	readResponse(t, rec, wallet)
 	require.Equal(t, testEnv.LedgerName(), ledger)
 	require.Equal(t, account, testEnv.Chart().GetMainAccount(wallet.ID))
-	require.Equal(t, wallet.LedgerMetadata(), metadata)
+	require.Equal(t, wallet.LedgerMetadata(), md)
 	require.Equal(t, wallet.Metadata, createWalletRequest.Metadata)
 	require.Equal(t, wallet.Name, createWalletRequest.Name)
 }

@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
@@ -21,7 +22,7 @@ func TestWalletsList(t *testing.T) {
 
 	var wallets []core.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), core.Metadata{}))
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{}))
 	}
 	const pageSize = 2
 	numberOfPages := int64(len(wallets) / pageSize)
@@ -105,7 +106,7 @@ func TestWalletsListFilterMetadata(t *testing.T) {
 
 	var wallets []core.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), core.Metadata{
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{
 			"wallet": float64(i),
 		}))
 	}

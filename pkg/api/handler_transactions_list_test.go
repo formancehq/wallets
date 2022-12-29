@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ import (
 func TestTransactionsList(t *testing.T) {
 	t.Parallel()
 
-	w := core.NewWallet(uuid.NewString(), core.Metadata{})
+	w := core.NewWallet(uuid.NewString(), metadata.Metadata{})
 
 	var transactions []sdk.Transaction
 	for i := 0; i < 10; i++ {

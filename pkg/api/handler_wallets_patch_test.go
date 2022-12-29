@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 func TestWalletsPatch(t *testing.T) {
 	t.Parallel()
 
-	wallet := core.NewWallet(uuid.NewString(), core.Metadata{
+	wallet := core.NewWallet(uuid.NewString(), metadata.Metadata{
 		"foo": "bar",
 	})
 	patchWalletRequest := PatchWalletRequest{
@@ -38,15 +39,15 @@ func TestWalletsPatch(t *testing.T) {
 				Metadata: wallet.LedgerMetadata(),
 			}, nil
 		}),
-		WithAddMetadataToAccount(func(ctx context.Context, ledger, account string, metadata core.Metadata) error {
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account string, md metadata.Metadata) error {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetMainAccount(wallet.ID), account)
-			require.EqualValues(t, core.Metadata{
-				core.MetadataKeyWalletCustomData: core.Metadata{
+			require.EqualValues(t, metadata.Metadata{
+				core.MetadataKeyWalletCustomData: metadata.Metadata{
 					"role": "admin",
 					"foo":  "baz",
 				},
-			}, metadata)
+			}, md)
 			return nil
 		}),
 	)

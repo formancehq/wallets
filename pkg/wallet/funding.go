@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet/numscript"
 	"github.com/pkg/errors"
@@ -53,11 +54,11 @@ type VoidHold struct {
 }
 
 type Credit struct {
-	WalletID  string        `json:"walletID"`
-	Source    string        `json:"source"`
-	Amount    core.Monetary `json:"amount"`
-	Reference string        `json:"reference"`
-	Metadata  core.Metadata `json:"metadata"`
+	WalletID  string            `json:"walletID"`
+	Source    string            `json:"source"`
+	Amount    core.Monetary     `json:"amount"`
+	Reference string            `json:"reference"`
+	Metadata  metadata.Metadata `json:"metadata"`
 }
 
 func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHold, error) {
@@ -203,7 +204,7 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 				Destination: s.chart.GetMainAccount(credit.WalletID),
 			},
 		},
-		Metadata: core.WalletTransactionBaseMetadata().Merge(core.Metadata{
+		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
 			core.MetadataKeyWalletCustomData: credit.Metadata,
 		}),
 	}

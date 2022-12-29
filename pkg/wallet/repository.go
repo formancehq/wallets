@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/pkg/errors"
 )
@@ -49,7 +50,7 @@ type ListTransactions struct {
 }
 
 type ListWallets struct {
-	Metadata core.Metadata
+	Metadata metadata.Metadata
 }
 
 type Repository struct {
@@ -71,8 +72,8 @@ func NewRepository(
 }
 
 type Data struct {
-	Metadata core.Metadata `json:"metadata"`
-	Name     string        `json:"name"`
+	Metadata metadata.Metadata `json:"metadata"`
+	Name     string            `json:"name"`
 }
 
 func (r *Repository) CreateWallet(ctx context.Context, data *Data) (*core.Wallet, error) {
@@ -91,8 +92,8 @@ func (r *Repository) CreateWallet(ctx context.Context, data *Data) (*core.Wallet
 }
 
 func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) error {
-	meta := core.Metadata{}
-	custom := core.Metadata{}
+	meta := metadata.Metadata{}
+	custom := metadata.Metadata{}
 
 	account, err := r.client.GetAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id))
 	if err != nil {
@@ -184,7 +185,7 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 		err      error
 	)
 	if query.PaginationToken == "" {
-		metadata := core.Metadata{
+		metadata := metadata.Metadata{
 			core.MetadataKeySpecType: core.HoldWallet,
 		}
 		if query.Payload.WalletID != "" {

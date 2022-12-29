@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/formancehq/formance-sdk-go v1.0.0-rc.1.0.20221227110945-2ed7cd120caa
-	github.com/formancehq/go-libs v1.4.0
+	github.com/formancehq/go-libs v1.4.1-0.20221229171134-b99a53af183e
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2
 	github.com/google/uuid v1.3.0

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
 )
 
@@ -17,8 +18,8 @@ type ExpandedDebitHold struct {
 	Remaining      MonetaryInt `json:"remaining"`
 }
 
-func (h DebitHold) LedgerMetadata(chart *Chart) Metadata {
-	return Metadata{
+func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
+	return metadata.Metadata{
 		//nolint:godox
 		// TODO: Use defined namespace on ledger
 		MetadataKeySpecType:     HoldWallet,

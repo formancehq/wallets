@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/formancehq/formance-sdk-go"
-	"github.com/formancehq/wallets/pkg/core"
+	"github.com/formancehq/go-libs/metadata"
 )
 
 type ListAccountsQuery struct {
@@ -23,7 +23,7 @@ type ListTransactionsQuery struct {
 }
 
 type Ledger interface {
-	AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error
+	AddMetadataToAccount(ctx context.Context, ledger, account string, metadata metadata.Metadata) error
 	GetAccount(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
 	ListAccounts(ctx context.Context, ledger string, query ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	ListTransactions(ctx context.Context, ledger string, query ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
@@ -60,7 +60,7 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, quer
 	return &ret.Cursor, nil
 }
 
-func (d DefaultLedger) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error {
+func (d DefaultLedger) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata metadata.Metadata) error {
 	_, err := d.client.AccountsApi.AddMetadataToAccount(ctx, ledger, account).RequestBody(metadata).Execute()
 	return err
 }

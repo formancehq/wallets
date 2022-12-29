@@ -13,6 +13,7 @@ import (
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
 	sharedhealth "github.com/formancehq/go-libs/health"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -89,7 +90,7 @@ func newTestEnv(opts ...Option) *testEnv {
 }
 
 type (
-	addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata core.Metadata) error
+	addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata metadata.Metadata) error
 	getAccountFn           func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
 	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	listTransactionsFn     func(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
@@ -106,7 +107,7 @@ type LedgerMock struct {
 	runScript            runScriptFn
 }
 
-func (l *LedgerMock) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error {
+func (l *LedgerMock) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata metadata.Metadata) error {
 	return l.addMetadataToAccount(ctx, ledger, account, metadata)
 }
 

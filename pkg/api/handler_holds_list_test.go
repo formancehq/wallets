@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
@@ -31,7 +32,7 @@ func TestHoldsList(t *testing.T) {
 		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 			require.Equal(t, defaultLimit, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.EqualValues(t, core.Metadata{
+			require.EqualValues(t, metadata.Metadata{
 				core.MetadataKeySpecType: core.HoldWallet,
 			}, query.Metadata)
 
@@ -104,7 +105,7 @@ func TestHoldsListWithPagination(t *testing.T) {
 
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.EqualValues(t, core.Metadata{
+			require.EqualValues(t, metadata.Metadata{
 				core.MetadataKeySpecType:     core.HoldWallet,
 				core.MetadataKeyHoldWalletID: walletID,
 			}, query.Metadata)
