@@ -61,7 +61,7 @@ func TestWalletsList(t *testing.T) {
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeySpecType: core.PrimaryWallet,
+				core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
 			}, query.Metadata)
 
 			hasMore := true
@@ -117,8 +117,8 @@ func TestWalletsListFilterMetadata(t *testing.T) {
 			require.Equal(t, defaultLimit, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeySpecType:                     core.PrimaryWallet,
-				core.MetadataKeyWalletCustomData + ".wallet": "2",
+				core.MetadataKeyWalletSpecType():               core.PrimaryWallet,
+				core.MetadataKeyWalletCustomData() + ".wallet": "2",
 			}, query.Metadata)
 
 			hasMore := false

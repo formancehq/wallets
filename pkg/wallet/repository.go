@@ -92,36 +92,26 @@ func (r *Repository) CreateWallet(ctx context.Context, data *Data) (*core.Wallet
 }
 
 func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) error {
-	meta := metadata.Metadata{}
-	custom := metadata.Metadata{}
-
 	account, err := r.client.GetAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id))
 	if err != nil {
 		return ErrWalletNotFound
 	}
-	if account.Metadata[core.MetadataKeySpecType] != core.PrimaryWallet {
+
+	if !core.IsPrimary(account) {
 		return ErrWalletNotFound
 	}
 
-	for k, v := range account.Metadata {
-		if k != core.MetadataKeyWalletCustomData {
-			continue
-		}
-		for k, v := range v.(map[string]interface{}) {
-			custom[k] = v
-		}
+	newCustomMetadata := metadata.Metadata{}
+	existingCustomMetadata := core.GetMetadata(account, core.MetadataKeyWalletCustomData())
+	if existingCustomMetadata != nil {
+		newCustomMetadata = newCustomMetadata.Merge(existingCustomMetadata.(map[string]any))
 	}
-	for k, v := range data.Metadata {
-		custom[k] = v
-	}
-	meta[core.MetadataKeyWalletCustomData] = custom
+	newCustomMetadata = newCustomMetadata.Merge(data.Metadata)
 
-	if err := r.client.AddMetadataToAccount(
-		ctx,
-		r.ledgerName,
-		r.chart.GetMainAccount(id),
-		meta,
-	); err != nil {
+	meta := account.GetMetadata()
+	meta[core.MetadataKeyWalletCustomData()] = newCustomMetadata
+
+	if err := r.client.AddMetadataToAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id), meta); err != nil {
 		return errors.Wrap(err, "adding metadata to account")
 	}
 
@@ -135,11 +125,11 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[ListWallet
 	)
 	if query.PaginationToken == "" {
 		metadata := map[string]interface{}{
-			core.MetadataKeySpecType: core.PrimaryWallet,
+			core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
 		}
 		if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
 			for k, v := range query.Payload.Metadata {
-				metadata[core.MetadataKeyWalletCustomData+"."+k] = v
+				metadata[core.MetadataKeyWalletCustomData()+"."+k] = v
 			}
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
@@ -170,7 +160,7 @@ func (r *Repository) GetWallet(ctx context.Context, id string) (*core.WalletWith
 		return nil, errors.Wrap(err, "getting account")
 	}
 
-	if account.Metadata[core.MetadataKeySpecType] != core.PrimaryWallet {
+	if !core.IsPrimary(account) {
 		return nil, ErrWalletNotFound
 	}
 
@@ -186,10 +176,10 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 	)
 	if query.PaginationToken == "" {
 		metadata := metadata.Metadata{
-			core.MetadataKeySpecType: core.HoldWallet,
+			core.MetadataKeyWalletSpecType(): core.HoldWallet,
 		}
 		if query.Payload.WalletID != "" {
-			metadata[core.MetadataKeyHoldWalletID] = query.Payload.WalletID
+			metadata[core.MetadataKeyHoldWalletID()] = query.Payload.WalletID
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,

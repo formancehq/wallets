@@ -53,7 +53,7 @@ func TestWalletsCredit(t *testing.T) {
 			Source:      "world",
 		}},
 		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
-			core.MetadataKeyWalletCustomData: creditWalletRequest.Metadata,
+			core.MetadataKeyWalletCustomData(): creditWalletRequest.Metadata,
 		}),
 	}, transactionData)
 }

@@ -3,12 +3,12 @@ module github.com/formancehq/wallets
 go 1.19
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/formancehq/formance-sdk-go v1.0.0-rc.1.0.20221227110945-2ed7cd120caa
-	github.com/formancehq/go-libs v1.4.1-0.20221229171134-b99a53af183e
+	github.com/formancehq/go-libs v1.4.1-0.20221229182026-36654270208c
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2
 	github.com/google/uuid v1.3.0
-	github.com/imdario/mergo v0.3.13
 	github.com/pkg/errors v0.9.1
 	github.com/riandyrn/otelchi v0.5.0
 	github.com/sirupsen/logrus v1.9.0
@@ -23,7 +23,6 @@ require (
 require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -31,6 +30,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

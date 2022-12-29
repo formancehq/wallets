@@ -129,13 +129,9 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	if err != nil {
 		return errors.Wrap(err, "getting account")
 	}
-	mType, ok := account.Metadata[core.MetadataKeySpecType]
-	if !ok {
-		return ErrHoldNotFound
-	}
 
-	if mType, ok := mType.(string); !ok || mType != core.HoldWallet {
-		return newErrMismatchType(core.HoldWallet, mType)
+	if !core.IsHold(account) {
+		return newErrMismatchType(core.HoldWallet, core.SpecType(account))
 	}
 
 	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
@@ -205,7 +201,7 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 			},
 		},
 		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
-			core.MetadataKeyWalletCustomData: credit.Metadata,
+			core.MetadataKeyWalletCustomData(): credit.Metadata,
 		}),
 	}
 
