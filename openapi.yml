@@ -282,7 +282,7 @@ components:
           type: string
           description: The asset of the monetary value.
         amount:
-          type: number
+          type: integer
           format: int64
           description: The amount of the monetary value.
     Wallet:
@@ -305,7 +305,7 @@ components:
           type: object
           description: The balances of the wallet.
           additionalProperties:
-            type: number
+            type: integer
             description: The balance of the wallet in the specified currency.
         name:
           type: string
@@ -319,7 +319,7 @@ components:
           balances:
             type: object
             additionalProperties:
-              type: number
+              type: integer
     Hold:
       type: object
       required:
@@ -339,12 +339,12 @@ components:
           description: Metadata associated with the hold.
           additionalProperties: {}
         remaining:
-          type: number
+          type: integer
           description: Remaining amount on hold
           example: 10
           format: int64
         originalAmount:
-          type: number
+          type: integer
           description: Original amount on hold
           example: 100
           format: int64
@@ -512,11 +512,11 @@ components:
       type: object
       properties:
         input:
-          type: number
+          type: integer
         output:
-          type: number
+          type: integer
         balance:
-          type: number
+          type: integer
       required:
       - input
       - output
@@ -542,7 +542,7 @@ components:
       type: object
       properties:
         amount:
-          type: number
+          type: integer
           format: int64
           example: 100
           description: Define the amount to transfer.
