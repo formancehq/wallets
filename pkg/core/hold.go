@@ -20,15 +20,15 @@ type ExpandedDebitHold struct {
 
 func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 	return metadata.Metadata{
-		MetadataKeyWalletSpecType(): HoldWallet,
-		MetadataKeyHoldWalletID():   h.WalletID,
-		MetadataKeyHoldID():         h.ID,
-		MetadataKeyHoldAsset():      h.Asset,
-		MetadataKeyHoldVoidDestination(): map[string]interface{}{
+		MetadataKeyWalletSpecType: HoldWallet,
+		MetadataKeyHoldWalletID:   h.WalletID,
+		MetadataKeyHoldID:         h.ID,
+		MetadataKeyHoldAsset:      h.Asset,
+		MetadataKeyHoldVoidDestination: map[string]interface{}{
 			"type":  "account",
 			"value": chart.GetMainAccount(h.WalletID),
 		},
-		MetadataKeyHoldDestination(): map[string]interface{}{
+		MetadataKeyHoldDestination: map[string]interface{}{
 			"type":  "account",
 			"value": h.Destination,
 		},
@@ -49,10 +49,10 @@ func DebitHoldFromLedgerAccount(account interface {
 },
 ) DebitHold {
 	hold := DebitHold{}
-	hold.ID = account.GetMetadata()[MetadataKeyHoldID()].(string)
-	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID()].(string)
-	hold.Destination = account.GetMetadata()[MetadataKeyHoldDestination()].(map[string]any)["value"].(string)
-	hold.Asset = account.GetMetadata()[MetadataKeyHoldAsset()].(string)
+	hold.ID = account.GetMetadata()[MetadataKeyHoldID].(string)
+	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
+	hold.Destination = account.GetMetadata()[MetadataKeyHoldDestination].(map[string]any)["value"].(string)
+	hold.Asset = account.GetMetadata()[MetadataKeyHoldAsset].(string)
 	return hold
 }
 

@@ -1,118 +1,48 @@
 package core
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
 )
 
+type Spec struct {
+	Type string `json:"type"`
+}
+
 const (
-	metadataKeyWalletTransaction   = "wallets"
-	metadataKeySpecType            = "wallets/spec/type"
-	metadataKeyWalletID            = "wallets/id"
-	metadataKeyWalletName          = "wallets/name"
-	metadataKeyWalletCustomData    = "wallets/custom_data"
-	metadataKeyHoldWalletID        = "wallets/holds/wallet_id"
-	metadataKeyHoldAsset           = "wallets/holds/asset"
-	metadataKeyHoldID              = "wallets/holds/id"
-	metadataKeyHoldVoidDestination = "wallets/holds/void_destination"
-	metadataKeyHoldDestination     = "wallets/holds/destination"
+	MetadataKeyWalletTransaction   = "wallets"
+	MetadataKeyWalletSpecType      = "wallets/spec/type"
+	MetadataKeyWalletID            = "wallets/id"
+	MetadataKeyWalletName          = "wallets/name"
+	MetadataKeyWalletCustomData    = "wallets/custom_data"
+	MetadataKeyHoldWalletID        = "wallets/holds/wallet_id"
+	MetadataKeyHoldAsset           = "wallets/holds/asset"
+	MetadataKeyHoldID              = "wallets/holds/id"
+	MetadataKeyHoldVoidDestination = "void_destination"
+	MetadataKeyHoldDestination     = "destination"
 
 	PrimaryWallet = "wallets.primary"
 	HoldWallet    = "wallets.hold"
 )
 
-func FilterMetadata(name string) string {
-	m := metadata.SpecMetadata(name)
-	//nolint:gomnd
-	parts := strings.SplitN(m, "/", 2)
-	return fmt.Sprintf(`"%s"/%s`, parts[0], parts[1])
-}
-
-func MetadataKeyWalletTransactionMarker() string {
-	return metadata.SpecMetadata(metadataKeyWalletTransaction)
-}
-
-func MetadataKeyWalletTransactionMarkerFilter() string {
-	return FilterMetadata(metadataKeyWalletTransaction)
-}
-
-func MetadataKeyWalletSpecType() string {
-	return metadata.SpecMetadata(metadataKeySpecType)
-}
-
-func MetadataKeyWalletSpecTypeFilter() string {
-	return FilterMetadata(metadataKeySpecType)
-}
-
-func MetadataKeyWalletID() string {
-	return metadata.SpecMetadata(metadataKeyWalletID)
-}
-
-func MetadataKeyWalletIDFilter() string {
-	return FilterMetadata(metadataKeyWalletID)
-}
-
-func MetadataKeyHoldID() string {
-	return metadata.SpecMetadata(metadataKeyHoldID)
-}
-
-func MetadataKeyHoldWalletID() string {
-	return metadata.SpecMetadata(metadataKeyHoldWalletID)
-}
-
-func MetadataKeyHoldWalletIDFilter() string {
-	return FilterMetadata(metadataKeyHoldWalletID)
-}
-
-func MetadataKeyHoldAsset() string {
-	return metadata.SpecMetadata(metadataKeyHoldAsset)
-}
-
-func MetadataKeyWalletCustomData() string {
-	return metadata.SpecMetadata(metadataKeyWalletCustomData)
-}
-
-func MetadataKeyWalletCustomDataFilter(key string) string {
-	return FilterMetadata(metadataKeyWalletCustomData) + "." + key
-}
-
-func MetadataKeyWalletName() string {
-	return metadata.SpecMetadata(metadataKeyWalletName)
-}
-
-func MetadataKeyWalletNameFilter() string {
-	return FilterMetadata(metadataKeyWalletName)
-}
-
-func MetadataKeyHoldVoidDestination() string {
-	return metadata.SpecMetadata(metadataKeyHoldVoidDestination)
-}
-
-func MetadataKeyHoldDestination() string {
-	return metadata.SpecMetadata(metadataKeyHoldDestination)
-}
-
 func WalletTransactionBaseMetadata() metadata.Metadata {
 	return metadata.Metadata{
-		MetadataKeyWalletTransactionMarker(): true,
+		MetadataKeyWalletTransaction: true,
 	}
 }
 
 func WalletTransactionBaseMetadataFilter() metadata.Metadata {
 	return metadata.Metadata{
-		MetadataKeyWalletTransactionMarkerFilter(): true,
+		MetadataKeyWalletTransaction: true,
 	}
 }
 
 func IsPrimary(v metadata.Owner) bool {
-	return HasMetadata(v, MetadataKeyWalletSpecType(), PrimaryWallet)
+	return HasMetadata(v, MetadataKeyWalletSpecType, PrimaryWallet)
 }
 
 func IsHold(v metadata.Owner) bool {
-	return HasMetadata(v, MetadataKeyWalletSpecType(), HoldWallet)
+	return HasMetadata(v, MetadataKeyWalletSpecType, HoldWallet)
 }
 
 func GetMetadata(v metadata.Owner, key string) any {
@@ -124,7 +54,7 @@ func HasMetadata(v metadata.Owner, key, value string) bool {
 }
 
 func SpecType(v metadata.Owner) string {
-	return GetMetadata(v, MetadataKeyWalletSpecType()).(string)
+	return GetMetadata(v, MetadataKeyWalletSpecType).(string)
 }
 
 type Wallet struct {
@@ -140,10 +70,10 @@ type WalletWithBalances struct {
 
 func (w Wallet) LedgerMetadata() metadata.Metadata {
 	return metadata.Metadata{
-		MetadataKeyWalletSpecType():   PrimaryWallet,
-		MetadataKeyWalletID():         w.ID,
-		MetadataKeyWalletCustomData(): map[string]any(w.Metadata),
-		MetadataKeyWalletName():       w.Name,
+		MetadataKeyWalletSpecType:   PrimaryWallet,
+		MetadataKeyWalletID:         w.ID,
+		MetadataKeyWalletCustomData: map[string]any(w.Metadata),
+		MetadataKeyWalletName:       w.Name,
 	}
 }
 
@@ -160,9 +90,9 @@ func NewWallet(name string, m metadata.Metadata) Wallet {
 
 func WalletFromAccount(account metadata.Owner) Wallet {
 	return Wallet{
-		ID:       GetMetadata(account, MetadataKeyWalletID()).(string),
-		Metadata: GetMetadata(account, MetadataKeyWalletCustomData()).(map[string]any),
-		Name:     GetMetadata(account, MetadataKeyWalletName()).(string),
+		ID:       GetMetadata(account, MetadataKeyWalletID).(string),
+		Metadata: GetMetadata(account, MetadataKeyWalletCustomData).(map[string]any),
+		Name:     GetMetadata(account, MetadataKeyWalletName).(string),
 	}
 }
 
