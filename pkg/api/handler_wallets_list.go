@@ -10,6 +10,7 @@ func (m *MainHandler) ListWalletsHandler(w http.ResponseWriter, r *http.Request)
 	query := readPaginatedRequest[wallet.ListWallets](r, func(r *http.Request) wallet.ListWallets {
 		return wallet.ListWallets{
 			Metadata: getQueryMap(r.URL.Query(), "metadata"),
+			Name:     r.URL.Query().Get("name"),
 		}
 	})
 	response, err := m.repository.ListWallets(r.Context(), query)

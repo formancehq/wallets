@@ -101,6 +101,49 @@ func TestWalletsList(t *testing.T) {
 	require.EqualValues(t, cursor.Data, wallets[pageSize:pageSize*2])
 }
 
+func TestWalletsListByName(t *testing.T) {
+	t.Parallel()
+
+	var wallets []core.Wallet
+	for i := 0; i < 10; i++ {
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{}))
+	}
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+			require.Equal(t, defaultLimit, query.Limit)
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, map[string]any{
+				core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
+				core.MetadataKeyWalletName():     wallets[1].Name,
+			}, query.Metadata)
+
+			hasMore := false
+			next := ""
+			return &sdk.ListAccounts200ResponseCursor{
+				PageSize: defaultLimit,
+				HasMore:  &hasMore,
+				Next:     &next,
+				Data: []sdk.Account{{
+					Address:  testEnv.Chart().GetMainAccount(wallets[1].ID),
+					Metadata: wallets[1].LedgerMetadata(),
+				}},
+			}, nil
+		}),
+	)
+
+	req := newRequest(t, http.MethodGet, fmt.Sprintf("/wallets?name=%s", wallets[1].Name), nil)
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	cursor := &sharedapi.Cursor[core.Wallet]{}
+	readCursor(t, rec, cursor)
+	require.Len(t, cursor.Data, 1)
+	require.EqualValues(t, cursor.Data[0], wallets[1])
+}
+
 func TestWalletsListFilterMetadata(t *testing.T) {
 	t.Parallel()
 
