@@ -18,7 +18,7 @@ func TestHoldsGet(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodGet, "/wallets/"+walletID+"/holds/"+hold.ID, nil)
+	req := newRequest(t, http.MethodGet, "/holds/"+hold.ID, nil)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
@@ -27,12 +27,18 @@ func TestHoldsGet(t *testing.T) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
 			balances := map[string]int32{
-				"USD": 100,
+				"USD": 50,
+			}
+			volumes := map[string]map[string]int32{
+				"USD": {
+					"input": 100,
+				},
 			}
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
 				Metadata: hold.LedgerMetadata(testEnv.Chart()),
 				Balances: &balances,
+				Volumes:  &volumes,
 			}, nil
 		}),
 	)
@@ -40,7 +46,11 @@ func TestHoldsGet(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
 
-	ret := core.DebitHold{}
+	ret := core.ExpandedDebitHold{}
 	readResponse(t, rec, &ret)
-	require.EqualValues(t, hold, ret)
+	require.EqualValues(t, core.ExpandedDebitHold{
+		DebitHold:      hold,
+		OriginalAmount: *core.NewMonetaryInt(100),
+		Remaining:      *core.NewMonetaryInt(50),
+	}, ret)
 }

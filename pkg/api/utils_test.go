@@ -11,14 +11,22 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
-	"github.com/formancehq/go-libs/sharedapi"
-	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
+	sharedapi "github.com/formancehq/go-libs/api"
+	sharedhealth "github.com/formancehq/go-libs/health"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
+
+func readErrorResponse(t *testing.T, rec *httptest.ResponseRecorder) *sharedapi.ErrorResponse {
+	t.Helper()
+	ret := &sharedapi.ErrorResponse{}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(ret))
+	return ret
+}
 
 func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 	t.Helper()
@@ -82,22 +90,24 @@ func newTestEnv(opts ...Option) *testEnv {
 }
 
 type (
-	addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata core.Metadata) error
+	addMetadataToAccountFn func(ctx context.Context, ledger, account string, metadata metadata.Metadata) error
 	getAccountFn           func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
-	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error)
+	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
+	listTransactionsFn     func(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
 	createTransactionFn    func(ctx context.Context, name string, transaction sdk.TransactionData) error
-	runScriptFn            func(ctx context.Context, name string, script sdk.Script) error
+	runScriptFn            func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error)
 )
 
 type LedgerMock struct {
 	addMetadataToAccount addMetadataToAccountFn
 	getAccount           getAccountFn
 	listAccounts         listAccountsFn
+	listTransactions     listTransactionsFn
 	createTransaction    createTransactionFn
 	runScript            runScriptFn
 }
 
-func (l *LedgerMock) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata core.Metadata) error {
+func (l *LedgerMock) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata metadata.Metadata) error {
 	return l.addMetadataToAccount(ctx, ledger, account, metadata)
 }
 
@@ -105,7 +115,7 @@ func (l *LedgerMock) GetAccount(ctx context.Context, ledger, account string) (*s
 	return l.getAccount(ctx, ledger, account)
 }
 
-func (l *LedgerMock) ListAccounts(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+func (l *LedgerMock) ListAccounts(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 	return l.listAccounts(ctx, ledger, query)
 }
 
@@ -113,8 +123,12 @@ func (l *LedgerMock) CreateTransaction(ctx context.Context, name string, transac
 	return l.createTransaction(ctx, name, transaction)
 }
 
-func (l *LedgerMock) RunScript(ctx context.Context, name string, script sdk.Script) error {
+func (l *LedgerMock) RunScript(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 	return l.runScript(ctx, name, script)
+}
+
+func (l *LedgerMock) ListTransactions(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error) {
+	return l.listTransactions(ctx, ledger, query)
 }
 
 var _ wallet.Ledger = &LedgerMock{}
@@ -148,6 +162,12 @@ func WithCreateTransaction(fn createTransactionFn) Option {
 func WithListAccounts(fn listAccountsFn) Option {
 	return func(mock *LedgerMock) {
 		mock.listAccounts = fn
+	}
+}
+
+func WithListTransactions(fn listTransactionsFn) Option {
+	return func(mock *LedgerMock) {
+		mock.listTransactions = fn
 	}
 }
 

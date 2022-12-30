@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
-	"github.com/formancehq/go-libs/sharedapi"
+	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
@@ -25,12 +26,55 @@ func TestHoldsList(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		holds = append(holds, core.NewDebitHold(walletID, "bank", "USD"))
 	}
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+			require.Equal(t, defaultLimit, query.Limit)
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.EqualValues(t, metadata.Metadata{
+				core.MetadataKeyWalletSpecType(): core.HoldWallet,
+			}, query.Metadata)
+
+			hasMore := false
+			accounts := make([]sdk.Account, 0)
+			for _, wallet := range holds {
+				accounts = append(accounts, sdk.Account{
+					Address:  testEnv.Chart().GetMainAccount(wallet.ID),
+					Metadata: wallet.LedgerMetadata(testEnv.Chart()),
+				})
+			}
+			return &sdk.ListAccounts200ResponseCursor{
+				PageSize: defaultLimit,
+				HasMore:  &hasMore,
+				Data:     accounts,
+			}, nil
+		}),
+	)
+	req := newRequest(t, http.MethodGet, "/holds", nil)
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	cursor := &sharedapi.Cursor[core.DebitHold]{}
+	readCursor(t, rec, cursor)
+}
+
+func TestHoldsListWithPagination(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+
+	holds := make([]core.DebitHold, 0)
+	for i := 0; i < 10; i++ {
+		holds = append(holds, core.NewDebitHold(walletID, "bank", "USD"))
+	}
 	const pageSize = 2
 	numberOfPages := int64(len(holds) / pageSize)
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
-		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 			if query.PaginationToken != "" {
 				page, err := strconv.ParseInt(query.PaginationToken, 10, 64)
 				if err != nil {
@@ -61,9 +105,9 @@ func TestHoldsList(t *testing.T) {
 
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.EqualValues(t, core.Metadata{
-				core.MetadataKeySpecType:     core.HoldWallet,
-				core.MetadataKeyHoldWalletID: walletID,
+			require.EqualValues(t, metadata.Metadata{
+				core.MetadataKeyWalletSpecType(): core.HoldWallet,
+				core.MetadataKeyHoldWalletID():   walletID,
 			}, query.Metadata)
 
 			hasMore := true
@@ -83,7 +127,7 @@ func TestHoldsList(t *testing.T) {
 			}, nil
 		}),
 	)
-	req := newRequest(t, http.MethodGet, fmt.Sprintf("/wallets/%s/holds?limit=%d", walletID, pageSize), nil)
+	req := newRequest(t, http.MethodGet, fmt.Sprintf("/holds?walletID=%s&limit=%d", walletID, pageSize), nil)
 	rec := httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
 
@@ -93,7 +137,7 @@ func TestHoldsList(t *testing.T) {
 	require.Len(t, cursor.Data, pageSize)
 	require.EqualValues(t, holds[:pageSize], cursor.Data)
 
-	req = newRequest(t, http.MethodGet, fmt.Sprintf("/wallets/%s/holds?cursor=%s", walletID, cursor.Next), nil)
+	req = newRequest(t, http.MethodGet, fmt.Sprintf("/holds?walletID=%s&cursor=%s", walletID, cursor.Next), nil)
 	rec = httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
 

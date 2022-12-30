@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	sharedhealth "github.com/formancehq/go-libs/sharedhealth/pkg"
+	sharedhealth "github.com/formancehq/go-libs/health"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -33,19 +33,22 @@ func NewRouter(
 		r.Route("/wallets", func(r chi.Router) {
 			r.Get("/", main.ListWalletsHandler)
 			r.Post("/", main.CreateWalletHandler)
-			r.Route("/{wallet_id}", func(r chi.Router) {
+			r.Route("/{walletID}", func(r chi.Router) {
 				r.Get("/", main.GetWalletHandler)
 				r.Patch("/", main.PatchWalletHandler)
 				r.Post("/debit", main.DebitWalletHandler)
 				r.Post("/credit", main.CreditWalletHandler)
-				r.Route("/holds", func(r chi.Router) {
-					r.Get("/", main.ListHoldsHandler)
-					r.Route("/{hold_id}", func(r chi.Router) {
-						r.Get("/", main.GetHoldHandler)
-						r.Post("/confirm", main.ConfirmHoldHandler)
-						r.Post("/void", main.VoidHoldHandler)
-					})
-				})
+			})
+		})
+		r.Route("/transactions", func(r chi.Router) {
+			r.Get("/", main.ListTransactions)
+		})
+		r.Route("/holds", func(r chi.Router) {
+			r.Get("/", main.ListHoldsHandler)
+			r.Route("/{holdID}", func(r chi.Router) {
+				r.Get("/", main.GetHoldHandler)
+				r.Post("/confirm", main.ConfirmHoldHandler)
+				r.Post("/void", main.VoidHoldHandler)
 			})
 		})
 	})

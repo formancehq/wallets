@@ -9,7 +9,7 @@ import (
 )
 
 func (m *MainHandler) GetWalletHandler(wr http.ResponseWriter, r *http.Request) {
-	w, err := m.repository.GetWallet(r.Context(), chi.URLParam(r, "wallet_id"))
+	w, err := m.repository.GetWallet(r.Context(), chi.URLParam(r, "walletID"))
 	if err != nil {
 		switch {
 		case errors.Is(err, wallet.ErrWalletNotFound):

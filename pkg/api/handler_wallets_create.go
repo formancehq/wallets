@@ -3,14 +3,14 @@ package api
 import (
 	"net/http"
 
-	"github.com/formancehq/wallets/pkg/core"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/render"
 )
 
 type CreateWalletRequest struct {
-	Metadata core.Metadata `json:"metadata"`
-	Name     string        `json:"name"`
+	Metadata metadata.Metadata `json:"metadata"`
+	Name     string            `json:"name"`
 }
 
 func (c *CreateWalletRequest) Bind(r *http.Request) error {
@@ -21,7 +21,7 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 	data := &CreateWalletRequest{}
 	if r.ContentLength > 0 {
 		if err := render.Bind(r, data); err != nil {
-			badRequest(w, err)
+			badRequest(w, ErrorCodeValidation, err)
 			return
 		}
 	}

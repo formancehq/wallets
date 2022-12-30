@@ -5,11 +5,14 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"github.com/formancehq/go-libs/sharedapi"
-	"github.com/formancehq/go-libs/sharedlogging"
+	sharedapi "github.com/formancehq/go-libs/api"
+	sharedlogging "github.com/formancehq/go-libs/logging"
 	"github.com/formancehq/wallets/pkg/wallet"
 )
+
+const defaultLimit = 15
 
 func notFound(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
@@ -19,10 +22,10 @@ func noContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func badRequest(w http.ResponseWriter, err error) {
+func badRequest(w http.ResponseWriter, code string, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
-		ErrorCode:    "INTERNAL_ERROR",
+		ErrorCode:    code,
 		ErrorMessage: err.Error(),
 	}); err != nil {
 		panic(err)
@@ -76,8 +79,6 @@ func parsePaginationToken(r *http.Request) string {
 	return r.URL.Query().Get("cursor")
 }
 
-const defaultLimit = 15
-
 func parseLimit(r *http.Request) int {
 	limit := r.URL.Query().Get("limit")
 	if limit == "" {
@@ -89,4 +90,28 @@ func parseLimit(r *http.Request) int {
 		panic(err)
 	}
 	return int(v)
+}
+
+func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) wallet.ListQuery[T] {
+	var payload T
+	if f != nil {
+		payload = f(r)
+	}
+	return wallet.ListQuery[T]{
+		Limit:           parseLimit(r),
+		PaginationToken: parsePaginationToken(r),
+		Payload:         payload,
+	}
+}
+
+func getQueryMap(m map[string][]string, key string) map[string]any {
+	dicts := make(map[string]any)
+	for k, v := range m {
+		if i := strings.IndexByte(k, '['); i >= 1 && k[0:i] == key {
+			if j := strings.IndexByte(k[i+1:], ']'); j >= 1 {
+				dicts[k[i+1:][:j]] = v[0]
+			}
+		}
+	}
+	return dicts
 }

@@ -28,6 +28,8 @@ linters:
     - testpackage
     - lll
     - dupl
+    - nosnakecase
+    - nestif
 
 run:
   timeout: 5m

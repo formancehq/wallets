@@ -20,7 +20,7 @@ func TestHoldsVoid(t *testing.T) {
 	walletID := uuid.NewString()
 	hold := core.NewDebitHold(walletID, "bank", "USD")
 
-	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/holds/"+hold.ID+"/void", nil)
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/void", nil)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
@@ -29,19 +29,31 @@ func TestHoldsVoid(t *testing.T) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
 
+			balances := map[string]int32{
+				"USD": 100,
+			}
+			volumes := map[string]map[string]int32{
+				"USD": {
+					"input": 100,
+				},
+			}
+
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  testEnv.Chart().GetHoldAccount(hold.ID),
 				Metadata: hold.LedgerMetadata(testEnv.Chart()),
+				Balances: &balances,
+				Volumes:  &volumes,
 			}, nil
 		}),
-		WithRunScript(func(ctx context.Context, name string, script sdk.Script) error {
+		WithRunScript(func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.Equal(t, sdk.Script{
 				Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", "USD"),
 				Vars: map[string]interface{}{
 					"hold": testEnv.Chart().GetHoldAccount(hold.ID),
 				},
+				Metadata: core.WalletTransactionBaseMetadata(),
 			}, script)
-			return nil
+			return &sdk.ScriptResult{}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)

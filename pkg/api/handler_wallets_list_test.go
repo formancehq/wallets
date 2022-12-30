@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
-	"github.com/formancehq/go-libs/sharedapi"
+	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
@@ -21,14 +22,14 @@ func TestWalletsList(t *testing.T) {
 
 	var wallets []core.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), core.Metadata{}))
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{}))
 	}
 	const pageSize = 2
 	numberOfPages := int64(len(wallets) / pageSize)
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
-		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 			if query.PaginationToken != "" {
 				page, err := strconv.ParseInt(query.PaginationToken, 10, 64)
 				if err != nil {
@@ -60,7 +61,7 @@ func TestWalletsList(t *testing.T) {
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeySpecType: core.PrimaryWallet,
+				core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
 			}, query.Metadata)
 
 			hasMore := true
@@ -98,4 +99,50 @@ func TestWalletsList(t *testing.T) {
 	readCursor(t, rec, cursor)
 	require.Len(t, cursor.Data, pageSize)
 	require.EqualValues(t, cursor.Data, wallets[pageSize:pageSize*2])
+}
+
+func TestWalletsListFilterMetadata(t *testing.T) {
+	t.Parallel()
+
+	var wallets []core.Wallet
+	for i := 0; i < 10; i++ {
+		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{
+			"wallet": float64(i),
+		}))
+	}
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
+			require.Equal(t, defaultLimit, query.Limit)
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, map[string]any{
+				core.MetadataKeyWalletSpecType():               core.PrimaryWallet,
+				core.MetadataKeyWalletCustomData() + ".wallet": "2",
+			}, query.Metadata)
+
+			hasMore := false
+			next := ""
+
+			return &sdk.ListAccounts200ResponseCursor{
+				PageSize: defaultLimit,
+				HasMore:  &hasMore,
+				Next:     &next,
+				Data: []sdk.Account{{
+					Address:  testEnv.Chart().GetMainAccount(wallets[2].ID),
+					Metadata: wallets[2].LedgerMetadata(),
+				}},
+			}, nil
+		}),
+	)
+
+	req := newRequest(t, http.MethodGet, "/wallets?metadata[wallet]=2", nil)
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	cursor := &sharedapi.Cursor[core.Wallet]{}
+	readCursor(t, rec, cursor)
+	require.Len(t, cursor.Data, 1)
+	require.EqualValues(t, cursor.Data[0], wallets[2])
 }

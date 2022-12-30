@@ -5,12 +5,51 @@ info:
   version: 0.1.0
 
 paths:
+  /transactions:
+    get:
+      operationId: getTransactions
+      parameters:
+      - name: limit
+        in: query
+        description: 'The maximum number of results to return per page'
+        example: 100
+        schema:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 15
+      - name: wallet_id
+        in: query
+        description: "A wallet ID to filter on"
+        example: "wallet1"
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: |
+          Parameter used in pagination requests.
+          Set to the value of next for the next page of results.
+          Set to the value of previous for the previous page of results.
+          No other parameters can be set when the cursor is set.
+        schema:
+          type: string
+          example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
+      tags:
+      - Wallets
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTransactionsResponse'
+
   /wallets:
     get:
       summary: Get all wallets
       operationId: getWallets
       parameters:
-      - name: page_size
+      - name: limit
         in: query
         description: 'The maximum number of results to return per page'
         example: 100
@@ -25,10 +64,10 @@ paths:
         schema:
           type: string
           example: users:003
-      - name: pagination_token
+      - name: cursor
         in: query
         description: |
-          Parameter used in pagination requests. Maximum page size is set to 15.
+          Parameter used in pagination requests.
           Set to the value of next for the next page of results.
           Set to the value of previous for the previous page of results.
           No other parameters can be set when the pagination token is set.
@@ -118,20 +157,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-              - amount
-              properties:
-                amount:
-                  $ref: '#/components/schemas/Monetary'
-                pending:
-                  type: boolean
-                  description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
-            example:
-              amount:
-                asset: USD/2
-                amount: 100
-              pending: true
+              $ref: '#/components/schemas/DebitWalletRequest'
       responses:
         200:
           description: Wallet successfully debited as a pending hold
@@ -158,12 +184,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-              - amount
-              properties:
-                amount:
-                  $ref: '#/components/schemas/Monetary'
+              $ref: '#/components/schemas/CreditWalletRequest'
             example:
               amount:
                 asset: USD/2
@@ -172,18 +193,38 @@ paths:
         204:
           description: Wallet successfully credited
 
-  /wallets/{id}/holds:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+  /holds:
     get:
       summary: Get all holds for a wallet
       tags:
         - Wallets
       operationId: getHolds
+      parameters:
+      - name: limit
+        in: query
+        description: 'The maximum number of results to return per page'
+        example: 100
+        schema:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 15
+      - name: walletID
+        in: query
+        description: 'The wallet to filter on'
+        example: wallet1
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: |
+          Parameter used in pagination requests.
+          Set to the value of next for the next page of results.
+          Set to the value of previous for the previous page of results.
+          No other parameters can be set when the pagination token is set.
+        schema:
+          type: string
+          example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
       responses:
         200:
           description: Holds
@@ -192,19 +233,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetHoldsResponse'
 
-  /wallets/{id}/holds/{hold_id}/confirm:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+  /holds/{hold_id}/confirm:
+    post:
+      parameters:
       - name: hold_id
         in: path
         required: true
         schema:
           type: string
-    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmHoldRequest'
       summary: Confirm a hold
       tags:
         - Wallets
@@ -213,13 +254,8 @@ paths:
         204:
           description: Hold successfully confirmed, funds moved back to initial destination
 
-  /wallets/{id}/holds/{hold_id}/void:
+  /holds/{hold_id}/void:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: hold_id
         in: path
         required: true
@@ -247,6 +283,7 @@ components:
           description: The asset of the monetary value.
         amount:
           type: number
+          format: int64
           description: The amount of the monetary value.
     Wallet:
       type: object
@@ -301,15 +338,32 @@ components:
           type: object
           description: Metadata associated with the hold.
           additionalProperties: {}
+        remaining:
+          type: number
+          description: Remaining amount on hold
+          example: 10
+          format: int64
+        originalAmount:
+          type: number
+          description: Original amount on hold
+          example: 100
+          format: int64
     GetWalletsResponse:
       type: object
       required:
-      - data
+      - cursor
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Wallet'
+        cursor:
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Wallet'
+                type: array
+            type: object
+            required:
+            - data
     CreateWalletResponse:
       type: object
       required:
@@ -331,15 +385,118 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/Hold'
+    AggregatedVolumes:
+      type: object
+      x-go-type:
+        type: AggregatedVolumes
+      additionalProperties:
+        $ref: '#/components/schemas/Volumes'
+    Metadata:
+      type: object
+      nullable: true
+      additionalProperties: {}
+      example: { admin: true, a: { nested: { key: value } } }
+    Posting:
+      type: object
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 100
+        asset:
+          type: string
+          example: COIN
+        destination:
+          type: string
+          example: users:002
+        source:
+          type: string
+          example: users:001
+      required:
+      - amount
+      - asset
+      - destination
+      - source
+    Transaction:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        postings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Posting'
+        reference:
+          type: string
+          example: ref:001
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        txid:
+          type: integer
+          format: int64
+          minimum: 0
+        preCommitVolumes:
+          $ref: '#/components/schemas/AggregatedVolumes'
+        postCommitVolumes:
+          $ref: '#/components/schemas/AggregatedVolumes'
+      required:
+      - postings
+      - timestamp
+      - txid
+    Cursor:
+      type: object
+      required:
+      - pageSize
+      properties:
+        pageSize:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000
+          example: 15
+        hasMore:
+          type: boolean
+          example: false
+        previous:
+          type: string
+          example: "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol="
+        next:
+          type: string
+          example: ""
+    GetTransactionsResponse:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Transaction'
+                type: array
+            type: object
+            required:
+            - data
     GetHoldsResponse:
       type: object
       required:
-      - data
+      - cursor
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Hold'
+        cursor:
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Hold'
+                type: array
+            type: object
+            required:
+            - data
     CreateWalletRequest:
       type: object
       required:
@@ -351,3 +508,71 @@ components:
           additionalProperties: {}
         name:
           type: string
+    Volume:
+      type: object
+      properties:
+        input:
+          type: number
+        output:
+          type: number
+        balance:
+          type: number
+      required:
+      - input
+      - output
+      - balance
+      example:
+        input: 100
+        output: 20
+        balance: 80
+    Volumes:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Volume'
+      example:
+        USD:
+          input: 100
+          output: 10
+          balance: 90
+        EUR:
+          input: 100
+          output: 10
+          balance: 90
+    ConfirmHoldRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: int64
+          example: 100
+          description: Define the amount to transfer.
+        final:
+          type: boolean
+          example: true
+          description: Define a final confirmation. Remaining funds will be returned to the wallet.
+    CreditWalletRequest:
+      type: object
+      required:
+      - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/Monetary'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+    DebitWalletRequest:
+      type: object
+      required:
+      - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/Monetary'
+        pending:
+          type: boolean
+          description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      example:
+        amount:
+          asset: USD/2
+          amount: 100
+        pending: true

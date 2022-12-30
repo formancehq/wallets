@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -49,7 +50,52 @@ func TestWalletsDebit(t *testing.T) {
 			Source:      testEnv.Chart().GetMainAccount(walletID),
 			Destination: "world",
 		}},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}, transactionData)
+}
+
+type genericError struct {
+	errorCode sdk.ErrorCode
+}
+
+func (e genericError) Error() string {
+	return ""
+}
+
+func (e genericError) Model() interface{} {
+	return e
+}
+
+func (e genericError) GetErrorCode() sdk.ErrorCode {
+	return e.errorCode
+}
+
+func TestWalletsDebitWithInsufficientFund(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	debitWalletRequest := DebitWalletRequest{
+		Amount: core.Monetary{
+			Amount: core.NewMonetaryInt(100),
+			Asset:  "USD",
+		},
+	}
+
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", debitWalletRequest)
+	rec := httptest.NewRecorder()
+
+	testEnv := newTestEnv(
+		WithCreateTransaction(func(ctx context.Context, l string, t sdk.TransactionData) error {
+			return &genericError{
+				errorCode: sdk.INSUFFICIENT_FUND,
+			}
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeInsufficientFund, errorResponse.ErrorCode)
 }
 
 func TestWalletsDebitWithHold(t *testing.T) {
@@ -70,14 +116,14 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	var (
 		ledger          string
 		account         string
-		metadata        core.Metadata
+		meta            metadata.Metadata
 		transactionData sdk.TransactionData
 	)
 	testEnv := newTestEnv(
-		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m core.Metadata) error {
+		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m metadata.Metadata) error {
 			ledger = l
 			account = a
-			metadata = m
+			meta = m
 			return nil
 		}),
 		WithCreateTransaction(func(ctx context.Context, l string, td sdk.TransactionData) error {
@@ -96,7 +142,7 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
 	require.Equal(t, walletID, hold.WalletID)
 	require.Equal(t, debitWalletRequest.Amount.Asset, hold.Asset)
-	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), metadata)
+	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), meta)
 	require.Equal(t, sdk.TransactionData{
 		Postings: []sdk.Posting{{
 			Amount:      100,
@@ -104,5 +150,6 @@ func TestWalletsDebitWithHold(t *testing.T) {
 			Source:      testEnv.Chart().GetMainAccount(walletID),
 			Destination: testEnv.Chart().GetHoldAccount(hold.ID),
 		}},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}, transactionData)
 }

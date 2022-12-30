@@ -4,14 +4,14 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/formancehq/wallets/pkg/core"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type PatchWalletRequest struct {
-	Metadata core.Metadata `json:"metadata"`
+	Metadata metadata.Metadata `json:"metadata"`
 }
 
 func (c *PatchWalletRequest) Bind(r *http.Request) error {
@@ -21,11 +21,11 @@ func (c *PatchWalletRequest) Bind(r *http.Request) error {
 func (m *MainHandler) PatchWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &PatchWalletRequest{}
 	if err := render.Bind(r, data); err != nil {
-		badRequest(w, err)
+		badRequest(w, ErrorCodeValidation, err)
 		return
 	}
 
-	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "wallet_id"), &wallet.Data{
+	err := m.repository.UpdateWallet(r.Context(), chi.URLParam(r, "walletID"), &wallet.Data{
 		Metadata: data.Metadata,
 	})
 	if err != nil {

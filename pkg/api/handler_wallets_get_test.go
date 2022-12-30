@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 func TestWalletsGet(t *testing.T) {
 	t.Parallel()
 
-	wallet := core.NewWallet(uuid.NewString(), core.Metadata{})
+	wallet := core.NewWallet(uuid.NewString(), metadata.Metadata{})
 	balances := map[string]int32{
 		"USD": 100,
 	}

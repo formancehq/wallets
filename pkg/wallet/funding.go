@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet/numscript"
 	"github.com/pkg/errors"
@@ -43,8 +44,9 @@ type Debit struct {
 
 type ConfirmHold struct {
 	HoldID    string `json:"holdID"`
-	Amount    core.Monetary
+	Amount    core.MonetaryInt
 	Reference string
+	Final     bool
 }
 
 type VoidHold struct {
@@ -52,10 +54,11 @@ type VoidHold struct {
 }
 
 type Credit struct {
-	WalletID  string        `json:"walletID"`
-	Source    string        `json:"source"`
-	Amount    core.Monetary `json:"amount"`
-	Reference string        `json:"reference"`
+	WalletID  string            `json:"walletID"`
+	Source    string            `json:"source"`
+	Amount    core.Monetary     `json:"amount"`
+	Reference string            `json:"reference"`
+	Metadata  metadata.Metadata `json:"metadata"`
 }
 
 func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHold, error) {
@@ -88,6 +91,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 				Destination: dest,
 			},
 		},
+		Metadata: core.WalletTransactionBaseMetadata(),
 	}
 
 	if debit.Reference != "" {
@@ -95,10 +99,27 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 	}
 
 	if err := s.client.CreateTransaction(ctx, s.ledgerName, transaction); err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
+		return nil, handleCreateTransactionError(err)
 	}
 
 	return hold, nil
+}
+
+func (s *FundingService) runScript(ctx context.Context, script sdk.Script) error {
+	ret, err := s.client.RunScript(ctx, s.ledgerName, script)
+	if err != nil {
+		return err
+	}
+	if ret.ErrorCode == nil {
+		return nil
+	}
+	if *ret.ErrorCode == string(sdk.INSUFFICIENT_FUND) {
+		return ErrInsufficientFundError
+	}
+	if ret.ErrorMessage != nil {
+		return errors.New(*ret.ErrorMessage)
+	}
+	return errors.New(*ret.ErrorCode)
 }
 
 func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) error {
@@ -109,35 +130,38 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 		return errors.Wrap(err, "getting account")
 	}
 
-	mType, ok := account.Metadata[core.MetadataKeySpecType]
-	if !ok {
-		return ErrHoldNotFound
+	if !core.IsHold(account) {
+		return newErrMismatchType(core.HoldWallet, core.SpecType(account))
 	}
 
-	if mType, ok := mType.(string); !ok || mType != core.HoldWallet {
-		return NewErrMismatchType(core.HoldWallet, mType)
+	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
+
+	if hold.Remaining.Uint64() == 0 {
+		return ErrClosedHold
 	}
 
-	var asset string
-	for key := range *account.Balances {
-		asset = key
-		break
+	amount := hold.Remaining.Uint64()
+	if debit.Amount.Uint64() != 0 {
+		if debit.Amount.Uint64() > amount {
+			return ErrInsufficientFundError
+		}
+		amount = debit.Amount.Uint64()
 	}
 
-	if err := s.client.RunScript(
+	return s.runScript(
 		ctx,
-		s.ledgerName,
 		sdk.Script{
-			Plain: strings.ReplaceAll(numscript.ConfirmHold, "ASSET", asset),
+			Plain: numscript.BuildConfirmHoldScript(debit.Final, hold.Asset),
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(debit.HoldID),
+				"amount": map[string]any{
+					"amount": amount,
+					"asset":  hold.Asset,
+				},
 			},
+			Metadata: core.WalletTransactionBaseMetadata(),
 		},
-	); err != nil {
-		return errors.Wrap(err, "running script")
-	}
-
-	return nil
+	)
 }
 
 func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
@@ -146,22 +170,18 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 		return errors.Wrap(err, "getting account")
 	}
 
-	hold := core.DebitHoldFromLedgerAccount(account)
-
-	if err := s.client.RunScript(
-		ctx,
-		s.ledgerName,
-		sdk.Script{
-			Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", hold.Asset),
-			Vars: map[string]interface{}{
-				"hold": s.chart.GetHoldAccount(void.HoldID),
-			},
-		},
-	); err != nil {
-		return errors.Wrap(err, "running script")
+	hold := core.ExpandedDebitHoldFromLedgerAccount(account)
+	if hold.Remaining.Uint64() == 0 {
+		return ErrClosedHold
 	}
 
-	return nil
+	return s.runScript(ctx, sdk.Script{
+		Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", hold.Asset),
+		Vars: map[string]interface{}{
+			"hold": s.chart.GetHoldAccount(void.HoldID),
+		},
+		Metadata: core.WalletTransactionBaseMetadata(),
+	})
 }
 
 func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
@@ -180,6 +200,9 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 				Destination: s.chart.GetMainAccount(credit.WalletID),
 			},
 		},
+		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
+			core.MetadataKeyWalletCustomData(): credit.Metadata,
+		}),
 	}
 
 	if credit.Reference != "" {
@@ -191,4 +214,21 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 	}
 
 	return nil
+}
+
+func handleCreateTransactionError(err error) error {
+	//nolint:errorlint
+	if err, ok := err.(interface {
+		error
+		Model() interface{}
+	}); ok {
+		if err, ok := err.(interface {
+			GetErrorCode() sdk.ErrorCode
+		}); ok {
+			if err.GetErrorCode() == sdk.INSUFFICIENT_FUND {
+				return ErrInsufficientFundError
+			}
+		}
+	}
+	return errors.Wrap(err, "running script")
 }

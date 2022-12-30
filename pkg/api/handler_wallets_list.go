@@ -7,10 +7,11 @@ import (
 )
 
 func (m *MainHandler) ListWalletsHandler(w http.ResponseWriter, r *http.Request) {
-	query := wallet.ListQuery[struct{}]{
-		Limit:           parseLimit(r),
-		PaginationToken: parsePaginationToken(r),
-	}
+	query := readPaginatedRequest[wallet.ListWallets](r, func(r *http.Request) wallet.ListWallets {
+		return wallet.ListWallets{
+			Metadata: getQueryMap(r.URL.Query(), "metadata"),
+		}
+	})
 	response, err := m.repository.ListWallets(r.Context(), query)
 	if err != nil {
 		internalError(w, r, err)
