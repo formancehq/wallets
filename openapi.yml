@@ -239,6 +239,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetHoldsResponse'
 
+  /holds/{holdID}:
+    get:
+      summary: Get a hold
+      tags:
+      - Wallets
+      operationId: getHold
+      parameters:
+      - name: holdID
+        in: path
+        schema:
+          type: string
+        required: true
+        description: The hold ID
+      responses:
+        200:
+          description: Holds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetHoldResponse'
+
   /holds/{hold_id}/confirm:
     post:
       parameters:
@@ -330,30 +351,38 @@ components:
       type: object
       required:
       - id
-      - wallet_id
+      - walletID
       - metadata
       properties:
         id:
           type: string
           format: uuid
           description: The unique ID of the hold.
-        wallet_id:
+        walletID:
           type: string
           description: The ID of the wallet the hold is associated with.
         metadata:
           type: object
           description: Metadata associated with the hold.
           additionalProperties: {}
-        remaining:
-          type: integer
-          description: Remaining amount on hold
-          example: 10
-          format: int64
-        originalAmount:
-          type: integer
-          description: Original amount on hold
-          example: 100
-          format: int64
+    ExpandedDebitHold:
+      allOf:
+      - $ref: '#/components/schemas/Hold'
+      - type: object
+        required:
+        - remaining
+        - originalAmount
+        properties:
+          remaining:
+            type: integer
+            description: Remaining amount on hold
+            example: 10
+            format: int64
+          originalAmount:
+            type: integer
+            description: Original amount on hold
+            example: 100
+            format: int64
     GetWalletsResponse:
       type: object
       required:
@@ -503,6 +532,13 @@ components:
             type: object
             required:
             - data
+    GetHoldResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ExpandedDebitHold'
     CreateWalletRequest:
       type: object
       required:
