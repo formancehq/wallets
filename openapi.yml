@@ -157,20 +157,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-              - amount
-              properties:
-                amount:
-                  $ref: '#/components/schemas/Monetary'
-                pending:
-                  type: boolean
-                  description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
-            example:
-              amount:
-                asset: USD/2
-                amount: 100
-              pending: true
+              $ref: '#/components/schemas/DebitWalletRequest'
       responses:
         200:
           description: Wallet successfully debited as a pending hold
@@ -197,12 +184,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-              - amount
-              properties:
-                amount:
-                  $ref: '#/components/schemas/Monetary'
+              $ref: '#/components/schemas/CreditWalletRequest'
             example:
               amount:
                 asset: USD/2
@@ -212,12 +194,6 @@ paths:
           description: Wallet successfully credited
 
   /holds:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
     get:
       summary: Get all holds for a wallet
       tags:
@@ -260,11 +236,6 @@ paths:
   /holds/{hold_id}/confirm:
     post:
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: hold_id
         in: path
         required: true
@@ -285,11 +256,6 @@ paths:
 
   /holds/{hold_id}/void:
     parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: hold_id
         in: path
         required: true
@@ -580,3 +546,29 @@ components:
           type: boolean
           example: true
           description: Define a final confirmation. Remaining funds will be returned to the wallet.
+    CreditWalletRequest:
+      type: object
+      required:
+      - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/Monetary'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+    DebitWalletRequest:
+      type: object
+      required:
+      - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/Monetary'
+        pending:
+          type: boolean
+          description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      example:
+        amount:
+          asset: USD/2
+          amount: 100
+        pending: true
