@@ -283,6 +283,7 @@ components:
           description: The asset of the monetary value.
         amount:
           type: number
+          format: int64
           description: The amount of the monetary value.
     Wallet:
       type: object
@@ -341,10 +342,12 @@ components:
           type: number
           description: Remaining amount on hold
           example: 10
+          format: int64
         originalAmount:
           type: number
           description: Original amount on hold
           example: 100
+          format: int64
     GetWalletsResponse:
       type: object
       required:
@@ -540,6 +543,7 @@ components:
       properties:
         amount:
           type: number
+          format: int64
           example: 100
           description: Define the amount to transfer.
         final:
