@@ -43,10 +43,10 @@ func TestWalletsPatch(t *testing.T) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, testEnv.Chart().GetMainAccount(wallet.ID), account)
 			require.EqualValues(t, metadata.Metadata{
-				core.MetadataKeyWalletID():       wallet.ID,
-				core.MetadataKeyWalletName():     wallet.Name,
-				core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
-				core.MetadataKeyWalletCustomData(): metadata.Metadata{
+				core.MetadataKeyWalletID:       wallet.ID,
+				core.MetadataKeyWalletName:     wallet.Name,
+				core.MetadataKeyWalletSpecType: core.PrimaryWallet,
+				core.MetadataKeyWalletCustomData: metadata.Metadata{
 					"role": "admin",
 					"foo":  "baz",
 				},

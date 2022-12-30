@@ -33,7 +33,7 @@ func TestHoldsList(t *testing.T) {
 			require.Equal(t, defaultLimit, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.EqualValues(t, metadata.Metadata{
-				core.MetadataKeyWalletSpecTypeFilter(): core.HoldWallet,
+				core.MetadataKeyWalletSpecType: core.HoldWallet,
 			}, query.Metadata)
 
 			hasMore := false
@@ -106,8 +106,8 @@ func TestHoldsListWithPagination(t *testing.T) {
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.EqualValues(t, metadata.Metadata{
-				core.MetadataKeyWalletSpecTypeFilter(): core.HoldWallet,
-				core.MetadataKeyHoldWalletIDFilter():   walletID,
+				core.MetadataKeyWalletSpecType: core.HoldWallet,
+				core.MetadataKeyHoldWalletID:   walletID,
 			}, query.Metadata)
 
 			hasMore := true

@@ -201,7 +201,7 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 			},
 		},
 		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
-			core.MetadataKeyWalletCustomData(): credit.Metadata,
+			core.MetadataKeyWalletCustomData: credit.Metadata,
 		}),
 	}
 

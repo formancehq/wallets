@@ -103,14 +103,14 @@ func (r *Repository) UpdateWallet(ctx context.Context, id string, data *Data) er
 	}
 
 	newCustomMetadata := metadata.Metadata{}
-	existingCustomMetadata := core.GetMetadata(account, core.MetadataKeyWalletCustomData())
+	existingCustomMetadata := core.GetMetadata(account, core.MetadataKeyWalletCustomData)
 	if existingCustomMetadata != nil {
 		newCustomMetadata = newCustomMetadata.Merge(existingCustomMetadata.(map[string]any))
 	}
 	newCustomMetadata = newCustomMetadata.Merge(data.Metadata)
 
 	meta := account.GetMetadata()
-	meta[core.MetadataKeyWalletCustomData()] = newCustomMetadata
+	meta[core.MetadataKeyWalletCustomData] = newCustomMetadata
 
 	if err := r.client.AddMetadataToAccount(ctx, r.ledgerName, r.chart.GetMainAccount(id), meta); err != nil {
 		return errors.Wrap(err, "adding metadata to account")
@@ -126,15 +126,15 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[ListWallet
 	)
 	if query.PaginationToken == "" {
 		metadata := map[string]interface{}{
-			core.MetadataKeyWalletSpecTypeFilter(): core.PrimaryWallet,
+			core.MetadataKeyWalletSpecType: core.PrimaryWallet,
 		}
 		if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
 			for k, v := range query.Payload.Metadata {
-				metadata[core.MetadataKeyWalletCustomDataFilter(k)] = v
+				metadata[core.MetadataKeyWalletCustomData+"."+k] = v
 			}
 		}
 		if query.Payload.Name != "" {
-			metadata[core.MetadataKeyWalletNameFilter()] = query.Payload.Name
+			metadata[core.MetadataKeyWalletName] = query.Payload.Name
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,
@@ -180,10 +180,10 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 	)
 	if query.PaginationToken == "" {
 		metadata := metadata.Metadata{
-			core.MetadataKeyWalletSpecTypeFilter(): core.HoldWallet,
+			core.MetadataKeyWalletSpecType: core.HoldWallet,
 		}
 		if query.Payload.WalletID != "" {
-			metadata[core.MetadataKeyHoldWalletIDFilter()] = query.Payload.WalletID
+			metadata[core.MetadataKeyHoldWalletID] = query.Payload.WalletID
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,
