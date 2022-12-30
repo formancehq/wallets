@@ -1,6 +1,9 @@
 package core
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
 )
@@ -21,16 +24,35 @@ const (
 	HoldWallet    = "wallets.hold"
 )
 
+func FilterMetadata(name string) string {
+	m := metadata.SpecMetadata(name)
+	//nolint:gomnd
+	parts := strings.SplitN(m, "/", 2)
+	return fmt.Sprintf(`"%s"/%s`, parts[0], parts[1])
+}
+
 func MetadataKeyWalletTransactionMarker() string {
 	return metadata.SpecMetadata(metadataKeyWalletTransaction)
+}
+
+func MetadataKeyWalletTransactionMarkerFilter() string {
+	return FilterMetadata(metadataKeyWalletTransaction)
 }
 
 func MetadataKeyWalletSpecType() string {
 	return metadata.SpecMetadata(metadataKeySpecType)
 }
 
+func MetadataKeyWalletSpecTypeFilter() string {
+	return FilterMetadata(metadataKeySpecType)
+}
+
 func MetadataKeyWalletID() string {
 	return metadata.SpecMetadata(metadataKeyWalletID)
+}
+
+func MetadataKeyWalletIDFilter() string {
+	return FilterMetadata(metadataKeyWalletID)
 }
 
 func MetadataKeyHoldID() string {
@@ -41,6 +63,10 @@ func MetadataKeyHoldWalletID() string {
 	return metadata.SpecMetadata(metadataKeyHoldWalletID)
 }
 
+func MetadataKeyHoldWalletIDFilter() string {
+	return FilterMetadata(metadataKeyHoldWalletID)
+}
+
 func MetadataKeyHoldAsset() string {
 	return metadata.SpecMetadata(metadataKeyHoldAsset)
 }
@@ -49,8 +75,16 @@ func MetadataKeyWalletCustomData() string {
 	return metadata.SpecMetadata(metadataKeyWalletCustomData)
 }
 
+func MetadataKeyWalletCustomDataFilter(key string) string {
+	return FilterMetadata(metadataKeyWalletCustomData) + "." + key
+}
+
 func MetadataKeyWalletName() string {
 	return metadata.SpecMetadata(metadataKeyWalletName)
+}
+
+func MetadataKeyWalletNameFilter() string {
+	return FilterMetadata(metadataKeyWalletName)
 }
 
 func MetadataKeyHoldVoidDestination() string {
@@ -64,6 +98,12 @@ func MetadataKeyHoldDestination() string {
 func WalletTransactionBaseMetadata() metadata.Metadata {
 	return metadata.Metadata{
 		MetadataKeyWalletTransactionMarker(): true,
+	}
+}
+
+func WalletTransactionBaseMetadataFilter() metadata.Metadata {
+	return metadata.Metadata{
+		MetadataKeyWalletTransactionMarkerFilter(): true,
 	}
 }
 
