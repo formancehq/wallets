@@ -51,6 +51,7 @@ type ListTransactions struct {
 
 type ListWallets struct {
 	Metadata metadata.Metadata
+	Name     string
 }
 
 type Repository struct {
@@ -131,6 +132,9 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[ListWallet
 			for k, v := range query.Payload.Metadata {
 				metadata[core.MetadataKeyWalletCustomData()+"."+k] = v
 			}
+		}
+		if query.Payload.Name != "" {
+			metadata[core.MetadataKeyWalletName()] = query.Payload.Name
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,

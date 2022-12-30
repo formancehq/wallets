@@ -49,6 +49,12 @@ paths:
       summary: Get all wallets
       operationId: getWallets
       parameters:
+      - name: name
+        in: query
+        description: 'Filter on wallet name'
+        example: wallet1
+        schema:
+          type: string
       - name: limit
         in: query
         description: 'The maximum number of results to return per page'
