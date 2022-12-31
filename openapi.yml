@@ -224,6 +224,15 @@ paths:
         example: wallet1
         schema:
           type: string
+      - name: metadata
+        in: query
+        description: Filter holds by metadata key value pairs. Nested objects can be used as seen in the example below.
+        style: deepObject
+        explode: true
+        schema:
+          type: object
+          properties: { }
+        example: metadata[key]=value1&metadata[a.nested.key]=value2
       - name: cursor
         in: query
         description: |

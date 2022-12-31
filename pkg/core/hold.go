@@ -34,7 +34,7 @@ func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 			"type":  "account",
 			"value": h.Destination,
 		},
-		MetadataKeyWalletHoldCustomData:  map[string]any(h.Metadata),
+		MetadataKeyWalletCustomData:      map[string]any(h.Metadata),
 		MetadataKeyWalletHoldDescription: h.Description,
 	}
 }
@@ -59,7 +59,7 @@ func DebitHoldFromLedgerAccount(account interface {
 	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
 	hold.Destination = account.GetMetadata()[MetadataKeyHoldDestination].(map[string]any)["value"].(string)
 	hold.Asset = account.GetMetadata()[MetadataKeyHoldAsset].(string)
-	hold.Metadata = account.GetMetadata()[MetadataKeyWalletHoldCustomData].(map[string]any)
+	hold.Metadata = account.GetMetadata()[MetadataKeyWalletCustomData].(map[string]any)
 	hold.Description = account.GetMetadata()[MetadataKeyWalletHoldDescription].(string)
 	return hold
 }
