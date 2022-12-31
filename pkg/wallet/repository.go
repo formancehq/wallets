@@ -43,6 +43,7 @@ func newListResponse[SRC any, DST any](cursor interface {
 
 type ListHolds struct {
 	WalletID string
+	Metadata map[string]any
 }
 
 type ListTransactions struct {
@@ -184,6 +185,11 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 		}
 		if query.Payload.WalletID != "" {
 			metadata[core.MetadataKeyHoldWalletID] = query.Payload.WalletID
+		}
+		if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
+			for k, v := range query.Payload.Metadata {
+				metadata[core.MetadataKeyWalletCustomData+"."+k] = v
+			}
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,
