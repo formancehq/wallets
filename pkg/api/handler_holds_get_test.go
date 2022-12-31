@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ func TestHoldsGet(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD")
+	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodGet, "/holds/"+hold.ID, nil)
 	rec := httptest.NewRecorder()

@@ -108,6 +108,10 @@ func TestWalletsDebitWithHold(t *testing.T) {
 			Asset:  "USD",
 		},
 		Pending: true,
+		Metadata: map[string]any{
+			"foo": "bar",
+		},
+		Description: "a first tx",
 	}
 
 	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", debitWalletRequest)
@@ -116,14 +120,14 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	var (
 		ledger          string
 		account         string
-		meta            metadata.Metadata
+		accountMetadata metadata.Metadata
 		transactionData sdk.TransactionData
 	)
 	testEnv := newTestEnv(
 		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m metadata.Metadata) error {
 			ledger = l
 			account = a
-			meta = m
+			accountMetadata = m
 			return nil
 		}),
 		WithCreateTransaction(func(ctx context.Context, l string, td sdk.TransactionData) error {
@@ -142,7 +146,7 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
 	require.Equal(t, walletID, hold.WalletID)
 	require.Equal(t, debitWalletRequest.Amount.Asset, hold.Asset)
-	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), meta)
+	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), accountMetadata)
 	require.Equal(t, sdk.TransactionData{
 		Postings: []sdk.Posting{{
 			Amount:      100,
