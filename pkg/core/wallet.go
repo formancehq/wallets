@@ -10,16 +10,18 @@ type Spec struct {
 }
 
 const (
-	MetadataKeyWalletTransaction   = "wallets"
-	MetadataKeyWalletSpecType      = "wallets/spec/type"
-	MetadataKeyWalletID            = "wallets/id"
-	MetadataKeyWalletName          = "wallets/name"
-	MetadataKeyWalletCustomData    = "wallets/custom_data"
-	MetadataKeyHoldWalletID        = "wallets/holds/wallet_id"
-	MetadataKeyHoldAsset           = "wallets/holds/asset"
-	MetadataKeyHoldID              = "wallets/holds/id"
-	MetadataKeyHoldVoidDestination = "void_destination"
-	MetadataKeyHoldDestination     = "destination"
+	MetadataKeyWalletTransaction     = "wallets"
+	MetadataKeyWalletSpecType        = "wallets/spec/type"
+	MetadataKeyWalletID              = "wallets/id"
+	MetadataKeyWalletName            = "wallets/name"
+	MetadataKeyWalletCustomData      = "wallets/custom_data"
+	MetadataKeyHoldWalletID          = "wallets/holds/wallet_id"
+	MetadataKeyHoldAsset             = "wallets/holds/asset"
+	MetadataKeyHoldID                = "wallets/holds/id"
+	MetadataKeyWalletHoldCustomData  = "wallets/holds/custom_data"
+	MetadataKeyWalletHoldDescription = "wallets/holds/description"
+	MetadataKeyHoldVoidDestination   = "void_destination"
+	MetadataKeyHoldDestination       = "destination"
 
 	PrimaryWallet = "wallets.primary"
 	HoldWallet    = "wallets.hold"

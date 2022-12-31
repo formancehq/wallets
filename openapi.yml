@@ -353,6 +353,7 @@ components:
       - id
       - walletID
       - metadata
+      - description
       properties:
         id:
           type: string
@@ -365,6 +366,8 @@ components:
           type: object
           description: Metadata associated with the hold.
           additionalProperties: {}
+        description:
+          type: string
     ExpandedDebitHold:
       allOf:
       - $ref: '#/components/schemas/Hold'
@@ -613,6 +616,8 @@ components:
           description: Set to true to create a pending hold. If false, the wallet will be debited immediately.
         metadata:
           $ref: '#/components/schemas/Metadata'
+        description:
+          type: string
       example:
         amount:
           asset: USD/2

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/go-chi/chi/v5"
@@ -11,8 +12,10 @@ import (
 )
 
 type DebitWalletRequest struct {
-	Amount  core.Monetary `json:"amount"`
-	Pending bool          `json:"pending"`
+	Amount      core.Monetary     `json:"amount"`
+	Pending     bool              `json:"pending"`
+	Metadata    metadata.Metadata `json:"metadata"`
+	Description string            `json:"description"`
 }
 
 func (c *DebitWalletRequest) Bind(r *http.Request) error {
@@ -26,15 +29,13 @@ func (m *MainHandler) DebitWalletHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	id := chi.URLParam(r, "walletID")
-
-	debit := wallet.Debit{
-		WalletID: id,
-		Amount:   data.Amount,
-		Pending:  data.Pending,
-	}
-
-	hold, err := m.funding.Debit(r.Context(), debit)
+	hold, err := m.funding.Debit(r.Context(), wallet.Debit{
+		WalletID:    chi.URLParam(r, "walletID"),
+		Amount:      data.Amount,
+		Pending:     data.Pending,
+		Description: data.Description,
+		Metadata:    data.Metadata,
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, wallet.ErrInsufficientFundError):

@@ -35,11 +35,13 @@ func NewFundingService(
 }
 
 type Debit struct {
-	WalletID    string        `json:"walletID"`
-	Amount      core.Monetary `json:"amount"`
-	Destination string        `json:"destination"`
-	Reference   string        `json:"reference"`
-	Pending     bool          `json:"pending"`
+	WalletID    string            `json:"walletID"`
+	Amount      core.Monetary     `json:"amount"`
+	Destination string            `json:"destination"`
+	Reference   string            `json:"reference"`
+	Pending     bool              `json:"pending"`
+	Metadata    metadata.Metadata `json:"metadata"`
+	Description string            `json:"description"`
 }
 
 type ConfirmHold struct {
@@ -69,7 +71,11 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 
 	var hold *core.DebitHold
 	if debit.Pending {
-		newHold := core.NewDebitHold(debit.WalletID, dest, debit.Amount.Asset)
+		md := debit.Metadata
+		if md == nil {
+			md = metadata.Metadata{}
+		}
+		newHold := core.NewDebitHold(debit.WalletID, dest, debit.Amount.Asset, debit.Description, md)
 		hold = &newHold
 
 		holdAccount := s.chart.GetHoldAccount(hold.ID)

@@ -6,10 +6,12 @@ import (
 )
 
 type DebitHold struct {
-	ID          string `json:"id"`
-	WalletID    string `json:"walletID"`
-	Destination string `json:"destination"`
-	Asset       string `json:"asset"`
+	ID          string            `json:"id"`
+	WalletID    string            `json:"walletID"`
+	Destination string            `json:"destination"`
+	Asset       string            `json:"asset"`
+	Metadata    metadata.Metadata `json:"metadata"`
+	Description string            `json:"description"`
 }
 
 type ExpandedDebitHold struct {
@@ -24,23 +26,27 @@ func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 		MetadataKeyHoldWalletID:   h.WalletID,
 		MetadataKeyHoldID:         h.ID,
 		MetadataKeyHoldAsset:      h.Asset,
-		MetadataKeyHoldVoidDestination: map[string]interface{}{
+		MetadataKeyHoldVoidDestination: map[string]any{
 			"type":  "account",
 			"value": chart.GetMainAccount(h.WalletID),
 		},
-		MetadataKeyHoldDestination: map[string]interface{}{
+		MetadataKeyHoldDestination: map[string]any{
 			"type":  "account",
 			"value": h.Destination,
 		},
+		MetadataKeyWalletHoldCustomData:  map[string]any(h.Metadata),
+		MetadataKeyWalletHoldDescription: h.Description,
 	}
 }
 
-func NewDebitHold(walletID, destination, asset string) DebitHold {
+func NewDebitHold(walletID, destination, asset, description string, md metadata.Metadata) DebitHold {
 	return DebitHold{
 		ID:          uuid.NewString(),
 		WalletID:    walletID,
 		Destination: destination,
 		Asset:       asset,
+		Metadata:    md,
+		Description: description,
 	}
 }
 
@@ -53,6 +59,8 @@ func DebitHoldFromLedgerAccount(account interface {
 	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
 	hold.Destination = account.GetMetadata()[MetadataKeyHoldDestination].(map[string]any)["value"].(string)
 	hold.Asset = account.GetMetadata()[MetadataKeyHoldAsset].(string)
+	hold.Metadata = account.GetMetadata()[MetadataKeyWalletHoldCustomData].(map[string]any)
+	hold.Description = account.GetMetadata()[MetadataKeyWalletHoldDescription].(string)
 	return hold
 }
 
