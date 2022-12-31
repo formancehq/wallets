@@ -55,6 +55,15 @@ paths:
         example: wallet1
         schema:
           type: string
+      - name: metadata
+        in: query
+        description: Filter wallets by metadata key value pairs. Nested objects can be used as seen in the example below.
+        style: deepObject
+        explode: true
+        schema:
+          type: object
+          properties: { }
+        example: metadata[key]=value1&metadata[a.nested.key]=value2
       - name: limit
         in: query
         description: 'The maximum number of results to return per page'
@@ -64,12 +73,6 @@ paths:
           maximum: 1000
           minimum: 1
           default: 15
-      - name: after
-        in: query
-        description: Pagination cursor, will return accounts after given address, in descending order.
-        schema:
-          type: string
-          example: users:003
       - name: cursor
         in: query
         description: |
