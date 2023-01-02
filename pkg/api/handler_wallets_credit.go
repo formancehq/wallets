@@ -16,7 +16,7 @@ const (
 )
 
 func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
-	data := &wallet.CreditWalletRequest{}
+	data := &wallet.CreditRequest{}
 	if err := render.Bind(r, data); err != nil {
 		badRequest(w, ErrorCodeValidation, err)
 		return
@@ -24,8 +24,8 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 
 	id := chi.URLParam(r, "walletID")
 	credit := wallet.Credit{
-		WalletID:            id,
-		CreditWalletRequest: *data,
+		WalletID:      id,
+		CreditRequest: *data,
 	}
 
 	err := m.funding.Credit(r.Context(), credit)
