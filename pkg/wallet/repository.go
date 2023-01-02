@@ -126,15 +126,15 @@ func (r *Repository) ListWallets(ctx context.Context, query ListQuery[ListWallet
 	)
 	if query.PaginationToken == "" {
 		metadata := map[string]interface{}{
-			core.MetadataKeyWalletSpecType(): core.PrimaryWallet,
+			core.MetadataKeyWalletSpecTypeFilter(): core.PrimaryWallet,
 		}
 		if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
 			for k, v := range query.Payload.Metadata {
-				metadata[core.MetadataKeyWalletCustomData()+"."+k] = v
+				metadata[core.MetadataKeyWalletCustomDataFilter(k)] = v
 			}
 		}
 		if query.Payload.Name != "" {
-			metadata[core.MetadataKeyWalletName()] = query.Payload.Name
+			metadata[core.MetadataKeyWalletNameFilter()] = query.Payload.Name
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,
@@ -180,10 +180,10 @@ func (r *Repository) ListHolds(ctx context.Context, query ListQuery[ListHolds]) 
 	)
 	if query.PaginationToken == "" {
 		metadata := metadata.Metadata{
-			core.MetadataKeyWalletSpecType(): core.HoldWallet,
+			core.MetadataKeyWalletSpecTypeFilter(): core.HoldWallet,
 		}
 		if query.Payload.WalletID != "" {
-			metadata[core.MetadataKeyHoldWalletID()] = query.Payload.WalletID
+			metadata[core.MetadataKeyHoldWalletIDFilter()] = query.Payload.WalletID
 		}
 		response, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
 			Limit:    query.Limit,
@@ -217,7 +217,7 @@ func (r *Repository) ListTransactions(ctx context.Context, query ListQuery[ListT
 				}
 				return ""
 			}(),
-			Metadata: core.WalletTransactionBaseMetadata(),
+			Metadata: core.WalletTransactionBaseMetadataFilter(),
 		})
 	} else {
 		response, err = r.client.ListTransactions(ctx, r.ledgerName, ListTransactionsQuery{
