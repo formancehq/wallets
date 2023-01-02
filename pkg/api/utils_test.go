@@ -85,7 +85,9 @@ func newTestEnv(opts ...Option) *testEnv {
 	ret.ledgerName = uuid.NewString()
 	fundingService := wallet.NewFundingService(ret.ledgerName, ledgerMock, ret.chart)
 	repository := wallet.NewRepository(ret.ledgerName, ledgerMock, ret.chart)
-	ret.router = NewRouter(fundingService, repository, &sharedhealth.HealthController{})
+	ret.router = NewRouter(fundingService, repository, &sharedhealth.HealthController{}, sharedapi.ServiceInfo{
+		Version: "latest",
+	})
 	return ret
 }
 

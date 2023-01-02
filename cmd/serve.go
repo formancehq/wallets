@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	sharedapi "github.com/formancehq/go-libs/api"
 	"github.com/formancehq/go-libs/otlp/otlptraces"
 	"github.com/formancehq/wallets/pkg"
 	"github.com/formancehq/wallets/pkg/client"
@@ -27,7 +28,9 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options := []fx.Option{
 			fx.NopLogger,
-			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag)),
+			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag), sharedapi.ServiceInfo{
+				Version: Version,
+			}),
 			client.NewModule(viper.GetString(stackClientIDFlag), viper.GetString(stackClientSecretFlag), viper.GetString(stackURLFlag)),
 			otlptraces.CLITracesModule(viper.GetViper()),
 		}
