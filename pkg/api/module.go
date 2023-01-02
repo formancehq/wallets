@@ -5,15 +5,17 @@ import (
 	"errors"
 	"net/http"
 
+	sharedapi "github.com/formancehq/go-libs/api"
 	sharedhealth "github.com/formancehq/go-libs/health"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 )
 
-func Module() fx.Option {
+func Module(serviceInfo sharedapi.ServiceInfo) fx.Option {
 	return fx.Module(
 		"api",
 		fx.Provide(NewRouter),
+		fx.Supply(serviceInfo),
 		sharedhealth.Module(),
 		fx.Invoke(func(lc fx.Lifecycle, router *chi.Mux) {
 			lc.Append(fx.Hook{

@@ -5,6 +5,17 @@ info:
   version: 0.1.0
 
 paths:
+  /_info:
+    get:
+      summary: Get server info
+      operationId: getServerInfo
+      responses:
+        200:
+          description: Server information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfo'
   /transactions:
     get:
       operationId: getTransactions
@@ -635,3 +646,10 @@ components:
           asset: USD/2
           amount: 100
         pending: true
+    ServerInfo:
+      type: object
+      required:
+      - version
+      properties:
+        version:
+          type: string
