@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -14,11 +13,66 @@ import (
 
 var (
 	DefaultCreditSource = Subject{
-		Type:       SourceTypeLedgerAccount,
+		Type:       SubjectTypeLedgerAccount,
 		Identifier: "world",
 	}
-	DefaultDebitDest = "world"
+	DefaultDebitDest = Subject{
+		Type:       SubjectTypeLedgerAccount,
+		Identifier: "world",
+	}
 )
+
+type DebitRequest struct {
+	Amount      core.Monetary     `json:"amount"`
+	Pending     bool              `json:"pending"`
+	Metadata    metadata.Metadata `json:"metadata"`
+	Description string            `json:"description"`
+	Reference   string            `json:"reference"`
+	Destination *Subject          `json:"destination"`
+}
+
+func (c *DebitRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+type Debit struct {
+	DebitRequest
+	WalletID string `json:"walletID"`
+}
+
+type ConfirmHold struct {
+	HoldID    string `json:"holdID"`
+	Amount    core.MonetaryInt
+	Reference string
+	Final     bool
+}
+
+type VoidHold struct {
+	HoldID string `json:"holdID"`
+}
+
+type CreditRequest struct {
+	Amount    core.Monetary     `json:"amount"`
+	Metadata  metadata.Metadata `json:"metadata"`
+	Sources   Subjects          `json:"sources"`
+	Reference string            `json:"reference"`
+}
+
+func (c *CreditRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (c CreditRequest) Validate() error {
+	if err := c.Sources.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+type Credit struct {
+	CreditRequest
+	WalletID string `json:"walletID"`
+}
 
 type FundingService struct {
 	client     Ledger
@@ -38,103 +92,10 @@ func NewFundingService(
 	}
 }
 
-type Debit struct {
-	WalletID    string            `json:"walletID"`
-	Amount      core.Monetary     `json:"amount"`
-	Destination string            `json:"destination"`
-	Reference   string            `json:"reference"`
-	Pending     bool              `json:"pending"`
-	Metadata    metadata.Metadata `json:"metadata"`
-	Description string            `json:"description"`
-}
-
-type ConfirmHold struct {
-	HoldID    string `json:"holdID"`
-	Amount    core.MonetaryInt
-	Reference string
-	Final     bool
-}
-
-type VoidHold struct {
-	HoldID string `json:"holdID"`
-}
-
-const (
-	SourceTypeLedgerAccount string = "ACCOUNT"
-	SourceTypeWallet        string = "WALLET"
-)
-
-type Subject struct {
-	Type       string `json:"type"`
-	Identifier string `json:"identifier"`
-}
-
-func (s Subject) resolveAccount(chart *core.Chart) string {
-	switch s.Type {
-	case SourceTypeLedgerAccount:
-		return s.Identifier
-	case SourceTypeWallet:
-		return chart.GetMainAccount(s.Identifier)
-	}
-	panic("unknown type")
-}
-
-func (s Subject) Validate() error {
-	if s.Type != SourceTypeWallet && s.Type != SourceTypeLedgerAccount {
-		return fmt.Errorf("unknown source type: %s", s.Type)
-	}
-	return nil
-}
-
-type Subjects []Subject
-
-func (subjects Subjects) resolveAccounts(chart *core.Chart) []string {
-	if len(subjects) == 0 {
-		subjects = []Subject{DefaultCreditSource}
-	}
-	resolvedSources := make([]string, 0)
-	for _, source := range subjects {
-		resolvedSources = append(resolvedSources, source.resolveAccount(chart))
-	}
-	return resolvedSources
-}
-
-func (subjects Subjects) Validate() error {
-	for _, source := range subjects {
-		if err := source.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-type CreditWalletRequest struct {
-	Amount    core.Monetary     `json:"amount"`
-	Metadata  metadata.Metadata `json:"metadata"`
-	Sources   Subjects          `json:"sources"`
-	Reference string            `json:"reference"`
-}
-
-func (c *CreditWalletRequest) Bind(r *http.Request) error {
-	return nil
-}
-
-func (c CreditWalletRequest) Validate() error {
-	if err := c.Sources.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-type Credit struct {
-	CreditWalletRequest
-	WalletID string `json:"walletID"`
-}
-
 func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHold, error) {
 	dest := DefaultDebitDest
-	if debit.Destination != "" {
-		dest = debit.Destination
+	if debit.Destination != nil {
+		dest = *debit.Destination
 	}
 
 	var hold *core.DebitHold
@@ -143,7 +104,8 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 		if md == nil {
 			md = metadata.Metadata{}
 		}
-		newHold := core.NewDebitHold(debit.WalletID, dest, debit.Amount.Asset, debit.Description, md)
+		newHold := core.NewDebitHold(debit.WalletID, dest.resolveAccount(s.chart),
+			debit.Amount.Asset, debit.Description, md)
 		hold = &newHold
 
 		holdAccount := s.chart.GetHoldAccount(hold.ID)
@@ -152,7 +114,10 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 			return nil, errors.Wrap(err, "adding metadata to account")
 		}
 
-		dest = holdAccount
+		dest = Subject{
+			Type:       SubjectTypeLedgerAccount,
+			Identifier: holdAccount,
+		}
 	}
 
 	customMetadata := debit.Metadata
@@ -164,7 +129,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 		Plain: BuildDebitWalletScript(),
 		Vars: map[string]interface{}{
 			"source":      s.chart.GetMainAccount(debit.WalletID),
-			"destination": dest,
+			"destination": dest.resolveAccount(s.chart),
 			"amount": map[string]any{
 				// @todo: upgrade this to proper int after sdk is updated
 				"amount": debit.Amount.Amount.Uint64(),

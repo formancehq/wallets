@@ -18,7 +18,7 @@ func TestWalletsCredit(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	creditWalletRequest := wallet.CreditWalletRequest{
+	creditWalletRequest := wallet.CreditRequest{
 		Amount: core.Monetary{
 			Amount: core.NewMonetaryInt(100),
 			Asset:  "USD",
@@ -62,16 +62,16 @@ func TestWalletsCreditWithSourceList(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	creditWalletRequest := wallet.CreditWalletRequest{
+	creditWalletRequest := wallet.CreditRequest{
 		Amount: core.Monetary{
 			Amount: core.NewMonetaryInt(100),
 			Asset:  "USD",
 		},
 		Sources: []wallet.Subject{{
-			Type:       wallet.SourceTypeLedgerAccount,
+			Type:       wallet.SubjectTypeLedgerAccount,
 			Identifier: "emitter1",
 		}, {
-			Type:       wallet.SourceTypeWallet,
+			Type:       wallet.SubjectTypeWallet,
 			Identifier: "wallet1",
 		}},
 	}
