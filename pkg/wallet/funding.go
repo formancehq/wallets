@@ -2,18 +2,22 @@ package wallet
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strings"
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet/numscript"
 	"github.com/pkg/errors"
 )
 
-const (
-	DefaultCreditSource = "world"
-	DefaultDebitDest    = "world"
+var (
+	DefaultCreditSource = Subject{
+		Type:       SourceTypeLedgerAccount,
+		Identifier: "world",
+	}
+	DefaultDebitDest = "world"
 )
 
 type FundingService struct {
@@ -55,12 +59,76 @@ type VoidHold struct {
 	HoldID string `json:"holdID"`
 }
 
-type Credit struct {
-	WalletID  string            `json:"walletID"`
-	Source    string            `json:"source"`
+const (
+	SourceTypeLedgerAccount string = "ACCOUNT"
+	SourceTypeWallet        string = "WALLET"
+)
+
+type Subject struct {
+	Type       string `json:"type"`
+	Identifier string `json:"identifier"`
+}
+
+func (s Subject) resolveAccount(chart *core.Chart) string {
+	switch s.Type {
+	case SourceTypeLedgerAccount:
+		return s.Identifier
+	case SourceTypeWallet:
+		return chart.GetMainAccount(s.Identifier)
+	}
+	panic("unknown type")
+}
+
+func (s Subject) Validate() error {
+	if s.Type != SourceTypeWallet && s.Type != SourceTypeLedgerAccount {
+		return fmt.Errorf("unknown source type: %s", s.Type)
+	}
+	return nil
+}
+
+type Subjects []Subject
+
+func (subjects Subjects) resolveAccounts(chart *core.Chart) []string {
+	if len(subjects) == 0 {
+		subjects = []Subject{DefaultCreditSource}
+	}
+	resolvedSources := make([]string, 0)
+	for _, source := range subjects {
+		resolvedSources = append(resolvedSources, source.resolveAccount(chart))
+	}
+	return resolvedSources
+}
+
+func (subjects Subjects) Validate() error {
+	for _, source := range subjects {
+		if err := source.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type CreditWalletRequest struct {
 	Amount    core.Monetary     `json:"amount"`
-	Reference string            `json:"reference"`
 	Metadata  metadata.Metadata `json:"metadata"`
+	Sources   Subjects          `json:"sources"`
+	Reference string            `json:"reference"`
+}
+
+func (c *CreditWalletRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (c CreditWalletRequest) Validate() error {
+	if err := c.Sources.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+type Credit struct {
+	CreditWalletRequest
+	WalletID string `json:"walletID"`
 }
 
 func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHold, error) {
@@ -93,7 +161,7 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 	}
 
 	script := sdk.Script{
-		Plain: numscript.BuildDebitWalletScript(),
+		Plain: BuildDebitWalletScript(),
 		Vars: map[string]interface{}{
 			"source":      s.chart.GetMainAccount(debit.WalletID),
 			"destination": dest,
@@ -162,7 +230,7 @@ func (s *FundingService) ConfirmHold(ctx context.Context, debit ConfirmHold) err
 	return s.runScript(
 		ctx,
 		sdk.Script{
-			Plain: numscript.BuildConfirmHoldScript(debit.Final, hold.Asset),
+			Plain: BuildConfirmHoldScript(debit.Final, hold.Asset),
 			Vars: map[string]interface{}{
 				"hold": s.chart.GetHoldAccount(debit.HoldID),
 				"amount": map[string]any{
@@ -187,7 +255,7 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 	}
 
 	return s.runScript(ctx, sdk.Script{
-		Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", hold.Asset),
+		Plain: strings.ReplaceAll(CancelHoldScript, "ASSET", hold.Asset),
 		Vars: map[string]interface{}{
 			"hold": s.chart.GetHoldAccount(void.HoldID),
 		},
@@ -196,15 +264,15 @@ func (s *FundingService) VoidHold(ctx context.Context, void VoidHold) error {
 }
 
 func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
-	source := DefaultCreditSource
-	if credit.Source != "" {
-		source = credit.Source
+	if credit.Metadata == nil {
+		credit.Metadata = metadata.Metadata{}
 	}
-
+	if err := credit.Validate(); err != nil {
+		return err
+	}
 	script := sdk.Script{
-		Plain: numscript.BuildCreditWalletScript(),
+		Plain: BuildCreditWalletScript(credit.Sources.resolveAccounts(s.chart)...),
 		Vars: map[string]interface{}{
-			"source":      source,
 			"destination": s.chart.GetMainAccount(credit.WalletID),
 			"amount": map[string]any{
 				// @todo: upgrade this to proper int after sdk is updated

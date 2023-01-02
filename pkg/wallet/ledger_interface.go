@@ -40,6 +40,7 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, quer
 		err error
 	)
 	if query.PaginationToken == "" {
+		//nolint:bodyclose
 		ret, _, err = d.client.TransactionsApi.ListTransactions(ctx, ledger).
 			Metadata(query.Metadata).
 			PageSize(int32(query.Limit)).
@@ -48,6 +49,7 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, quer
 			Source(query.Source).
 			Execute()
 	} else {
+		//nolint:bodyclose
 		ret, _, err = d.client.TransactionsApi.ListTransactions(ctx, ledger).
 			PaginationToken(query.PaginationToken).
 			Execute()
@@ -60,11 +62,13 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, quer
 }
 
 func (d DefaultLedger) AddMetadataToAccount(ctx context.Context, ledger, account string, metadata metadata.Metadata) error {
+	//nolint:bodyclose
 	_, err := d.client.AccountsApi.AddMetadataToAccount(ctx, ledger, account).RequestBody(metadata).Execute()
 	return err
 }
 
 func (d DefaultLedger) GetAccount(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
+	//nolint:bodyclose
 	ret, _, err := d.client.AccountsApi.GetAccount(ctx, ledger, account).Execute()
 	return &ret.Data, err
 }
@@ -75,11 +79,13 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, query Li
 		err error
 	)
 	if query.PaginationToken == "" {
+		//nolint:bodyclose
 		ret, _, err = d.client.AccountsApi.ListAccounts(ctx, ledger).
 			Metadata(query.Metadata).
 			PageSize(int32(query.Limit)).
 			Execute()
 	} else {
+		//nolint:bodyclose
 		ret, _, err = d.client.AccountsApi.ListAccounts(ctx, ledger).
 			PaginationToken(query.PaginationToken).
 			Execute()
@@ -92,6 +98,7 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, query Li
 }
 
 func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error {
+	//nolint:bodyclose
 	_, _, err := d.client.TransactionsApi.
 		CreateTransaction(ctx, ledger).
 		TransactionData(transaction).
@@ -100,6 +107,7 @@ func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger string, tra
 }
 
 func (d DefaultLedger) RunScript(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
+	//nolint:bodyclose
 	ret, _, err := d.client.ScriptApi.RunScript(ctx, ledger).Script(script).Execute()
 	return ret, err
 }

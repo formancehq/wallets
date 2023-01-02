@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
 	"github.com/formancehq/wallets/pkg/wallet"
-	"github.com/formancehq/wallets/pkg/wallet/numscript"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +33,7 @@ func TestWalletsDebit(t *testing.T) {
 		WithRunScript(func(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, sdk.Script{
-				Plain: numscript.BuildDebitWalletScript(),
+				Plain: wallet.BuildDebitWalletScript(),
 				Vars: map[string]interface{}{
 					"source":      testEnv.Chart().GetMainAccount(walletID),
 					"destination": wallet.DefaultDebitDest,
@@ -135,7 +134,7 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	require.Equal(t, debitWalletRequest.Amount.Asset, hold.Asset)
 	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), holdAccountMetadata)
 	require.Equal(t, sdk.Script{
-		Plain: numscript.BuildDebitWalletScript(),
+		Plain: wallet.BuildDebitWalletScript(),
 		Vars: map[string]interface{}{
 			"source":      testEnv.Chart().GetMainAccount(walletID),
 			"destination": testEnv.Chart().GetHoldAccount(hold.ID),

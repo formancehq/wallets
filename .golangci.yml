@@ -30,6 +30,7 @@ linters:
     - dupl
     - nosnakecase
     - nestif
+    - goerr113
 
 run:
   timeout: 5m
