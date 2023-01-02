@@ -87,28 +87,33 @@ func (s *FundingService) Debit(ctx context.Context, debit Debit) (*core.DebitHol
 		dest = holdAccount
 	}
 
-	transaction := sdk.TransactionData{
-		Postings: []sdk.Posting{
-			{
+	customMetadata := debit.Metadata
+	if customMetadata == nil {
+		customMetadata = metadata.Metadata{}
+	}
+
+	script := sdk.Script{
+		Plain: numscript.BuildDebitWalletScript(),
+		Vars: map[string]interface{}{
+			"source":      s.chart.GetMainAccount(debit.WalletID),
+			"destination": dest,
+			"amount": map[string]any{
 				// @todo: upgrade this to proper int after sdk is updated
-				Amount:      int32(debit.Amount.Amount.Uint64()),
-				Asset:       debit.Amount.Asset,
-				Source:      s.chart.GetMainAccount(debit.WalletID),
-				Destination: dest,
+				"amount": debit.Amount.Amount.Uint64(),
+				"asset":  debit.Amount.Asset,
 			},
 		},
-		Metadata: core.WalletTransactionBaseMetadata(),
+		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
+			core.MetadataKeyWalletCustomData: customMetadata,
+		}),
+		//nolint:godox
+		// TODO: Add set account metadata for hold when released on ledger (v1.9)
 	}
-
 	if debit.Reference != "" {
-		transaction.Reference = &debit.Reference
+		script.Reference = &debit.Reference
 	}
 
-	if err := s.client.CreateTransaction(ctx, s.ledgerName, transaction); err != nil {
-		return nil, handleCreateTransactionError(err)
-	}
-
-	return hold, nil
+	return hold, s.runScript(ctx, script)
 }
 
 func (s *FundingService) runScript(ctx context.Context, script sdk.Script) error {
@@ -196,45 +201,24 @@ func (s *FundingService) Credit(ctx context.Context, credit Credit) error {
 		source = credit.Source
 	}
 
-	transaction := sdk.TransactionData{
-		Postings: []sdk.Posting{
-			{
+	script := sdk.Script{
+		Plain: numscript.BuildCreditWalletScript(),
+		Vars: map[string]interface{}{
+			"source":      source,
+			"destination": s.chart.GetMainAccount(credit.WalletID),
+			"amount": map[string]any{
 				// @todo: upgrade this to proper int after sdk is updated
-				Amount:      int32(credit.Amount.Amount.Uint64()),
-				Asset:       credit.Amount.Asset,
-				Source:      source,
-				Destination: s.chart.GetMainAccount(credit.WalletID),
+				"amount": credit.Amount.Amount.Uint64(),
+				"asset":  credit.Amount.Asset,
 			},
 		},
 		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
 			core.MetadataKeyWalletCustomData: credit.Metadata,
 		}),
 	}
-
 	if credit.Reference != "" {
-		transaction.Reference = &credit.Reference
+		script.Reference = &credit.Reference
 	}
 
-	if err := s.client.CreateTransaction(ctx, s.ledgerName, transaction); err != nil {
-		return errors.Wrap(err, "creating transaction")
-	}
-
-	return nil
-}
-
-func handleCreateTransactionError(err error) error {
-	//nolint:errorlint
-	if err, ok := err.(interface {
-		error
-		Model() interface{}
-	}); ok {
-		if err, ok := err.(interface {
-			GetErrorCode() sdk.ErrorCode
-		}); ok {
-			if err.GetErrorCode() == sdk.INSUFFICIENT_FUND {
-				return ErrInsufficientFundError
-			}
-		}
-	}
-	return errors.Wrap(err, "running script")
+	return s.runScript(ctx, script)
 }

@@ -9,6 +9,8 @@ import (
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
+	"github.com/formancehq/wallets/pkg/wallet"
+	"github.com/formancehq/wallets/pkg/wallet/numscript"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -27,47 +29,30 @@ func TestWalletsDebit(t *testing.T) {
 	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", debitWalletRequest)
 	rec := httptest.NewRecorder()
 
-	var (
-		ledger          string
-		transactionData sdk.TransactionData
-	)
-	testEnv := newTestEnv(
-		WithCreateTransaction(func(ctx context.Context, l string, t sdk.TransactionData) error {
-			ledger = l
-			transactionData = t
-			return nil
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithRunScript(func(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, sdk.Script{
+				Plain: numscript.BuildDebitWalletScript(),
+				Vars: map[string]interface{}{
+					"source":      testEnv.Chart().GetMainAccount(walletID),
+					"destination": wallet.DefaultDebitDest,
+					"amount": map[string]any{
+						"amount": uint64(100),
+						"asset":  "USD",
+					},
+				},
+				Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
+					core.MetadataKeyWalletCustomData: metadata.Metadata{},
+				}),
+			}, script)
+			return &sdk.ScriptResult{}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
-	require.Equal(t, testEnv.LedgerName(), ledger)
-	require.Equal(t, sdk.TransactionData{
-		Timestamp: nil,
-		Postings: []sdk.Posting{{
-			Amount:      100,
-			Asset:       "USD",
-			Source:      testEnv.Chart().GetMainAccount(walletID),
-			Destination: "world",
-		}},
-		Metadata: core.WalletTransactionBaseMetadata(),
-	}, transactionData)
-}
-
-type genericError struct {
-	errorCode sdk.ErrorCode
-}
-
-func (e genericError) Error() string {
-	return ""
-}
-
-func (e genericError) Model() interface{} {
-	return e
-}
-
-func (e genericError) GetErrorCode() sdk.ErrorCode {
-	return e.errorCode
 }
 
 func TestWalletsDebitWithInsufficientFund(t *testing.T) {
@@ -85,10 +70,11 @@ func TestWalletsDebitWithInsufficientFund(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	testEnv := newTestEnv(
-		WithCreateTransaction(func(ctx context.Context, l string, t sdk.TransactionData) error {
-			return &genericError{
-				errorCode: sdk.INSUFFICIENT_FUND,
-			}
+		WithRunScript(func(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
+			errorCode := string(sdk.INSUFFICIENT_FUND)
+			return &sdk.ScriptResult{
+				ErrorCode: &errorCode,
+			}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)
@@ -118,22 +104,23 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	var (
-		ledger          string
-		account         string
-		accountMetadata metadata.Metadata
-		transactionData sdk.TransactionData
+		targetedLedger      string
+		holdAccount         string
+		holdAccountMetadata metadata.Metadata
+		executedScript      sdk.Script
+		testEnv             *testEnv
 	)
-	testEnv := newTestEnv(
-		WithAddMetadataToAccount(func(ctx context.Context, l, a string, m metadata.Metadata) error {
-			ledger = l
-			account = a
-			accountMetadata = m
+	testEnv = newTestEnv(
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account string, m metadata.Metadata) error {
+			targetedLedger = ledger
+			holdAccount = account
+			holdAccountMetadata = m
 			return nil
 		}),
-		WithCreateTransaction(func(ctx context.Context, l string, td sdk.TransactionData) error {
-			require.Equal(t, ledger, l)
-			transactionData = td
-			return nil
+		WithRunScript(func(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			executedScript = script
+			return &sdk.ScriptResult{}, nil
 		}),
 	)
 	testEnv.Router().ServeHTTP(rec, req)
@@ -142,18 +129,25 @@ func TestWalletsDebitWithHold(t *testing.T) {
 	hold := &core.DebitHold{}
 	readResponse(t, rec, hold)
 
-	require.Equal(t, testEnv.LedgerName(), ledger)
-	require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), account)
+	require.Equal(t, testEnv.LedgerName(), targetedLedger)
+	require.Equal(t, testEnv.Chart().GetHoldAccount(hold.ID), holdAccount)
 	require.Equal(t, walletID, hold.WalletID)
 	require.Equal(t, debitWalletRequest.Amount.Asset, hold.Asset)
-	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), accountMetadata)
-	require.Equal(t, sdk.TransactionData{
-		Postings: []sdk.Posting{{
-			Amount:      100,
-			Asset:       "USD",
-			Source:      testEnv.Chart().GetMainAccount(walletID),
-			Destination: testEnv.Chart().GetHoldAccount(hold.ID),
-		}},
-		Metadata: core.WalletTransactionBaseMetadata(),
-	}, transactionData)
+	require.Equal(t, hold.LedgerMetadata(testEnv.Chart()), holdAccountMetadata)
+	require.Equal(t, sdk.Script{
+		Plain: numscript.BuildDebitWalletScript(),
+		Vars: map[string]interface{}{
+			"source":      testEnv.Chart().GetMainAccount(walletID),
+			"destination": testEnv.Chart().GetHoldAccount(hold.ID),
+			"amount": map[string]any{
+				"amount": uint64(100),
+				"asset":  "USD",
+			},
+		},
+		Metadata: core.WalletTransactionBaseMetadata().Merge(metadata.Metadata{
+			core.MetadataKeyWalletCustomData: metadata.Metadata{
+				"foo": "bar",
+			},
+		}),
+	}, executedScript)
 }
