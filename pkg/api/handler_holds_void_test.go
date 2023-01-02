@@ -10,7 +10,7 @@ import (
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet/numscript"
+	"github.com/formancehq/wallets/pkg/wallet"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +48,7 @@ func TestHoldsVoid(t *testing.T) {
 		}),
 		WithRunScript(func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.Equal(t, sdk.Script{
-				Plain: strings.ReplaceAll(numscript.CancelHold, "ASSET", "USD"),
+				Plain: strings.ReplaceAll(wallet.CancelHoldScript, "ASSET", "USD"),
 				Vars: map[string]interface{}{
 					"hold": testEnv.Chart().GetHoldAccount(hold.ID),
 				},
