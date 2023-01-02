@@ -618,6 +618,25 @@ components:
           type: boolean
           example: true
           description: Define a final confirmation. Remaining funds will be returned to the wallet.
+    Subject:
+      type: object
+      required:
+      - type
+      - identifier
+      properties:
+        type:
+          type: string
+          enum:
+          - ACCOUNT
+          - WALLET
+          description: The subject type, either a ledger account or a wallet
+        identifier:
+          type: string
+          description: The identifier of the subject, either a plain ledger account or a wallet id.
+    Subjects:
+      type: array
+      items:
+        $ref: '#/components/schemas/Subject'
     CreditWalletRequest:
       type: object
       required:
@@ -627,6 +646,10 @@ components:
           $ref: '#/components/schemas/Monetary'
         metadata:
           $ref: '#/components/schemas/Metadata'
+        reference:
+          type: string
+        sources:
+          $ref: '#/components/schemas/Subjects'
     DebitWalletRequest:
       type: object
       required:
@@ -641,6 +664,8 @@ components:
           $ref: '#/components/schemas/Metadata'
         description:
           type: string
+        destination:
+          $ref: '#/components/schemas/Subject'
       example:
         amount:
           asset: USD/2
