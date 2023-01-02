@@ -27,7 +27,6 @@ type Ledger interface {
 	GetAccount(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
 	ListAccounts(ctx context.Context, ledger string, query ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	ListTransactions(ctx context.Context, ledger string, query ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
-	CreateTransaction(ctx context.Context, ledger string, transaction sdk.TransactionData) error
 	RunScript(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error)
 }
 

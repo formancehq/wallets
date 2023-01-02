@@ -96,8 +96,7 @@ type (
 	getAccountFn           func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error)
 	listAccountsFn         func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error)
 	listTransactionsFn     func(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*sdk.ListTransactions200ResponseCursor, error)
-	createTransactionFn    func(ctx context.Context, name string, transaction sdk.TransactionData) error
-	runScriptFn            func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error)
+	runScriptFn            func(ctx context.Context, ledger string, script sdk.Script) (*sdk.ScriptResult, error)
 )
 
 type LedgerMock struct {
@@ -105,7 +104,6 @@ type LedgerMock struct {
 	getAccount           getAccountFn
 	listAccounts         listAccountsFn
 	listTransactions     listTransactionsFn
-	createTransaction    createTransactionFn
 	runScript            runScriptFn
 }
 
@@ -119,10 +117,6 @@ func (l *LedgerMock) GetAccount(ctx context.Context, ledger, account string) (*s
 
 func (l *LedgerMock) ListAccounts(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*sdk.ListAccounts200ResponseCursor, error) {
 	return l.listAccounts(ctx, ledger, query)
-}
-
-func (l *LedgerMock) CreateTransaction(ctx context.Context, name string, transaction sdk.TransactionData) error {
-	return l.createTransaction(ctx, name, transaction)
 }
 
 func (l *LedgerMock) RunScript(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
@@ -152,12 +146,6 @@ func WithAddMetadataToAccount(fn addMetadataToAccountFn) Option {
 func WithGetAccount(fn getAccountFn) Option {
 	return func(mock *LedgerMock) {
 		mock.getAccount = fn
-	}
-}
-
-func WithCreateTransaction(fn createTransactionFn) Option {
-	return func(mock *LedgerMock) {
-		mock.createTransaction = fn
 	}
 }
 
