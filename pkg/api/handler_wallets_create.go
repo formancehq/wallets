@@ -3,22 +3,12 @@ package api
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/render"
 )
 
-type CreateWalletRequest struct {
-	Metadata metadata.Metadata `json:"metadata"`
-	Name     string            `json:"name"`
-}
-
-func (c *CreateWalletRequest) Bind(r *http.Request) error {
-	return nil
-}
-
-func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request) {
-	data := &CreateWalletRequest{}
+func (m *MainHandler) createWalletHandler(w http.ResponseWriter, r *http.Request) {
+	data := &wallet.CreateRequest{}
 	if r.ContentLength > 0 {
 		if err := render.Bind(r, data); err != nil {
 			badRequest(w, ErrorCodeValidation, err)
@@ -26,10 +16,7 @@ func (m *MainHandler) CreateWalletHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	wallet, err := m.repository.CreateWallet(r.Context(), &wallet.Data{
-		Metadata: data.Metadata,
-		Name:     data.Name,
-	})
+	wallet, err := m.manager.CreateWallet(r.Context(), data)
 	if err != nil {
 		internalError(w, r, err)
 		return

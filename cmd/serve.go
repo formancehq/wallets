@@ -5,7 +5,8 @@ import (
 
 	sharedapi "github.com/formancehq/go-libs/api"
 	"github.com/formancehq/go-libs/otlp/otlptraces"
-	"github.com/formancehq/wallets/pkg"
+	wallet "github.com/formancehq/wallets/pkg"
+	"github.com/formancehq/wallets/pkg/api"
 	"github.com/formancehq/wallets/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,7 +29,8 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options := []fx.Option{
 			fx.NopLogger,
-			pkg.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag), sharedapi.ServiceInfo{
+			wallet.Module(viper.GetString(ledgerNameFlag), viper.GetString(accountPrefixFlag)),
+			api.Module(sharedapi.ServiceInfo{
 				Version: Version,
 			}),
 			client.NewModule(viper.GetString(stackClientIDFlag), viper.GetString(stackClientSecretFlag), viper.GetString(stackURLFlag)),

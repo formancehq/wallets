@@ -20,7 +20,7 @@ paths:
     get:
       operationId: getTransactions
       parameters:
-      - name: limit
+      - name: pageSize
         in: query
         description: 'The maximum number of results to return per page'
         example: 100
@@ -57,8 +57,8 @@ paths:
 
   /wallets:
     get:
-      summary: Get all wallets
-      operationId: getWallets
+      summary: List all wallets
+      operationId: listWallets
       parameters:
       - name: name
         in: query
@@ -75,7 +75,7 @@ paths:
           type: object
           properties: { }
         example: metadata[key]=value1&metadata[a.nested.key]=value2
-      - name: limit
+      - name: pageSize
         in: query
         description: 'The maximum number of results to return per page'
         example: 100
@@ -102,7 +102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetWalletsResponse'
+                $ref: '#/components/schemas/ListWalletsResponse'
     post:
       summary: Create a new wallet
       operationId: createWallet
@@ -160,6 +160,62 @@ paths:
       responses:
         204:
           description: Wallet successfully updated
+
+  /wallets/{id}/balances:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: List balances of a wallet
+      operationId: listBalances
+      responses:
+        200:
+          description: Balances list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListBalancesResponse'
+    post:
+      summary: Create a balance
+      operationId: createBalance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBalanceRequest'
+      responses:
+        201:
+          description: Created balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBalanceResponse'
+
+  /wallets/{id}/balances/{balanceName}:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: balanceName
+        in: path
+        required: true
+        schema:
+          type: string
+      summary: Get detailed balance
+      operationId: getBalance
+      responses:
+        200:
+          description: Balance summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBalanceResponse'
 
   /wallets/{id}/debit:
     parameters:
@@ -220,7 +276,7 @@ paths:
         - Wallets
       operationId: getHolds
       parameters:
-      - name: limit
+      - name: pageSize
         in: query
         description: 'The maximum number of results to return per page'
         example: 100
@@ -409,7 +465,7 @@ components:
             description: Original amount on hold
             example: 100
             format: int64
-    GetWalletsResponse:
+    ListWalletsResponse:
       type: object
       required:
       - cursor
@@ -618,21 +674,35 @@ components:
           type: boolean
           example: true
           description: Define a final confirmation. Remaining funds will be returned to the wallet.
-    Subject:
-      type: object
+    LedgerAccountSubject:
       required:
       - type
       - identifier
       properties:
         type:
           type: string
-          enum:
-          - ACCOUNT
-          - WALLET
-          description: The subject type, either a ledger account or a wallet
         identifier:
           type: string
-          description: The identifier of the subject, either a plain ledger account or a wallet id.
+    WalletSubject:
+      required:
+      - type
+      - identifier
+      properties:
+        type:
+          type: string
+        identifier:
+          type: string
+        balance:
+          type: string
+    Subject:
+      discriminator:
+        propertyName: type
+        mapping:
+          ACCOUNT: '#/components/schemas/LedgerAccountSubject'
+          WALLET: '#/components/schemas/WalletSubject'
+      oneOf:
+      - $ref: '#/components/schemas/LedgerAccountSubject'
+      - $ref: '#/components/schemas/WalletSubject'
     Subjects:
       type: array
       items:
@@ -650,6 +720,9 @@ components:
           type: string
         sources:
           $ref: '#/components/schemas/Subjects'
+        balance:
+          type: string
+          description: The balance to credit
     DebitWalletRequest:
       type: object
       required:
@@ -666,6 +739,9 @@ components:
           type: string
         destination:
           $ref: '#/components/schemas/Subject'
+        balance:
+          type: string
+          description: The targeted balance
       example:
         amount:
           asset: USD/2
@@ -678,3 +754,54 @@ components:
       properties:
         version:
           type: string
+    Balance:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+    BalanceWithAssets:
+      allOf:
+      - $ref: '#/components/schemas/Balance'
+      - type: object
+        required:
+        - assets
+        properties:
+          assets:
+            type: object
+            additionalProperties:
+              type: number
+    ListBalancesResponse:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Balance'
+                type: array
+            type: object
+            required:
+            - data
+    GetBalanceResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/BalanceWithAssets'
+    CreateBalanceRequest:
+      $ref: '#/components/schemas/Balance'
+
+    CreateBalanceResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Balance'

@@ -8,8 +8,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +17,7 @@ func TestHoldsConfirm(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", nil)
 	rec := httptest.NewRecorder()
@@ -47,7 +46,7 @@ func TestHoldsConfirm(t *testing.T) {
 						"asset":  "USD",
 					},
 				},
-				Metadata: core.WalletTransactionBaseMetadata(),
+				Metadata: wallet.TransactionMetadata(nil),
 			}, script)
 			return &sdk.ScriptResult{}, nil
 		}),
@@ -61,7 +60,7 @@ func TestHoldsPartialConfirm(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 50,
@@ -98,7 +97,7 @@ func TestHoldsPartialConfirm(t *testing.T) {
 						"asset":  "USD",
 					},
 				},
-				Metadata: core.WalletTransactionBaseMetadata(),
+				Metadata: wallet.TransactionMetadata(nil),
 			}, script)
 			return &sdk.ScriptResult{}, nil
 		}),
@@ -112,7 +111,7 @@ func TestHoldsConfirmWithTooHighAmount(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 500,
@@ -151,7 +150,7 @@ func TestHoldsConfirmWithClosedHold(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{})
 	rec := httptest.NewRecorder()
@@ -188,7 +187,7 @@ func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{
 		Amount: 50,
@@ -226,7 +225,7 @@ func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 						"asset":  "USD",
 					},
 				},
-				Metadata: core.WalletTransactionBaseMetadata(),
+				Metadata: wallet.TransactionMetadata(nil),
 			}, script)
 			return &sdk.ScriptResult{}, nil
 		}),

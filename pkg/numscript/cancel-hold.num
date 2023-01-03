@@ -3,7 +3,7 @@ vars {
   account $dest = meta($hold, "void_destination")
 }
 
-send [ASSET *] (
+send [{{ .Asset }} *] (
   source = $hold
   destination = $dest
 )

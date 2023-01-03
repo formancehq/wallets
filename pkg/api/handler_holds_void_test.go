@@ -4,13 +4,11 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +17,7 @@ func TestHoldsVoid(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/void", nil)
 	rec := httptest.NewRecorder()
@@ -48,11 +46,11 @@ func TestHoldsVoid(t *testing.T) {
 		}),
 		WithRunScript(func(ctx context.Context, name string, script sdk.Script) (*sdk.ScriptResult, error) {
 			require.Equal(t, sdk.Script{
-				Plain: strings.ReplaceAll(wallet.CancelHoldScript, "ASSET", "USD"),
+				Plain: wallet.BuildCancelHoldScript("USD"),
 				Vars: map[string]interface{}{
 					"hold": testEnv.Chart().GetHoldAccount(hold.ID),
 				},
-				Metadata: core.WalletTransactionBaseMetadata(),
+				Metadata: wallet.TransactionMetadata(nil),
 			}, script)
 			return &sdk.ScriptResult{}, nil
 		}),

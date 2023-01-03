@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 )
 
-func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
+func (m *MainHandler) listHoldsHandler(w http.ResponseWriter, r *http.Request) {
 	query := readPaginatedRequest(r, func(r *http.Request) wallet.ListHolds {
 		return wallet.ListHolds{
 			WalletID: r.URL.Query().Get("walletID"),
@@ -14,7 +14,7 @@ func (m *MainHandler) ListHoldsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 
-	holds, err := m.repository.ListHolds(r.Context(), query)
+	holds, err := m.manager.ListHolds(r.Context(), query)
 	if err != nil {
 		internalError(w, r, err)
 		return

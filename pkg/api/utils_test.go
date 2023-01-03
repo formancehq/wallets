@@ -14,8 +14,7 @@ import (
 	sharedapi "github.com/formancehq/go-libs/api"
 	sharedhealth "github.com/formancehq/go-libs/health"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -63,7 +62,7 @@ func newRequest(t *testing.T, method, path string, object any) *http.Request {
 type testEnv struct {
 	router     chi.Router
 	ledgerName string
-	chart      *core.Chart
+	chart      *wallet.Chart
 }
 
 func (e testEnv) Router() chi.Router {
@@ -74,18 +73,17 @@ func (e testEnv) LedgerName() string {
 	return e.ledgerName
 }
 
-func (e testEnv) Chart() *core.Chart {
+func (e testEnv) Chart() *wallet.Chart {
 	return e.chart
 }
 
 func newTestEnv(opts ...Option) *testEnv {
 	ret := &testEnv{}
 	ledgerMock := NewLedgerMock(opts...)
-	ret.chart = core.NewChart("")
+	ret.chart = wallet.NewChart("")
 	ret.ledgerName = uuid.NewString()
-	fundingService := wallet.NewFundingService(ret.ledgerName, ledgerMock, ret.chart)
-	repository := wallet.NewRepository(ret.ledgerName, ledgerMock, ret.chart)
-	ret.router = NewRouter(fundingService, repository, &sharedhealth.HealthController{}, sharedapi.ServiceInfo{
+	manager := wallet.NewManager(ret.ledgerName, ledgerMock, ret.chart)
+	ret.router = NewRouter(manager, &sharedhealth.HealthController{}, sharedapi.ServiceInfo{
 		Version: "latest",
 	})
 	return ret

@@ -11,8 +11,7 @@ import (
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +19,7 @@ import (
 func TestTransactionsList(t *testing.T) {
 	t.Parallel()
 
-	w := core.NewWallet(uuid.NewString(), metadata.Metadata{})
+	w := wallet.NewWallet(uuid.NewString(), metadata.Metadata{})
 
 	var transactions []sdk.Transaction
 	for i := 0; i < 10; i++ {
@@ -63,7 +62,7 @@ func TestTransactionsList(t *testing.T) {
 
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.Equal(t, testEnv.Chart().GetMainAccount(w.ID), query.Account)
+			require.Equal(t, testEnv.Chart().GetMainBalanceAccount(w.ID), query.Account)
 
 			hasMore := true
 			next := "1"
@@ -77,7 +76,7 @@ func TestTransactionsList(t *testing.T) {
 		}),
 	)
 
-	req := newRequest(t, http.MethodGet, fmt.Sprintf("/transactions?limit=%d&walletID=%s", pageSize, w.ID), nil)
+	req := newRequest(t, http.MethodGet, fmt.Sprintf("/transactions?pageSize=%d&walletID=%s", pageSize, w.ID), nil)
 	rec := httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
 

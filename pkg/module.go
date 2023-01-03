@@ -1,16 +1,18 @@
-package pkg
+package wallet
 
 import (
-	sharedapi "github.com/formancehq/go-libs/api"
-	"github.com/formancehq/wallets/pkg/api"
-	"github.com/formancehq/wallets/pkg/wallet"
 	"go.uber.org/fx"
 )
 
-func Module(ledgerName, chartPrefix string, serviceInfo sharedapi.ServiceInfo) fx.Option {
+func Module(ledgerName, chartPrefix string) fx.Option {
 	return fx.Module(
-		"wallets-core",
-		wallet.Module(ledgerName, chartPrefix),
-		api.Module(serviceInfo),
+		"wallet",
+		fx.Provide(fx.Annotate(NewDefaultLedger, fx.As(new(Ledger)))),
+		fx.Provide(func() *Chart {
+			return NewChart(chartPrefix)
+		}),
+		fx.Provide(func(ledger Ledger, chart *Chart) *Manager {
+			return NewManager(ledgerName, ledger, chart)
+		}),
 	)
 }

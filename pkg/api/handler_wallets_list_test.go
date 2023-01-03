@@ -11,8 +11,7 @@ import (
 	sdk "github.com/formancehq/formance-sdk-go"
 	sharedapi "github.com/formancehq/go-libs/api"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -20,9 +19,9 @@ import (
 func TestWalletsList(t *testing.T) {
 	t.Parallel()
 
-	var wallets []core.Wallet
+	var wallets []wallet.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{}))
+		wallets = append(wallets, wallet.NewWallet(uuid.NewString(), metadata.Metadata{}))
 	}
 	const pageSize = 2
 	numberOfPages := int64(len(wallets) / pageSize)
@@ -45,7 +44,7 @@ func TestWalletsList(t *testing.T) {
 				accounts := make([]sdk.Account, 0)
 				for _, wallet := range wallets[page*pageSize : (page+1)*pageSize] {
 					accounts = append(accounts, sdk.Account{
-						Address:  testEnv.Chart().GetMainAccount(wallet.ID),
+						Address:  testEnv.Chart().GetMainBalanceAccount(wallet.ID),
 						Metadata: wallet.LedgerMetadata(),
 					})
 				}
@@ -61,7 +60,7 @@ func TestWalletsList(t *testing.T) {
 			require.Equal(t, pageSize, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeyWalletSpecType: core.PrimaryWallet,
+				wallet.MetadataKeyWalletSpecType: wallet.PrimaryWallet,
 			}, query.Metadata)
 
 			hasMore := true
@@ -69,7 +68,7 @@ func TestWalletsList(t *testing.T) {
 			accounts := make([]sdk.Account, 0)
 			for _, wallet := range wallets[:pageSize] {
 				accounts = append(accounts, sdk.Account{
-					Address:  testEnv.Chart().GetMainAccount(wallet.ID),
+					Address:  testEnv.Chart().GetMainBalanceAccount(wallet.ID),
 					Metadata: wallet.LedgerMetadata(),
 				})
 			}
@@ -82,20 +81,20 @@ func TestWalletsList(t *testing.T) {
 		}),
 	)
 
-	req := newRequest(t, http.MethodGet, fmt.Sprintf("/wallets?limit=%d", pageSize), nil)
+	req := newRequest(t, http.MethodGet, fmt.Sprintf("/wallets?pageSize=%d", pageSize), nil)
 	rec := httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	cursor := &sharedapi.Cursor[core.Wallet]{}
+	cursor := &sharedapi.Cursor[wallet.Wallet]{}
 	readCursor(t, rec, cursor)
 	require.Len(t, cursor.Data, pageSize)
-	require.EqualValues(t, cursor.Data, wallets[:pageSize])
+	require.EqualValues(t, wallets[:pageSize], cursor.Data)
 
 	req = newRequest(t, http.MethodGet, fmt.Sprintf("/wallets?cursor=%s", cursor.Next), nil)
 	rec = httptest.NewRecorder()
 	testEnv.Router().ServeHTTP(rec, req)
-	cursor = &sharedapi.Cursor[core.Wallet]{}
+	cursor = &sharedapi.Cursor[wallet.Wallet]{}
 	readCursor(t, rec, cursor)
 	require.Len(t, cursor.Data, pageSize)
 	require.EqualValues(t, cursor.Data, wallets[pageSize:pageSize*2])
@@ -104,9 +103,9 @@ func TestWalletsList(t *testing.T) {
 func TestWalletsListByName(t *testing.T) {
 	t.Parallel()
 
-	var wallets []core.Wallet
+	var wallets []wallet.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{}))
+		wallets = append(wallets, wallet.NewWallet(uuid.NewString(), metadata.Metadata{}))
 	}
 
 	var testEnv *testEnv
@@ -115,8 +114,8 @@ func TestWalletsListByName(t *testing.T) {
 			require.Equal(t, defaultLimit, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeyWalletSpecType: core.PrimaryWallet,
-				core.MetadataKeyWalletName:     wallets[1].Name,
+				wallet.MetadataKeyWalletSpecType: wallet.PrimaryWallet,
+				wallet.MetadataKeyWalletName:     wallets[1].Name,
 			}, query.Metadata)
 
 			hasMore := false
@@ -126,7 +125,7 @@ func TestWalletsListByName(t *testing.T) {
 				HasMore:  &hasMore,
 				Next:     &next,
 				Data: []sdk.Account{{
-					Address:  testEnv.Chart().GetMainAccount(wallets[1].ID),
+					Address:  testEnv.Chart().GetMainBalanceAccount(wallets[1].ID),
 					Metadata: wallets[1].LedgerMetadata(),
 				}},
 			}, nil
@@ -138,18 +137,18 @@ func TestWalletsListByName(t *testing.T) {
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	cursor := &sharedapi.Cursor[core.Wallet]{}
+	cursor := &sharedapi.Cursor[wallet.Wallet]{}
 	readCursor(t, rec, cursor)
 	require.Len(t, cursor.Data, 1)
-	require.EqualValues(t, cursor.Data[0], wallets[1])
+	require.EqualValues(t, wallets[1], cursor.Data[0])
 }
 
 func TestWalletsListFilterMetadata(t *testing.T) {
 	t.Parallel()
 
-	var wallets []core.Wallet
+	var wallets []wallet.Wallet
 	for i := 0; i < 10; i++ {
-		wallets = append(wallets, core.NewWallet(uuid.NewString(), metadata.Metadata{
+		wallets = append(wallets, wallet.NewWallet(uuid.NewString(), metadata.Metadata{
 			"wallet": float64(i),
 		}))
 	}
@@ -160,8 +159,8 @@ func TestWalletsListFilterMetadata(t *testing.T) {
 			require.Equal(t, defaultLimit, query.Limit)
 			require.Equal(t, testEnv.LedgerName(), ledger)
 			require.Equal(t, map[string]any{
-				core.MetadataKeyWalletSpecType:               core.PrimaryWallet,
-				core.MetadataKeyWalletCustomData + ".wallet": "2",
+				wallet.MetadataKeyWalletSpecType:               wallet.PrimaryWallet,
+				wallet.MetadataKeyWalletCustomData + ".wallet": "2",
 			}, query.Metadata)
 
 			hasMore := false
@@ -172,7 +171,7 @@ func TestWalletsListFilterMetadata(t *testing.T) {
 				HasMore:  &hasMore,
 				Next:     &next,
 				Data: []sdk.Account{{
-					Address:  testEnv.Chart().GetMainAccount(wallets[2].ID),
+					Address:  testEnv.Chart().GetMainBalanceAccount(wallets[2].ID),
 					Metadata: wallets[2].LedgerMetadata(),
 				}},
 			}, nil
@@ -184,8 +183,8 @@ func TestWalletsListFilterMetadata(t *testing.T) {
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	cursor := &sharedapi.Cursor[core.Wallet]{}
+	cursor := &sharedapi.Cursor[wallet.Wallet]{}
 	readCursor(t, rec, cursor)
 	require.Len(t, cursor.Data, 1)
-	require.EqualValues(t, cursor.Data[0], wallets[2])
+	require.EqualValues(t, wallets[2], cursor.Data[0])
 }

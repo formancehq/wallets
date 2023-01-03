@@ -2,8 +2,6 @@ package wallet
 
 import (
 	"fmt"
-
-	"github.com/formancehq/wallets/pkg/core"
 )
 
 const (
@@ -14,14 +12,18 @@ const (
 type Subject struct {
 	Type       string `json:"type"`
 	Identifier string `json:"identifier"`
+	Balance    string `json:"balance"`
 }
 
-func (s Subject) resolveAccount(chart *core.Chart) string {
+func (s Subject) getAccount(chart *Chart) string {
 	switch s.Type {
 	case SubjectTypeLedgerAccount:
 		return s.Identifier
 	case SubjectTypeWallet:
-		return chart.GetMainAccount(s.Identifier)
+		if s.Balance != "" {
+			return chart.GetBalanceAccount(s.Identifier, s.Balance)
+		}
+		return chart.GetMainBalanceAccount(s.Identifier)
 	}
 	panic("unknown type")
 }
@@ -35,13 +37,13 @@ func (s Subject) Validate() error {
 
 type Subjects []Subject
 
-func (subjects Subjects) resolveAccounts(chart *core.Chart) []string {
+func (subjects Subjects) ResolveAccounts(chart *Chart) []string {
 	if len(subjects) == 0 {
 		subjects = []Subject{DefaultCreditSource}
 	}
 	resolvedSources := make([]string, 0)
 	for _, source := range subjects {
-		resolvedSources = append(resolvedSources, source.resolveAccount(chart))
+		resolvedSources = append(resolvedSources, source.getAccount(chart))
 	}
 	return resolvedSources
 }
@@ -53,4 +55,19 @@ func (subjects Subjects) Validate() error {
 		}
 	}
 	return nil
+}
+
+func NewWalletSubject(walletID, balance string) Subject {
+	return Subject{
+		Type:       SubjectTypeWallet,
+		Identifier: walletID,
+		Balance:    balance,
+	}
+}
+
+func NewLedgerAccountSubject(account string) Subject {
+	return Subject{
+		Type:       SubjectTypeLedgerAccount,
+		Identifier: account,
+	}
 }
