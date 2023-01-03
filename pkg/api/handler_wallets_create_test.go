@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -15,9 +15,11 @@ import (
 func TestWalletsCreate(t *testing.T) {
 	t.Parallel()
 
-	createWalletRequest := CreateWalletRequest{
-		Metadata: map[string]interface{}{
-			"foo": "bar",
+	createWalletRequest := wallet.CreateRequest{
+		PatchRequest: wallet.PatchRequest{
+			Metadata: map[string]interface{}{
+				"foo": "bar",
+			},
 		},
 		Name: uuid.NewString(),
 	}
@@ -41,10 +43,10 @@ func TestWalletsCreate(t *testing.T) {
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	wallet := &core.Wallet{}
+	wallet := &wallet.Wallet{}
 	readResponse(t, rec, wallet)
 	require.Equal(t, testEnv.LedgerName(), ledger)
-	require.Equal(t, account, testEnv.Chart().GetMainAccount(wallet.ID))
+	require.Equal(t, account, testEnv.Chart().GetMainBalanceAccount(wallet.ID))
 	require.Equal(t, wallet.LedgerMetadata(), md)
 	require.Equal(t, wallet.Metadata, createWalletRequest.Metadata)
 	require.Equal(t, wallet.Name, createWalletRequest.Name)

@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -16,40 +16,42 @@ import (
 func TestWalletsPatch(t *testing.T) {
 	t.Parallel()
 
-	wallet := core.NewWallet(uuid.NewString(), metadata.Metadata{
-		"foo": "bar",
-	})
-	patchWalletRequest := PatchWalletRequest{
+	patchWalletRequest := wallet.PatchRequest{
 		Metadata: map[string]interface{}{
 			"role": "admin",
 			"foo":  "baz",
 		},
 	}
+	w := wallet.NewWallet(uuid.NewString(), metadata.Metadata{
+		"foo": "bar",
+	})
 
-	req := newRequest(t, http.MethodPatch, "/wallets/"+wallet.ID, patchWalletRequest)
+	req := newRequest(t, http.MethodPatch, "/wallets/"+w.ID, patchWalletRequest)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.Equal(t, testEnv.Chart().GetMainAccount(wallet.ID), account)
+			require.Equal(t, testEnv.Chart().GetMainBalanceAccount(w.ID), account)
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  account,
-				Metadata: wallet.LedgerMetadata(),
+				Metadata: w.LedgerMetadata(),
 			}, nil
 		}),
 		WithAddMetadataToAccount(func(ctx context.Context, ledger, account string, md metadata.Metadata) error {
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.Equal(t, testEnv.Chart().GetMainAccount(wallet.ID), account)
+			require.Equal(t, testEnv.Chart().GetMainBalanceAccount(w.ID), account)
 			require.EqualValues(t, metadata.Metadata{
-				core.MetadataKeyWalletID:       wallet.ID,
-				core.MetadataKeyWalletName:     wallet.Name,
-				core.MetadataKeyWalletSpecType: core.PrimaryWallet,
-				core.MetadataKeyWalletCustomData: metadata.Metadata{
+				wallet.MetadataKeyWalletID:       w.ID,
+				wallet.MetadataKeyWalletName:     w.Name,
+				wallet.MetadataKeyWalletSpecType: wallet.PrimaryWallet,
+				wallet.MetadataKeyWalletCustomData: metadata.Metadata{
 					"role": "admin",
 					"foo":  "baz",
 				},
+				wallet.MetadataKeyBalanceName:   wallet.MainBalance,
+				wallet.MetadataKeyWalletBalance: wallet.TrueValue,
 			}, md)
 			return nil
 		}),

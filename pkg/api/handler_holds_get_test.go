@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +17,7 @@ func TestHoldsGet(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
-	hold := core.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
+	hold := wallet.NewDebitHold(walletID, "bank", "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodGet, "/holds/"+hold.ID, nil)
 	rec := httptest.NewRecorder()
@@ -47,11 +47,11 @@ func TestHoldsGet(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
 
-	ret := core.ExpandedDebitHold{}
+	ret := wallet.ExpandedDebitHold{}
 	readResponse(t, rec, &ret)
-	require.EqualValues(t, core.ExpandedDebitHold{
+	require.EqualValues(t, wallet.ExpandedDebitHold{
 		DebitHold:      hold,
-		OriginalAmount: *core.NewMonetaryInt(100),
-		Remaining:      *core.NewMonetaryInt(50),
+		OriginalAmount: *wallet.NewMonetaryInt(100),
+		Remaining:      *wallet.NewMonetaryInt(50),
 	}, ret)
 }

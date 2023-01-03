@@ -1,9 +1,10 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
@@ -15,7 +16,7 @@ const (
 	ErrorCodeClosedHold       = "HOLD_CLOSED"
 )
 
-func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request) {
+func (m *MainHandler) creditWalletHandler(w http.ResponseWriter, r *http.Request) {
 	data := &wallet.CreditRequest{}
 	if err := render.Bind(r, data); err != nil {
 		badRequest(w, ErrorCodeValidation, err)
@@ -28,9 +29,14 @@ func (m *MainHandler) CreditWalletHandler(w http.ResponseWriter, r *http.Request
 		CreditRequest: *data,
 	}
 
-	err := m.funding.Credit(r.Context(), credit)
+	err := m.manager.Credit(r.Context(), credit)
 	if err != nil {
-		internalError(w, r, err)
+		switch {
+		case errors.Is(err, wallet.ErrBalanceNotExists):
+			badRequest(w, ErrorCodeValidation, err)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 

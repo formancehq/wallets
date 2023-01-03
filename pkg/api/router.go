@@ -5,15 +5,14 @@ import (
 
 	sharedapi "github.com/formancehq/go-libs/api"
 	sharedhealth "github.com/formancehq/go-libs/health"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/riandyrn/otelchi"
 )
 
 func NewRouter(
-	funding *wallet.FundingService,
-	repository *wallet.Repository,
+	manager *wallet.Manager,
 	healthController *sharedhealth.HealthController,
 	serviceInfo sharedapi.ServiceInfo,
 ) *chi.Mux {
@@ -31,27 +30,32 @@ func NewRouter(
 				handler.ServeHTTP(w, r)
 			})
 		})
-		main := NewMainHandler(funding, repository)
+		main := NewMainHandler(manager)
 
 		r.Route("/wallets", func(r chi.Router) {
-			r.Get("/", main.ListWalletsHandler)
-			r.Post("/", main.CreateWalletHandler)
+			r.Get("/", main.listWalletsHandler)
+			r.Post("/", main.createWalletHandler)
 			r.Route("/{walletID}", func(r chi.Router) {
-				r.Get("/", main.GetWalletHandler)
-				r.Patch("/", main.PatchWalletHandler)
-				r.Post("/debit", main.DebitWalletHandler)
-				r.Post("/credit", main.CreditWalletHandler)
+				r.Get("/", main.getWalletHandler)
+				r.Patch("/", main.patchWalletHandler)
+				r.Post("/debit", main.debitWalletHandler)
+				r.Post("/credit", main.creditWalletHandler)
+				r.Route("/balances", func(r chi.Router) {
+					r.Get("/", main.listBalancesHandler)
+					r.Post("/", main.createBalanceHandler)
+					r.Get("/{balanceName}", main.getBalanceHandler)
+				})
 			})
 		})
 		r.Route("/transactions", func(r chi.Router) {
-			r.Get("/", main.ListTransactions)
+			r.Get("/", main.listTransactions)
 		})
 		r.Route("/holds", func(r chi.Router) {
-			r.Get("/", main.ListHoldsHandler)
+			r.Get("/", main.listHoldsHandler)
 			r.Route("/{holdID}", func(r chi.Router) {
-				r.Get("/", main.GetHoldHandler)
-				r.Post("/confirm", main.ConfirmHoldHandler)
-				r.Post("/void", main.VoidHoldHandler)
+				r.Get("/", main.getHoldHandler)
+				r.Post("/confirm", main.confirmHoldHandler)
+				r.Post("/void", main.voidHoldHandler)
 			})
 		})
 	})

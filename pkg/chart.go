@@ -1,8 +1,10 @@
-package core
+package wallet
 
 import (
 	"strings"
 )
+
+const MainBalance = "main"
 
 type Address []string
 
@@ -33,17 +35,21 @@ func (c *Chart) BasePath() Address {
 	return addr
 }
 
-func (c *Chart) GetMainAccount(walletID string) string {
-	addr := c.BasePath()
-	addr = append(addr, walletID, "main")
-
-	return addr.String()
+func (c *Chart) GetMainBalanceAccount(walletID string) string {
+	return c.GetBalanceAccount(walletID, MainBalance)
 }
 
 func (c *Chart) GetHoldAccount(holdID string) string {
 	addr := c.BasePath()
 	addr = append(addr, "holds")
 	addr = append(addr, holdID)
+
+	return addr.String()
+}
+
+func (c *Chart) GetBalanceAccount(walletID, balanceName string) string {
+	addr := c.BasePath()
+	addr = append(addr, walletID, balanceName)
 
 	return addr.String()
 }

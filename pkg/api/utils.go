@@ -9,7 +9,7 @@ import (
 
 	sharedapi "github.com/formancehq/go-libs/api"
 	sharedlogging "github.com/formancehq/go-libs/logging"
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 )
 
 const defaultLimit = 15
@@ -79,13 +79,13 @@ func parsePaginationToken(r *http.Request) string {
 	return r.URL.Query().Get("cursor")
 }
 
-func parseLimit(r *http.Request) int {
-	limit := r.URL.Query().Get("limit")
-	if limit == "" {
+func parsePageSize(r *http.Request) int {
+	pageSize := r.URL.Query().Get("pageSize")
+	if pageSize == "" {
 		return defaultLimit
 	}
 
-	v, err := strconv.ParseInt(limit, 10, 32)
+	v, err := strconv.ParseInt(pageSize, 10, 32)
 	if err != nil {
 		panic(err)
 	}
@@ -98,9 +98,11 @@ func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) wal
 		payload = f(r)
 	}
 	return wallet.ListQuery[T]{
-		Limit:           parseLimit(r),
-		PaginationToken: parsePaginationToken(r),
-		Payload:         payload,
+		Pagination: wallet.Pagination{
+			Limit:           parsePageSize(r),
+			PaginationToken: parsePaginationToken(r),
+		},
+		Payload: payload,
 	}
 }
 

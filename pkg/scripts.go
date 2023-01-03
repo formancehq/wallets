@@ -43,3 +43,9 @@ func BuildCreditWalletScript(sources ...string) string {
 func BuildDebitWalletScript() string {
 	return renderTemplate(DebitWalletScript, map[string]any{})
 }
+
+func BuildCancelHoldScript(asset string) string {
+	return renderTemplate(CancelHoldScript, map[string]any{
+		"Asset": asset,
+	})
+}

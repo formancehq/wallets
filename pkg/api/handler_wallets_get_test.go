@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/wallets/pkg/core"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -16,22 +16,22 @@ import (
 func TestWalletsGet(t *testing.T) {
 	t.Parallel()
 
-	wallet := core.NewWallet(uuid.NewString(), metadata.Metadata{})
+	w := wallet.NewWallet(uuid.NewString(), metadata.Metadata{})
 	balances := map[string]int32{
 		"USD": 100,
 	}
 
-	req := newRequest(t, http.MethodGet, "/wallets/"+wallet.ID, nil)
+	req := newRequest(t, http.MethodGet, "/wallets/"+w.ID, nil)
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*sdk.AccountWithVolumesAndBalances, error) {
 			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.Equal(t, testEnv.Chart().GetMainAccount(wallet.ID), account)
+			require.Equal(t, testEnv.Chart().GetMainBalanceAccount(w.ID), account)
 			return &sdk.AccountWithVolumesAndBalances{
 				Address:  account,
-				Metadata: wallet.LedgerMetadata(),
+				Metadata: w.LedgerMetadata(),
 				Balances: &balances,
 			}, nil
 		}),
@@ -39,10 +39,10 @@ func TestWalletsGet(t *testing.T) {
 	testEnv.Router().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	walletWithBalances := core.WalletWithBalances{}
+	walletWithBalances := wallet.WithBalances{}
 	readResponse(t, rec, &walletWithBalances)
-	require.Equal(t, core.WalletWithBalances{
-		Wallet:   wallet,
+	require.Equal(t, wallet.WithBalances{
+		Wallet:   w,
 		Balances: balances,
 	}, walletWithBalances)
 }

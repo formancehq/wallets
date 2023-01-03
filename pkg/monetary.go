@@ -1,4 +1,4 @@
-package core
+package wallet
 
 import (
 	"math/big"
@@ -7,6 +7,13 @@ import (
 type Monetary struct {
 	Amount *MonetaryInt `json:"amount"`
 	Asset  string       `json:"asset"`
+}
+
+func NewMonetary(amount *MonetaryInt, asset string) Monetary {
+	return Monetary{
+		Amount: amount,
+		Asset:  asset,
+	}
 }
 
 type MonetaryInt big.Int

@@ -1,4 +1,4 @@
-package core
+package wallet
 
 import (
 	"github.com/formancehq/go-libs/metadata"
@@ -14,12 +14,6 @@ type DebitHold struct {
 	Description string            `json:"description"`
 }
 
-type ExpandedDebitHold struct {
-	DebitHold
-	OriginalAmount MonetaryInt `json:"originalAmount"`
-	Remaining      MonetaryInt `json:"remaining"`
-}
-
 func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 	return metadata.Metadata{
 		MetadataKeyWalletSpecType: HoldWallet,
@@ -28,7 +22,7 @@ func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 		MetadataKeyHoldAsset:      h.Asset,
 		MetadataKeyHoldVoidDestination: map[string]any{
 			"type":  "account",
-			"value": chart.GetMainAccount(h.WalletID),
+			"value": chart.GetMainBalanceAccount(h.WalletID),
 		},
 		MetadataKeyHoldDestination: map[string]any{
 			"type":  "account",
@@ -50,10 +44,7 @@ func NewDebitHold(walletID, destination, asset, description string, md metadata.
 	}
 }
 
-func DebitHoldFromLedgerAccount(account interface {
-	GetMetadata() map[string]any
-},
-) DebitHold {
+func DebitHoldFromLedgerAccount(account metadata.Owner) DebitHold {
 	hold := DebitHold{}
 	hold.ID = account.GetMetadata()[MetadataKeyHoldID].(string)
 	hold.WalletID = account.GetMetadata()[MetadataKeyHoldWalletID].(string)
@@ -62,6 +53,16 @@ func DebitHoldFromLedgerAccount(account interface {
 	hold.Metadata = account.GetMetadata()[MetadataKeyWalletCustomData].(map[string]any)
 	hold.Description = account.GetMetadata()[MetadataKeyWalletHoldDescription].(string)
 	return hold
+}
+
+type ExpandedDebitHold struct {
+	DebitHold
+	OriginalAmount MonetaryInt `json:"originalAmount"`
+	Remaining      MonetaryInt `json:"remaining"`
+}
+
+func (h ExpandedDebitHold) IsClosed() bool {
+	return h.Remaining.Uint64() == 0
 }
 
 func ExpandedDebitHoldFromLedgerAccount(account interface {
@@ -76,4 +77,26 @@ func ExpandedDebitHoldFromLedgerAccount(account interface {
 	hold.OriginalAmount = *NewMonetaryInt(int64(account.GetVolumes()[hold.Asset]["input"]))
 	hold.Remaining = *NewMonetaryInt(int64(account.GetBalances()[hold.Asset]))
 	return hold
+}
+
+type ConfirmHold struct {
+	HoldID    string `json:"holdID"`
+	Amount    MonetaryInt
+	Reference string
+	Final     bool
+}
+
+func (c ConfirmHold) resolveAmount(hold ExpandedDebitHold) (uint64, error) {
+	amount := hold.Remaining.Uint64()
+	if c.Amount.Uint64() != 0 {
+		if c.Amount.Uint64() > amount {
+			return 0, ErrInsufficientFundError
+		}
+		amount = c.Amount.Uint64()
+	}
+	return amount, nil
+}
+
+type VoidHold struct {
+	HoldID string `json:"holdID"`
 }

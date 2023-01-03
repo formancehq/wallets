@@ -4,12 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5"
 )
 
-func (m *MainHandler) VoidHoldHandler(w http.ResponseWriter, r *http.Request) {
-	err := m.funding.VoidHold(r.Context(), wallet.VoidHold{
+func (m *MainHandler) voidHoldHandler(w http.ResponseWriter, r *http.Request) {
+	err := m.manager.VoidHold(r.Context(), wallet.VoidHold{
 		HoldID: chi.URLParam(r, "holdID"),
 	})
 	if err != nil {

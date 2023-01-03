@@ -1,20 +1,15 @@
 package api
 
 import (
-	"github.com/formancehq/wallets/pkg/wallet"
+	wallet "github.com/formancehq/wallets/pkg"
 )
 
 type MainHandler struct {
-	funding    *wallet.FundingService
-	repository *wallet.Repository
+	manager *wallet.Manager
 }
 
-func NewMainHandler(
-	funding *wallet.FundingService,
-	repository *wallet.Repository,
-) *MainHandler {
+func NewMainHandler(funding *wallet.Manager) *MainHandler {
 	return &MainHandler{
-		funding:    funding,
-		repository: repository,
+		manager: funding,
 	}
 }
