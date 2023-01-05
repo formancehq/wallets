@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/formancehq/go-libs/metadata"
@@ -38,6 +39,42 @@ type Wallet struct {
 type WithBalances struct {
 	Wallet
 	Balances map[string]int32 `json:"balances"`
+}
+
+func (w *WithBalances) UnmarshalJSON(data []byte) error {
+	type view struct {
+		Wallet
+		Balances struct {
+			Main ExpandedBalance
+		}
+	}
+	v := view{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	*w = WithBalances{
+		Wallet:   v.Wallet,
+		Balances: v.Balances.Main.Assets,
+	}
+	return nil
+}
+
+func (w WithBalances) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Wallet
+		Balances struct {
+			Main ExpandedBalance
+		}
+	}{
+		Wallet: w.Wallet,
+		Balances: struct {
+			Main ExpandedBalance
+		}{
+			Main: ExpandedBalance{
+				Assets: w.Balances,
+			},
+		},
+	})
 }
 
 func (w Wallet) LedgerMetadata() metadata.Metadata {

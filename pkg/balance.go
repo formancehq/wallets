@@ -31,7 +31,7 @@ func (c *CreateBalance) Bind(r *http.Request) error {
 }
 
 type Balance struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
 
 func (b Balance) LedgerMetadata(walletID string) metadata.Metadata {
