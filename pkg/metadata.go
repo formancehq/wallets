@@ -12,6 +12,7 @@ const (
 	MetadataKeyWalletCustomData      = "wallets/custom_data"
 	MetadataKeyHoldWalletID          = "wallets/holds/wallet_id"
 	MetadataKeyHoldAsset             = "wallets/holds/asset"
+	MetadataKeyHoldSubject           = "wallets/holds/subject"
 	MetadataKeyHoldID                = "wallets/holds/id"
 	MetadataKeyWalletHoldDescription = "wallets/holds/description"
 	MetadataKeyHoldVoidDestination   = "void_destination"
