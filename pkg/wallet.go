@@ -45,8 +45,8 @@ func (w *WithBalances) UnmarshalJSON(data []byte) error {
 	type view struct {
 		Wallet
 		Balances struct {
-			Main ExpandedBalance
-		}
+			Main ExpandedBalance `json:"main"`
+		} `json:"balances"`
 	}
 	v := view{}
 	if err := json.Unmarshal(data, &v); err != nil {
@@ -63,12 +63,12 @@ func (w WithBalances) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Wallet
 		Balances struct {
-			Main ExpandedBalance
-		}
+			Main ExpandedBalance `json:"main"`
+		} `json:"balances"`
 	}{
 		Wallet: w.Wallet,
 		Balances: struct {
-			Main ExpandedBalance
+			Main ExpandedBalance `json:"main"`
 		}{
 			Main: ExpandedBalance{
 				Assets: w.Balances,
