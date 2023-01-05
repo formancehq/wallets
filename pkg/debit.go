@@ -55,3 +55,12 @@ func (d Debit) sourceAccount(chart *Chart) string {
 	}
 	return chart.GetBalanceAccount(d.WalletID, d.Balance)
 }
+
+func (d Debit) Validate() error {
+	if d.Destination != nil {
+		if err := d.Destination.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -79,6 +79,10 @@ func NewManager(
 }
 
 func (m *Manager) Debit(ctx context.Context, debit Debit) (*DebitHold, error) {
+	if err := debit.Validate(); err != nil {
+		return nil, err
+	}
+
 	dest := debit.getDestination()
 
 	var hold *DebitHold
