@@ -27,14 +27,14 @@ type Debit struct {
 	WalletID string `json:"walletID"`
 }
 
-func (d Debit) newHold(chart *Chart) DebitHold {
+func (d Debit) newHold() DebitHold {
 	md := d.Metadata
 	if md == nil {
 		md = metadata.Metadata{}
 	}
 	return NewDebitHold(
 		d.WalletID,
-		d.getDestination().getAccount(chart),
+		d.getDestination(),
 		d.Amount.Asset,
 		d.Description,
 		md,
