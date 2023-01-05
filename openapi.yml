@@ -396,7 +396,6 @@ components:
       required:
         - name
         - id
-        - balances
         - metadata
       properties:
         id:
@@ -407,12 +406,6 @@ components:
           type: object
           description: Metadata associated with the wallet.
           additionalProperties: {}
-        balances:
-          type: object
-          description: The balances of the wallet.
-          additionalProperties:
-            type: integer
-            description: The balance of the wallet in the specified currency.
         name:
           type: string
     WalletWithBalances:
@@ -424,8 +417,11 @@ components:
         properties:
           balances:
             type: object
-            additionalProperties:
-              type: integer
+            required:
+            - main
+            properties:
+              main:
+                $ref: '#/components/schemas/AssetHolder'
     Hold:
       type: object
       required:
@@ -754,6 +750,15 @@ components:
       properties:
         version:
           type: string
+    AssetHolder:
+      type: object
+      required:
+      - assets
+      properties:
+        assets:
+          type: object
+          additionalProperties:
+            type: number
     Balance:
       type: object
       required:
@@ -764,14 +769,7 @@ components:
     BalanceWithAssets:
       allOf:
       - $ref: '#/components/schemas/Balance'
-      - type: object
-        required:
-        - assets
-        properties:
-          assets:
-            type: object
-            additionalProperties:
-              type: number
+      - $ref: '#/components/schemas/AssetHolder'
     ListBalancesResponse:
       type: object
       required:
