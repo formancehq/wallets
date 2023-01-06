@@ -397,6 +397,7 @@ components:
       - name
       - id
       - metadata
+      - createdAt
       properties:
         id:
           type: string
@@ -408,6 +409,9 @@ components:
           additionalProperties: {}
         name:
           type: string
+        createdAt:
+          type: string
+          format: date-time
     WalletWithBalances:
       allOf:
       - $ref: '#/components/schemas/Wallet'
