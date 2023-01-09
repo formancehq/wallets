@@ -1,6 +1,8 @@
 package wallet
 
 import (
+	"time"
+
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
 )
@@ -12,6 +14,7 @@ type DebitHold struct {
 	Asset       string            `json:"asset"`
 	Metadata    metadata.Metadata `json:"metadata"`
 	Description string            `json:"description"`
+	CreatedAt   time.Time         `json:"createdAt"`
 }
 
 func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
@@ -35,6 +38,7 @@ func (h DebitHold) LedgerMetadata(chart *Chart) metadata.Metadata {
 			"identifier": h.Destination.Identifier,
 			"balance":    h.Destination.Balance,
 		},
+		MetadataKeyCreatedAt: h.CreatedAt.Format(time.RFC3339Nano),
 	}
 }
 
@@ -69,6 +73,11 @@ func DebitHoldFromLedgerAccount(account Account) DebitHold {
 	hold.Asset = account.GetMetadata()[MetadataKeyHoldAsset].(string)
 	hold.Metadata = account.GetMetadata()[MetadataKeyWalletCustomData].(map[string]any)
 	hold.Description = account.GetMetadata()[MetadataKeyWalletHoldDescription].(string)
+	var err error
+	hold.CreatedAt, err = time.Parse(time.RFC3339Nano, account.GetMetadata()[MetadataKeyCreatedAt].(string))
+	if err != nil {
+		panic(err)
+	}
 	return hold
 }
 
