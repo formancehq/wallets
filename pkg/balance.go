@@ -31,7 +31,8 @@ func (c *CreateBalance) Bind(r *http.Request) error {
 }
 
 type Balance struct {
-	Name string `json:"name,omitempty"`
+	Name   string           `json:"name,omitempty"`
+	Assets map[string]int32 `json:"assets,omitempty"`
 }
 
 func (b Balance) LedgerMetadata(walletID string) metadata.Metadata {
@@ -39,6 +40,7 @@ func (b Balance) LedgerMetadata(walletID string) metadata.Metadata {
 		MetadataKeyWalletID:      walletID,
 		MetadataKeyWalletBalance: TrueValue,
 		MetadataKeyBalanceName:   b.Name,
+		MetadataKeyBalanceAsset:  b.Assets,
 	}
 }
 
@@ -49,9 +51,16 @@ func NewBalance(name string) Balance {
 }
 
 func BalanceFromAccount(account Account) Balance {
-	return Balance{
-		Name: GetMetadata(account, MetadataKeyBalanceName).(string),
+	balance := Balance{}
+	assets, ok := account.GetMetadata()[MetadataKeyBalanceAsset].(map[string]int32)
+	if ok {
+		balance.Assets = assets
 	}
+	name, ok := account.GetMetadata()[MetadataKeyBalanceName].(string)
+	if ok {
+		balance.Name = name
+	}
+	return balance
 }
 
 type ExpandedBalance struct {
@@ -64,8 +73,9 @@ func ExpandedBalanceFromAccount(account interface {
 	GetBalances() map[string]int32
 },
 ) ExpandedBalance {
-	return ExpandedBalance{
+	expandedBalance := ExpandedBalance{
 		Balance: BalanceFromAccount(account),
-		Assets:  account.GetBalances(),
 	}
+	expandedBalance.Assets = account.GetBalances()
+	return expandedBalance
 }

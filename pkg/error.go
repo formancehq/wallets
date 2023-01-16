@@ -13,5 +13,6 @@ var (
 	ErrInvalidBalanceName      = errors.New("invalid balance name")
 	ErrReservedBalanceName     = errors.New("reserved balance name")
 	ErrBalanceNotExists        = errors.New("balance not exists")
+	ErrBalanceNotMain          = errors.New("balance not main")
 	ErrInvalidBalanceSpecified = errors.New("invalid balance specified")
 )

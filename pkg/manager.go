@@ -426,14 +426,10 @@ func (m *Manager) CreateBalance(ctx context.Context, data *CreateBalance) (*Bala
 }
 
 func (m *Manager) GetBalance(ctx context.Context, walletID string, balanceName string) (*ExpandedBalance, error) {
-	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetBalanceAccount(walletID, balanceName))
+	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetBalanceAccount(walletID, balanceName+":"+MainBalance))
 	if err != nil {
 		return nil, err
 	}
-	if account.Metadata[MetadataKeyWalletBalance] != TrueValue {
-		return nil, ErrBalanceNotExists
-	}
-
 	return Ptr(ExpandedBalanceFromAccount(account)), nil
 }
 
