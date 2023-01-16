@@ -75,7 +75,7 @@ func ExpandedBalanceFromAccount(account interface {
 ) ExpandedBalance {
 	expandedBalance := ExpandedBalance{
 		Balance: BalanceFromAccount(account),
+		Assets:  account.GetBalances(),
 	}
-	expandedBalance.Assets = account.GetBalances()
 	return expandedBalance
 }
