@@ -433,7 +433,6 @@ func (m *Manager) GetBalance(ctx context.Context, walletID string, balanceName s
 	if account.Metadata[MetadataKeyWalletBalance] != TrueValue {
 		return nil, ErrBalanceNotExists
 	}
-
 	return Ptr(ExpandedBalanceFromAccount(account)), nil
 }
 
