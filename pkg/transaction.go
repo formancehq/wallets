@@ -3,7 +3,7 @@ package wallet
 import (
 	"encoding/json"
 
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 )
 
 type Transaction struct {

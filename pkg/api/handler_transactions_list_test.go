@@ -13,7 +13,7 @@ import (
 
 	sharedapi "github.com/formancehq/go-libs/bun/bunpaginate"
 
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/pointer"
 
 	"github.com/formancehq/go-libs/metadata"

@@ -14,7 +14,7 @@ import (
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
 
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
 	sharedapi "github.com/formancehq/go-libs/api"
 	"github.com/formancehq/go-libs/auth"

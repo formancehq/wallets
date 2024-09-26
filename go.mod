@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.7
 
 require (
-	github.com/formancehq/formance-sdk-go/v2 v2.0.0-00010101000000-000000000000
+	github.com/formancehq/formance-sdk-go/v3 v3.0.0
 	github.com/formancehq/go-libs v1.7.1
 	github.com/formancehq/ledger v0.0.0-00010101000000-000000000000
 	github.com/go-chi/chi/v5 v5.1.0
@@ -79,6 +79,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
@@ -89,6 +90,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/formancehq/formance-sdk-go/v2 => ../../releases/sdks/go
-
-replace github.com/formancehq/ledger => ../../components/ledger
+replace github.com/formancehq/ledger => github.com/formancehq/ledger v0.0.0-20240925213413-0ef9d8eb67e6

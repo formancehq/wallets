@@ -7,16 +7,16 @@ import (
 	"math/big"
 	stdtime "time"
 
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/sdkerrors"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/query"
 
 	"github.com/formancehq/go-libs/time"
 
-	sdk "github.com/formancehq/formance-sdk-go/v2"
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/operations"
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
+	sdk "github.com/formancehq/formance-sdk-go/v3"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/operations"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/collectionutils"
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/formancehq/go-libs/pointer"

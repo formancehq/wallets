@@ -3,7 +3,7 @@ package wallet
 import (
 	"net/http"
 
-	sdk "github.com/formancehq/formance-sdk-go/v2"
+	sdk "github.com/formancehq/formance-sdk-go/v3"
 
 	"go.uber.org/fx"
 )

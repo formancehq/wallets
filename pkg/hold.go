@@ -3,7 +3,7 @@ package wallet
 import (
 	"math/big"
 
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
 	"github.com/formancehq/go-libs/metadata"
 	"github.com/google/uuid"
