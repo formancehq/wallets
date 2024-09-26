@@ -2,15 +2,10 @@ VERSION 0.8
 
 IMPORT github.com/formancehq/earthly:tags/v0.16.2 AS core
 
-IMPORT ../../releases AS releases
-
-
 FROM core+base-image
 
 sources:
     WORKDIR src
-    COPY (stack+sources/out --LOCATION=components/ledger) components/ledger
-    COPY --pass-args (releases+sdk-generate/go) /src/releases/sdks/go
     WORKDIR /src
     COPY go.* .
     COPY --dir pkg cmd .
