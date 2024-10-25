@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.7
 
 require (
-	github.com/formancehq/formance-sdk-go/v3 v3.0.0
+	github.com/formancehq/formance-sdk-go/v3 v3.1.0
 	github.com/formancehq/go-libs v1.7.1
 	github.com/formancehq/ledger v0.0.0-00010101000000-000000000000
 	github.com/go-chi/chi/v5 v5.1.0
