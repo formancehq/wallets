@@ -3,7 +3,7 @@
 package operations
 
 import (
-	"openapi/models/components"
+	"github.com/formancehq/wallets/pkg/client/models/components"
 )
 
 type CreateBalanceRequest struct {

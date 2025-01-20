@@ -4,8 +4,8 @@ package operations
 
 import (
 	"errors"
-	"openapi/internal/utils"
-	"openapi/retry"
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
+	"github.com/formancehq/wallets/pkg/client/retry"
 	"time"
 )
 

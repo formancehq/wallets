@@ -5,8 +5,8 @@ management:
   docVersion: 0.1.0
   speakeasyVersion: 1.351.0
   generationVersion: 2.384.1
-  releaseVersion: 0.0.1
-  configChecksum: e78b720f8c05dc2f5dddefb31c1cb6cd
+  releaseVersion: 0.6.0
+  configChecksum: 7402711c7e3f026cf2ffe8b053195040
 features:
   go:
     additionalDependencies: 0.1.0
@@ -14,7 +14,6 @@ features:
     core: 3.5.2
     defaultEnabledRetries: 0.2.0
     envVarSecurityUsage: 0.2.1
-    flattening: 2.81.1
     globalSecurity: 2.82.9
     globalSecurityCallbacks: 0.1.0
     globalServerURLs: 2.82.2
@@ -28,7 +27,7 @@ features:
 generatedFiles:
   - v1.go
   - wallets.go
-  - sdk.go
+  - formance.go
   - go.mod
   - models/sdkerrors/sdkerror.go
   - retry/config.go
@@ -170,7 +169,7 @@ generatedFiles:
   - docs/models/components/expandeddebithold.md
   - docs/models/components/confirmholdrequest.md
   - docs/models/components/security.md
-  - docs/sdks/sdk/README.md
+  - docs/sdks/formance/README.md
   - docs/sdks/wallets/README.md
   - docs/models/operations/option.md
   - docs/sdks/v1/README.md

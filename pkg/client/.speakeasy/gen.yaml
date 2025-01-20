@@ -1,6 +1,6 @@
 configVersion: 2.0.0
 generation:
-  sdkClassName: SDK
+  sdkClassName: Formance
   maintainOpenAPIOrder: true
   usageSnippets:
     optionalPropertyRendering: withExample
@@ -12,10 +12,11 @@ generation:
   auth:
     oAuth2ClientCredentialsEnabled: true
 go:
-  version: 0.0.1
+  version: 0.6.0
   additionalDependencies: {}
   allowUnknownFieldsInWeakUnions: false
   clientServerStatusCodesAsErrors: true
+  envVarPrefix: FORMANCE
   flattenGlobalSecurity: true
   imports:
     option: openapi
@@ -26,8 +27,8 @@ go:
       shared: models/components
       webhooks: models/webhooks
   inputModelSuffix: input
-  maxMethodParams: 4
+  maxMethodParams: 0
   methodArguments: require-security-and-request
   outputModelSuffix: output
-  packageName: openapi
+  packageName: github.com/formancehq/wallets/pkg/client
   responseFormat: envelope-http

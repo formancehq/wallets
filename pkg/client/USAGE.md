@@ -4,14 +4,14 @@ package main
 
 import (
 	"context"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/components"
 	"log"
-	"openapi"
-	"openapi/models/components"
 )
 
 func main() {
-	s := openapi.New(
-		openapi.WithSecurity(components.Security{
+	s := client.New(
+		client.WithSecurity(components.Security{
 			ClientID:     "",
 			ClientSecret: "",
 		}),

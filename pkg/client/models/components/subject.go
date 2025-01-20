@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"openapi/internal/utils"
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
 )
 
 type SubjectType string
