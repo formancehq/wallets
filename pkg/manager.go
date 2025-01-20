@@ -322,7 +322,7 @@ func (m *Manager) ListWallets(ctx context.Context, query ListQuery[ListWallets])
 			metadata := metadata.Metadata{
 				MetadataKeyWalletSpecType: PrimaryWallet,
 			}
-			if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
+			if len(query.Payload.Metadata) > 0 {
 				for k, v := range query.Payload.Metadata {
 					metadata[MetadataKeyWalletCustomDataPrefix+k] = v
 				}
@@ -352,7 +352,7 @@ func (m *Manager) ListHolds(ctx context.Context, query ListQuery[ListHolds]) (*L
 			if query.Payload.WalletID != "" {
 				metadata[MetadataKeyHoldWalletID] = query.Payload.WalletID
 			}
-			if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
+			if len(query.Payload.Metadata) > 0 {
 				for k, v := range query.Payload.Metadata {
 					metadata[MetadataKeyWalletCustomDataPrefix+k] = v
 				}
@@ -366,7 +366,7 @@ func (m *Manager) ListBalances(ctx context.Context, query ListQuery[ListBalances
 	return mapAccountList(ctx, m, mapAccountListQuery{
 		Metadata: func() metadata.Metadata {
 			metadata := BalancesMetadataFilter(query.Payload.WalletID)
-			if query.Payload.Metadata != nil && len(query.Payload.Metadata) > 0 {
+			if len(query.Payload.Metadata) > 0 {
 				for k, v := range query.Payload.Metadata {
 					metadata[MetadataKeyWalletCustomDataPrefix+k] = v
 				}
