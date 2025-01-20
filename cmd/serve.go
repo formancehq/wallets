@@ -21,16 +21,16 @@ import (
 const (
 	StackClientIDFlag     = "stack-client-id"
 	StackClientSecretFlag = "stack-client-secret"
-	StackURLFlag      = "stack-url"
-	LedgerNameFlag    = "ledger"
-	AccountPrefixFlag = "account-prefix"
-	ListenFlag        = "listen"
+	StackURLFlag          = "stack-url"
+	LedgerNameFlag        = "ledger"
+	AccountPrefixFlag     = "account-prefix"
+	ListenFlag            = "listen"
 )
 
 func newServeCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "serve",
-		Aliases: []string{"server"},
+		Use:          "serve",
+		Aliases:      []string{"server"},
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stackClientID, _ := cmd.Flags().GetString(StackClientIDFlag)
@@ -59,6 +59,7 @@ func newServeCommand() *cobra.Command {
 					Version: Version,
 					Debug:   service.IsDebug(cmd),
 				}, listen),
+				otlp.FXModuleFromFlags(cmd),
 				otlptraces.FXModuleFromFlags(cmd),
 				auth.FXModuleFromFlags(cmd),
 				licence.FXModuleFromFlags(cmd, ServiceName),
