@@ -583,6 +583,7 @@ func (m *Manager) CreateBalance(ctx context.Context, data *CreateBalance) (*Bala
 	}
 
 	balance := NewBalance(data.Name, data.ExpiresAt)
+	balance.Priority = data.Priority
 
 	if err := m.client.AddMetadataToAccount(
 		ctx,
