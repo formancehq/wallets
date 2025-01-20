@@ -18,6 +18,7 @@ generate:
 tests:
   @go test -race -covermode=atomic \
     -coverprofile coverage.txt \
+    -tags it \
     ./...
 
 generate-client:
