@@ -53,6 +53,32 @@
         go = final."go_1_${toString goVersion}";
       };
 
+      packages = forEachSupportedSystem ({ pkgs, system }:
+        {
+          speakeasy = pkgs.stdenv.mkDerivation {
+            pname = "speakeasy";
+            version = speakeasyVersion;
+
+            src = pkgs.fetchurl {
+              url = "https://github.com/speakeasy-api/speakeasy/releases/download/v${speakeasyVersion}/speakeasy_${speakeasyPlatforms.${system}}.zip";
+              sha256 = speakeasyHashes.${system};
+            };
+
+            nativeBuildInputs = [ pkgs.unzip ];
+            dontUnpack = true;
+
+            installPhase = ''
+              mkdir -p $out/bin
+              unzip $src
+              ls -al
+              install -m755 speakeasy $out/bin/
+            '';
+
+            name = "speakeasy";
+          };
+        }
+      );
+
       defaultPackage.x86_64-linux   = self.packages.x86_64-linux.speakeasy;
       defaultPackage.aarch64-linux  = self.packages.aarch64-linux.speakeasy;
       defaultPackage.x86_64-darwin  = self.packages.x86_64-darwin.speakeasy;
@@ -67,6 +93,7 @@
               golangci-lint
               ginkgo
               pkgs.nur.repos.goreleaser.goreleaser-pro
+              self.packages.${system}.speakeasy
               just
             ];
           };

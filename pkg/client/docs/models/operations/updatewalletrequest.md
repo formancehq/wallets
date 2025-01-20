@@ -1,0 +1,10 @@
+# UpdateWalletRequest
+
+
+## Fields
+
+| Field                                                                                     | Type                                                                                      | Required                                                                                  | Description                                                                               |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `ID`                                                                                      | *string*                                                                                  | :heavy_check_mark:                                                                        | N/A                                                                                       |
+| `IdempotencyKey`                                                                          | **string*                                                                                 | :heavy_minus_sign:                                                                        | Use an idempotency key                                                                    |
+| `RequestBody`                                                                             | [*operations.UpdateWalletRequestBody](../../models/operations/updatewalletrequestbody.md) | :heavy_minus_sign:                                                                        | N/A                                                                                       |

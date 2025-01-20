@@ -1,0 +1,12 @@
+# GetWalletSummaryResponse
+
+
+## Fields
+
+| Field                                                                          | Type                                                                           | Required                                                                       | Description                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `Balances`                                                                     | [][components.BalanceWithAssets](../../models/components/balancewithassets.md) | :heavy_check_mark:                                                             | N/A                                                                            |
+| `AvailableFunds`                                                               | map[string][*big.Int](https://pkg.go.dev/math/big#Int)                         | :heavy_check_mark:                                                             | N/A                                                                            |
+| `ExpiredFunds`                                                                 | map[string][*big.Int](https://pkg.go.dev/math/big#Int)                         | :heavy_check_mark:                                                             | N/A                                                                            |
+| `ExpirableFunds`                                                               | map[string][*big.Int](https://pkg.go.dev/math/big#Int)                         | :heavy_check_mark:                                                             | N/A                                                                            |
+| `HoldFunds`                                                                    | map[string][*big.Int](https://pkg.go.dev/math/big#Int)                         | :heavy_check_mark:                                                             | N/A                                                                            |

@@ -2,6 +2,8 @@ openapi: 3.0.3
 info:
   title: Formance Simple Wallets Service API
   version: 0.1.0
+servers:
+  - url: http://localhost:8080/
 paths:
   /_info:
     get:
@@ -602,6 +604,14 @@ paths:
         - Authorization:
             - wallets:write
 components:
+  securitySchemes:
+    Authorization:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: '/oauth/token'
+          refreshUrl: '/oauth/token'
+          scopes: {}
   schemas:
     Monetary:
       type: object
