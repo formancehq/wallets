@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/v2/api"
 
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/render"

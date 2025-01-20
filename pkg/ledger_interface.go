@@ -10,16 +10,16 @@ import (
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 	"github.com/pkg/errors"
 
-	"github.com/formancehq/go-libs/query"
+	"github.com/formancehq/go-libs/v2/query"
 
-	"github.com/formancehq/go-libs/time"
+	"github.com/formancehq/go-libs/v2/time"
 
 	sdk "github.com/formancehq/formance-sdk-go/v3"
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/operations"
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/collectionutils"
-	"github.com/formancehq/go-libs/metadata"
-	"github.com/formancehq/go-libs/pointer"
+	"github.com/formancehq/go-libs/v2/collectionutils"
+	"github.com/formancehq/go-libs/v2/metadata"
+	"github.com/formancehq/go-libs/v2/pointer"
 )
 
 type ListAccountsQuery struct {

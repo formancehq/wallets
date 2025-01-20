@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/time"
+	"github.com/formancehq/go-libs/v2/time"
 )
 
 var balanceNameRegex = regexp.MustCompile("[0-9A-Za-z_-]+")
