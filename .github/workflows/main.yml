@@ -49,7 +49,7 @@ jobs:
           fi
 
   Tests:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     needs:
       - Dirty
     steps:
@@ -65,7 +65,7 @@ jobs:
           develop --impure --command just tests
 
   GoReleaser:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     if: contains(github.event.pull_request.labels.*.name, 'build-images') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
     needs:
       - Dirty
