@@ -3,7 +3,7 @@
 package components
 
 import (
-	"openapi/internal/utils"
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
 	"time"
 )
 

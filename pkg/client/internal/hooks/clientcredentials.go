@@ -9,10 +9,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/wallets/pkg/client/models/components"
 	"io"
 	"net/http"
 	"net/url"
-	"openapi/models/components"
 	"strings"
 	"time"
 )

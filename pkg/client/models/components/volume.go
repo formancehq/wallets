@@ -3,8 +3,8 @@
 package components
 
 import (
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
 	"math/big"
-	"openapi/internal/utils"
 )
 
 type Volume struct {

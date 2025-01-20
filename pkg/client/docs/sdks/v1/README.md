@@ -30,15 +30,15 @@ Get server info
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
@@ -78,26 +78,27 @@ func main() {
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var pageSize *int64 = openapi.Int64(100)
-
-    var walletID *string = openapi.String("wallet1")
-
-    var cursor *string = openapi.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==")
+    request := operations.GetTransactionsRequest{
+        PageSize: client.Int64(100),
+        WalletID: client.String("wallet1"),
+        Cursor: client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetTransactions(ctx, pageSize, walletID, cursor)
+    res, err := s.Wallets.V1.GetTransactions(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -109,13 +110,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                                                                                                                                                            | Type                                                                                                                                                                                                                 | Required                                                                                                                                                                                                             | Description                                                                                                                                                                                                          | Example                                                                                                                                                                                                              |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ctx`                                                                                                                                                                                                                | [context.Context](https://pkg.go.dev/context#Context)                                                                                                                                                                | :heavy_check_mark:                                                                                                                                                                                                   | The context to use for the request.                                                                                                                                                                                  |                                                                                                                                                                                                                      |
-| `pageSize`                                                                                                                                                                                                           | **int64*                                                                                                                                                                                                             | :heavy_minus_sign:                                                                                                                                                                                                   | The maximum number of results to return per page                                                                                                                                                                     | 100                                                                                                                                                                                                                  |
-| `walletID`                                                                                                                                                                                                           | **string*                                                                                                                                                                                                            | :heavy_minus_sign:                                                                                                                                                                                                   | A wallet ID to filter on                                                                                                                                                                                             | wallet1                                                                                                                                                                                                              |
-| `cursor`                                                                                                                                                                                                             | **string*                                                                                                                                                                                                            | :heavy_minus_sign:                                                                                                                                                                                                   | Parameter used in pagination requests.<br/>Set to the value of next for the next page of results.<br/>Set to the value of previous for the previous page of results.<br/>No other parameters can be set when the cursor is set.<br/> | aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==                                                                                                                                                                         |
-| `opts`                                                                                                                                                                                                               | [][operations.Option](../../models/operations/option.md)                                                                                                                                                             | :heavy_minus_sign:                                                                                                                                                                                                   | The options for this request.                                                                                                                                                                                        |                                                                                                                                                                                                                      |
+| Parameter                                                                              | Type                                                                                   | Required                                                                               | Description                                                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `ctx`                                                                                  | [context.Context](https://pkg.go.dev/context#Context)                                  | :heavy_check_mark:                                                                     | The context to use for the request.                                                    |
+| `request`                                                                              | [operations.GetTransactionsRequest](../../models/operations/gettransactionsrequest.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
+| `opts`                                                                                 | [][operations.Option](../../models/operations/option.md)                               | :heavy_minus_sign:                                                                     | The options for this request.                                                          |
 
 
 ### Response
@@ -135,28 +134,28 @@ List all wallets
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
-	"openapi/models/operations"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
     request := operations.ListWalletsRequest{
-        Name: openapi.String("wallet1"),
+        Name: client.String("wallet1"),
         Metadata: map[string]string{
             "admin": "true",
         },
-        PageSize: openapi.Int64(100),
-        Cursor: openapi.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
-        Expand: openapi.String("balances"),
+        PageSize: client.Int64(100),
+        Cursor: client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
+        Expand: client.String("balances"),
     }
     ctx := context.Background()
     res, err := s.Wallets.V1.ListWallets(ctx, request)
@@ -195,22 +194,23 @@ Create a new wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-
+    request := operations.CreateWalletRequest{}
     ctx := context.Background()
-    res, err := s.Wallets.V1.CreateWallet(ctx, nil, nil)
+    res, err := s.Wallets.V1.CreateWallet(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -222,12 +222,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                         | Type                                                                              | Required                                                                          | Description                                                                       |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `ctx`                                                                             | [context.Context](https://pkg.go.dev/context#Context)                             | :heavy_check_mark:                                                                | The context to use for the request.                                               |
-| `idempotencyKey`                                                                  | **string*                                                                         | :heavy_minus_sign:                                                                | Use an idempotency key                                                            |
-| `createWalletRequest`                                                             | [*components.CreateWalletRequest](../../models/components/createwalletrequest.md) | :heavy_minus_sign:                                                                | N/A                                                                               |
-| `opts`                                                                            | [][operations.Option](../../models/operations/option.md)                          | :heavy_minus_sign:                                                                | The options for this request.                                                     |
+| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ctx`                                                                            | [context.Context](https://pkg.go.dev/context#Context)                            | :heavy_check_mark:                                                               | The context to use for the request.                                              |
+| `request`                                                                        | [operations.CreateWalletRequest](../../models/operations/createwalletrequest.md) | :heavy_check_mark:                                                               | The request object to use for the request.                                       |
+| `opts`                                                                           | [][operations.Option](../../models/operations/option.md)                         | :heavy_minus_sign:                                                               | The options for this request.                                                    |
 
 
 ### Response
@@ -247,22 +246,25 @@ Get a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
+    request := operations.GetWalletRequest{
+        ID: "<id>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetWallet(ctx, id)
+    res, err := s.Wallets.V1.GetWallet(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -274,11 +276,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `id`                                                     | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                  | Type                                                                       | Required                                                                   | Description                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `ctx`                                                                      | [context.Context](https://pkg.go.dev/context#Context)                      | :heavy_check_mark:                                                         | The context to use for the request.                                        |
+| `request`                                                                  | [operations.GetWalletRequest](../../models/operations/getwalletrequest.md) | :heavy_check_mark:                                                         | The request object to use for the request.                                 |
+| `opts`                                                                     | [][operations.Option](../../models/operations/option.md)                   | :heavy_minus_sign:                                                         | The options for this request.                                              |
 
 
 ### Response
@@ -298,23 +300,25 @@ Update a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
-	"openapi/models/operations"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
+    request := operations.UpdateWalletRequest{
+        ID: "<id>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.UpdateWallet(ctx, id, nil, nil)
+    res, err := s.Wallets.V1.UpdateWallet(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -326,13 +330,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                                 | Type                                                                                      | Required                                                                                  | Description                                                                               |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `ctx`                                                                                     | [context.Context](https://pkg.go.dev/context#Context)                                     | :heavy_check_mark:                                                                        | The context to use for the request.                                                       |
-| `id`                                                                                      | *string*                                                                                  | :heavy_check_mark:                                                                        | N/A                                                                                       |
-| `idempotencyKey`                                                                          | **string*                                                                                 | :heavy_minus_sign:                                                                        | Use an idempotency key                                                                    |
-| `requestBody`                                                                             | [*operations.UpdateWalletRequestBody](../../models/operations/updatewalletrequestbody.md) | :heavy_minus_sign:                                                                        | N/A                                                                                       |
-| `opts`                                                                                    | [][operations.Option](../../models/operations/option.md)                                  | :heavy_minus_sign:                                                                        | The options for this request.                                                             |
+| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ctx`                                                                            | [context.Context](https://pkg.go.dev/context#Context)                            | :heavy_check_mark:                                                               | The context to use for the request.                                              |
+| `request`                                                                        | [operations.UpdateWalletRequest](../../models/operations/updatewalletrequest.md) | :heavy_check_mark:                                                               | The request object to use for the request.                                       |
+| `opts`                                                                           | [][operations.Option](../../models/operations/option.md)                         | :heavy_minus_sign:                                                               | The options for this request.                                                    |
 
 
 ### Response
@@ -352,22 +354,25 @@ Get wallet summary
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
+    request := operations.GetWalletSummaryRequest{
+        ID: "<id>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetWalletSummary(ctx, id)
+    res, err := s.Wallets.V1.GetWalletSummary(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -379,11 +384,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `id`                                                     | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                                | Type                                                                                     | Required                                                                                 | Description                                                                              |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `ctx`                                                                                    | [context.Context](https://pkg.go.dev/context#Context)                                    | :heavy_check_mark:                                                                       | The context to use for the request.                                                      |
+| `request`                                                                                | [operations.GetWalletSummaryRequest](../../models/operations/getwalletsummaryrequest.md) | :heavy_check_mark:                                                                       | The request object to use for the request.                                               |
+| `opts`                                                                                   | [][operations.Option](../../models/operations/option.md)                                 | :heavy_minus_sign:                                                                       | The options for this request.                                                            |
 
 
 ### Response
@@ -403,22 +408,25 @@ List balances of a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
+    request := operations.ListBalancesRequest{
+        ID: "<id>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.ListBalances(ctx, id)
+    res, err := s.Wallets.V1.ListBalances(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -430,11 +438,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `id`                                                     | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ctx`                                                                            | [context.Context](https://pkg.go.dev/context#Context)                            | :heavy_check_mark:                                                               | The context to use for the request.                                              |
+| `request`                                                                        | [operations.ListBalancesRequest](../../models/operations/listbalancesrequest.md) | :heavy_check_mark:                                                               | The request object to use for the request.                                       |
+| `opts`                                                                           | [][operations.Option](../../models/operations/option.md)                         | :heavy_minus_sign:                                                               | The options for this request.                                                    |
 
 
 ### Response
@@ -454,22 +462,25 @@ Create a balance
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
+    request := operations.CreateBalanceRequest{
+        ID: "<id>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.CreateBalance(ctx, id, nil, nil)
+    res, err := s.Wallets.V1.CreateBalance(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -481,13 +492,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                           | Type                                                                                | Required                                                                            | Description                                                                         |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `ctx`                                                                               | [context.Context](https://pkg.go.dev/context#Context)                               | :heavy_check_mark:                                                                  | The context to use for the request.                                                 |
-| `id`                                                                                | *string*                                                                            | :heavy_check_mark:                                                                  | N/A                                                                                 |
-| `idempotencyKey`                                                                    | **string*                                                                           | :heavy_minus_sign:                                                                  | Use an idempotency key                                                              |
-| `createBalanceRequest`                                                              | [*components.CreateBalanceRequest](../../models/components/createbalancerequest.md) | :heavy_minus_sign:                                                                  | N/A                                                                                 |
-| `opts`                                                                              | [][operations.Option](../../models/operations/option.md)                            | :heavy_minus_sign:                                                                  | The options for this request.                                                       |
+| Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `ctx`                                                                              | [context.Context](https://pkg.go.dev/context#Context)                              | :heavy_check_mark:                                                                 | The context to use for the request.                                                |
+| `request`                                                                          | [operations.CreateBalanceRequest](../../models/operations/createbalancerequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+| `opts`                                                                             | [][operations.Option](../../models/operations/option.md)                           | :heavy_minus_sign:                                                                 | The options for this request.                                                      |
 
 
 ### Response
@@ -507,24 +516,26 @@ Get detailed balance
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
-
-    var balanceName string = "<value>"
+    request := operations.GetBalanceRequest{
+        ID: "<id>",
+        BalanceName: "<value>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetBalance(ctx, id, balanceName)
+    res, err := s.Wallets.V1.GetBalance(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -536,12 +547,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `id`                                                     | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `balanceName`                                            | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `ctx`                                                                        | [context.Context](https://pkg.go.dev/context#Context)                        | :heavy_check_mark:                                                           | The context to use for the request.                                          |
+| `request`                                                                    | [operations.GetBalanceRequest](../../models/operations/getbalancerequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
+| `opts`                                                                       | [][operations.Option](../../models/operations/option.md)                     | :heavy_minus_sign:                                                           | The options for this request.                                                |
 
 
 ### Response
@@ -561,34 +571,36 @@ Debit a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"math/big"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
-
-    var debitWalletRequest *components.DebitWalletRequest = &components.DebitWalletRequest{
-        Amount: components.Monetary{
-            Asset: "USD/2",
-            Amount: big.NewInt(100),
-        },
-        Pending: openapi.Bool(true),
-        Metadata: map[string]string{
-            "key": "",
+    request := operations.DebitWalletRequest{
+        ID: "<id>",
+        DebitWalletRequest: &components.DebitWalletRequest{
+            Amount: components.Monetary{
+                Asset: "USD/2",
+                Amount: big.NewInt(100),
+            },
+            Pending: client.Bool(true),
+            Metadata: map[string]string{
+                "key": "",
+            },
         },
     }
     ctx := context.Background()
-    res, err := s.Wallets.V1.DebitWallet(ctx, id, nil, debitWalletRequest)
+    res, err := s.Wallets.V1.DebitWallet(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -600,13 +612,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                                     | Type                                                                                          | Required                                                                                      | Description                                                                                   | Example                                                                                       |
-| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `ctx`                                                                                         | [context.Context](https://pkg.go.dev/context#Context)                                         | :heavy_check_mark:                                                                            | The context to use for the request.                                                           |                                                                                               |
-| `id`                                                                                          | *string*                                                                                      | :heavy_check_mark:                                                                            | N/A                                                                                           |                                                                                               |
-| `idempotencyKey`                                                                              | **string*                                                                                     | :heavy_minus_sign:                                                                            | Use an idempotency key                                                                        |                                                                                               |
-| `debitWalletRequest`                                                                          | [*components.DebitWalletRequest](../../models/components/debitwalletrequest.md)               | :heavy_minus_sign:                                                                            | N/A                                                                                           | {<br/>"amount": {<br/>"asset": "USD/2",<br/>"amount": 100<br/>},<br/>"metadata": {<br/>"key": ""<br/>},<br/>"pending": true<br/>} |
-| `opts`                                                                                        | [][operations.Option](../../models/operations/option.md)                                      | :heavy_minus_sign:                                                                            | The options for this request.                                                                 |                                                                                               |
+| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `ctx`                                                                          | [context.Context](https://pkg.go.dev/context#Context)                          | :heavy_check_mark:                                                             | The context to use for the request.                                            |
+| `request`                                                                      | [operations.DebitWalletRequest](../../models/operations/debitwalletrequest.md) | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
+| `opts`                                                                         | [][operations.Option](../../models/operations/option.md)                       | :heavy_minus_sign:                                                             | The options for this request.                                                  |
 
 
 ### Response
@@ -626,41 +636,43 @@ Credit a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"math/big"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var id string = "<value>"
-
-    var creditWalletRequest *components.CreditWalletRequest = &components.CreditWalletRequest{
-        Amount: components.Monetary{
-            Asset: "USD/2",
-            Amount: big.NewInt(100),
-        },
-        Metadata: map[string]string{
-            "key": "",
-        },
-        Sources: []components.Subject{
-            components.CreateSubjectLedgerAccountSubject(
-                components.LedgerAccountSubject{
-                    Type: "<value>",
-                    Identifier: "<value>",
-                },
-            ),
+    request := operations.CreditWalletRequest{
+        ID: "<id>",
+        CreditWalletRequest: &components.CreditWalletRequest{
+            Amount: components.Monetary{
+                Asset: "USD/2",
+                Amount: big.NewInt(100),
+            },
+            Metadata: map[string]string{
+                "key": "",
+            },
+            Sources: []components.Subject{
+                components.CreateSubjectLedgerAccountSubject(
+                    components.LedgerAccountSubject{
+                        Type: "<value>",
+                        Identifier: "<value>",
+                    },
+                ),
+            },
         },
     }
     ctx := context.Background()
-    res, err := s.Wallets.V1.CreditWallet(ctx, id, nil, creditWalletRequest)
+    res, err := s.Wallets.V1.CreditWallet(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -672,13 +684,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                                   | Type                                                                                        | Required                                                                                    | Description                                                                                 | Example                                                                                     |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `ctx`                                                                                       | [context.Context](https://pkg.go.dev/context#Context)                                       | :heavy_check_mark:                                                                          | The context to use for the request.                                                         |                                                                                             |
-| `id`                                                                                        | *string*                                                                                    | :heavy_check_mark:                                                                          | N/A                                                                                         |                                                                                             |
-| `idempotencyKey`                                                                            | **string*                                                                                   | :heavy_minus_sign:                                                                          | Use an idempotency key                                                                      |                                                                                             |
-| `creditWalletRequest`                                                                       | [*components.CreditWalletRequest](../../models/components/creditwalletrequest.md)           | :heavy_minus_sign:                                                                          | N/A                                                                                         | {<br/>"amount": {<br/>"asset": "USD/2",<br/>"amount": 100<br/>},<br/>"metadata": {<br/>"key": ""<br/>},<br/>"sources": []<br/>} |
-| `opts`                                                                                      | [][operations.Option](../../models/operations/option.md)                                    | :heavy_minus_sign:                                                                          | The options for this request.                                                               |                                                                                             |
+| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ctx`                                                                            | [context.Context](https://pkg.go.dev/context#Context)                            | :heavy_check_mark:                                                               | The context to use for the request.                                              |
+| `request`                                                                        | [operations.CreditWalletRequest](../../models/operations/creditwalletrequest.md) | :heavy_check_mark:                                                               | The request object to use for the request.                                       |
+| `opts`                                                                           | [][operations.Option](../../models/operations/option.md)                         | :heavy_minus_sign:                                                               | The options for this request.                                                    |
 
 
 ### Response
@@ -698,30 +708,30 @@ Get all holds for a wallet
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var pageSize *int64 = openapi.Int64(100)
-
-    var walletID *string = openapi.String("wallet1")
-
-    var metadata map[string]string = map[string]string{
-        "admin": "true",
+    request := operations.GetHoldsRequest{
+        PageSize: client.Int64(100),
+        WalletID: client.String("wallet1"),
+        Metadata: map[string]string{
+            "admin": "true",
+        },
+        Cursor: client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
     }
-
-    var cursor *string = openapi.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==")
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetHolds(ctx, pageSize, walletID, metadata, cursor)
+    res, err := s.Wallets.V1.GetHolds(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -733,14 +743,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                                                                                                                                                                      | Type                                                                                                                                                                                                                           | Required                                                                                                                                                                                                                       | Description                                                                                                                                                                                                                    | Example                                                                                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ctx`                                                                                                                                                                                                                          | [context.Context](https://pkg.go.dev/context#Context)                                                                                                                                                                          | :heavy_check_mark:                                                                                                                                                                                                             | The context to use for the request.                                                                                                                                                                                            |                                                                                                                                                                                                                                |
-| `pageSize`                                                                                                                                                                                                                     | **int64*                                                                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                             | The maximum number of results to return per page                                                                                                                                                                               | 100                                                                                                                                                                                                                            |
-| `walletID`                                                                                                                                                                                                                     | **string*                                                                                                                                                                                                                      | :heavy_minus_sign:                                                                                                                                                                                                             | The wallet to filter on                                                                                                                                                                                                        | wallet1                                                                                                                                                                                                                        |
-| `metadata`                                                                                                                                                                                                                     | map[string]*string*                                                                                                                                                                                                            | :heavy_minus_sign:                                                                                                                                                                                                             | Filter holds by metadata key value pairs. Nested objects can be used as seen in the example below.                                                                                                                             | {<br/>"admin": "true"<br/>}                                                                                                                                                                                                    |
-| `cursor`                                                                                                                                                                                                                       | **string*                                                                                                                                                                                                                      | :heavy_minus_sign:                                                                                                                                                                                                             | Parameter used in pagination requests.<br/>Set to the value of next for the next page of results.<br/>Set to the value of previous for the previous page of results.<br/>No other parameters can be set when the pagination token is set.<br/> | aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==                                                                                                                                                                                   |
-| `opts`                                                                                                                                                                                                                         | [][operations.Option](../../models/operations/option.md)                                                                                                                                                                       | :heavy_minus_sign:                                                                                                                                                                                                             | The options for this request.                                                                                                                                                                                                  |                                                                                                                                                                                                                                |
+| Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `ctx`                                                                    | [context.Context](https://pkg.go.dev/context#Context)                    | :heavy_check_mark:                                                       | The context to use for the request.                                      |
+| `request`                                                                | [operations.GetHoldsRequest](../../models/operations/getholdsrequest.md) | :heavy_check_mark:                                                       | The request object to use for the request.                               |
+| `opts`                                                                   | [][operations.Option](../../models/operations/option.md)                 | :heavy_minus_sign:                                                       | The options for this request.                                            |
 
 
 ### Response
@@ -760,22 +767,25 @@ Get a hold
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var holdID string = "<value>"
+    request := operations.GetHoldRequest{
+        HoldID: "<value>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.GetHold(ctx, holdID)
+    res, err := s.Wallets.V1.GetHold(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -787,11 +797,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `holdID`                                                 | *string*                                                 | :heavy_check_mark:                                       | The hold ID                                              |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                              | Type                                                                   | Required                                                               | Description                                                            |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `ctx`                                                                  | [context.Context](https://pkg.go.dev/context#Context)                  | :heavy_check_mark:                                                     | The context to use for the request.                                    |
+| `request`                                                              | [operations.GetHoldRequest](../../models/operations/getholdrequest.md) | :heavy_check_mark:                                                     | The request object to use for the request.                             |
+| `opts`                                                                 | [][operations.Option](../../models/operations/option.md)               | :heavy_minus_sign:                                                     | The options for this request.                                          |
 
 
 ### Response
@@ -811,28 +821,30 @@ Confirm a hold
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"math/big"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var holdID string = "<value>"
-
-    var confirmHoldRequest *components.ConfirmHoldRequest = &components.ConfirmHoldRequest{
-        Amount: big.NewInt(100),
-        Final: openapi.Bool(true),
+    request := operations.ConfirmHoldRequest{
+        HoldID: "<value>",
+        ConfirmHoldRequest: &components.ConfirmHoldRequest{
+            Amount: big.NewInt(100),
+            Final: client.Bool(true),
+        },
     }
     ctx := context.Background()
-    res, err := s.Wallets.V1.ConfirmHold(ctx, holdID, nil, confirmHoldRequest)
+    res, err := s.Wallets.V1.ConfirmHold(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -844,13 +856,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                       | Type                                                                            | Required                                                                        | Description                                                                     |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `ctx`                                                                           | [context.Context](https://pkg.go.dev/context#Context)                           | :heavy_check_mark:                                                              | The context to use for the request.                                             |
-| `holdID`                                                                        | *string*                                                                        | :heavy_check_mark:                                                              | N/A                                                                             |
-| `idempotencyKey`                                                                | **string*                                                                       | :heavy_minus_sign:                                                              | Use an idempotency key                                                          |
-| `confirmHoldRequest`                                                            | [*components.ConfirmHoldRequest](../../models/components/confirmholdrequest.md) | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `opts`                                                                          | [][operations.Option](../../models/operations/option.md)                        | :heavy_minus_sign:                                                              | The options for this request.                                                   |
+| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `ctx`                                                                          | [context.Context](https://pkg.go.dev/context#Context)                          | :heavy_check_mark:                                                             | The context to use for the request.                                            |
+| `request`                                                                      | [operations.ConfirmHoldRequest](../../models/operations/confirmholdrequest.md) | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
+| `opts`                                                                         | [][operations.Option](../../models/operations/option.md)                       | :heavy_minus_sign:                                                             | The options for this request.                                                  |
 
 
 ### Response
@@ -870,22 +880,25 @@ Cancel a hold
 package main
 
 import(
-	"openapi/models/components"
-	"openapi"
+	"github.com/formancehq/wallets/pkg/client/models/components"
+	"github.com/formancehq/wallets/pkg/client"
+	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"context"
 	"log"
 )
 
 func main() {
-    s := openapi.New(
-        openapi.WithSecurity(components.Security{
+    s := client.New(
+        client.WithSecurity(components.Security{
             ClientID: "",
             ClientSecret: "",
         }),
     )
-    var holdID string = "<value>"
+    request := operations.VoidHoldRequest{
+        HoldID: "<value>",
+    }
     ctx := context.Background()
-    res, err := s.Wallets.V1.VoidHold(ctx, holdID, nil)
+    res, err := s.Wallets.V1.VoidHold(ctx, request)
     if err != nil {
         log.Fatal(err)
     }
@@ -897,12 +910,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `holdID`                                                 | *string*                                                 | :heavy_check_mark:                                       | N/A                                                      |
-| `idempotencyKey`                                         | **string*                                                | :heavy_minus_sign:                                       | Use an idempotency key                                   |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `ctx`                                                                    | [context.Context](https://pkg.go.dev/context#Context)                    | :heavy_check_mark:                                                       | The context to use for the request.                                      |
+| `request`                                                                | [operations.VoidHoldRequest](../../models/operations/voidholdrequest.md) | :heavy_check_mark:                                                       | The request object to use for the request.                               |
+| `opts`                                                                   | [][operations.Option](../../models/operations/option.md)                 | :heavy_minus_sign:                                                       | The options for this request.                                            |
 
 
 ### Response

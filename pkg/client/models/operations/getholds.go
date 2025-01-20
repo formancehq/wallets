@@ -3,8 +3,8 @@
 package operations
 
 import (
-	"openapi/internal/utils"
-	"openapi/models/components"
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
+	"github.com/formancehq/wallets/pkg/client/models/components"
 )
 
 type GetHoldsRequest struct {

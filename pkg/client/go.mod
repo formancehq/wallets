@@ -1,5 +1,5 @@
 
-module openapi
+module github.com/formancehq/wallets/pkg/client
 
 go 1.20
 

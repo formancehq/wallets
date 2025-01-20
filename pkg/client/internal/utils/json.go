@@ -13,7 +13,7 @@ import (
 	"time"
 	"unsafe"
 
-	"openapi/types"
+	"github.com/formancehq/wallets/pkg/client/types"
 
 	"github.com/ericlagergren/decimal"
 )
