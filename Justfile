@@ -20,6 +20,9 @@ tests:
     -coverprofile coverage.txt \
     ./...
 
+generate-client:
+  @speakeasy generate sdk -s openapi.yaml -o ./pkg/client -l go
+
 release-local:
   @goreleaser release --nightly --skip=publish --clean
 

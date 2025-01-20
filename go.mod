@@ -1,13 +1,13 @@
 module github.com/formancehq/wallets
 
-go 1.22.0
+go 1.23
 
-toolchain go1.22.7
+toolchain go1.23.4
 
 require (
 	github.com/formancehq/formance-sdk-go/v3 v3.2.0
 	github.com/formancehq/go-libs/v2 v2.0.1-0.20250117191457-819bd408382b
-	github.com/formancehq/ledger v1.12.0
+	github.com/formancehq/ledger v0.0.0-20250117163346-1a4b9a580763
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/render v1.0.3
 	github.com/google/uuid v1.6.0
@@ -69,7 +69,7 @@ require (
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.3.2 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.9-0.20240816141633-0a40785b4f41 // indirect
 	github.com/zitadel/oidc/v2 v2.12.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
@@ -99,5 +99,3 @@ require (
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/formancehq/ledger => github.com/formancehq/ledger v0.0.0-20240925213413-0ef9d8eb67e6

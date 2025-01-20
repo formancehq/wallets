@@ -74,8 +74,8 @@ github.com/formancehq/formance-sdk-go/v3 v3.2.0 h1:3zxYSu71jjCj5XMBvT6bTm2HlbZWv
 github.com/formancehq/formance-sdk-go/v3 v3.2.0/go.mod h1:XivkqQzjOtR3W7hqIFYcUN11UIf+X8/V1yoPPnGBQVU=
 github.com/formancehq/go-libs/v2 v2.0.1-0.20250117191457-819bd408382b h1:MNQVoarKfn0hyNQB35rn8GM/W6wmpMOOA5s+Pyh1RCo=
 github.com/formancehq/go-libs/v2 v2.0.1-0.20250117191457-819bd408382b/go.mod h1:r30zBG0wZPvJjdzFuEBrUYMpxVc7902zQdvlr2calfQ=
-github.com/formancehq/ledger v0.0.0-20240925213413-0ef9d8eb67e6 h1:VjlFSyIPbX7T22+3q0pD7BhQjOYY1mNHubytWrwJLEE=
-github.com/formancehq/ledger v0.0.0-20240925213413-0ef9d8eb67e6/go.mod h1:sGscj1S3S2ndAzOPVFQFBuC72YF8t+OAm/hcqDcxpxI=
+github.com/formancehq/ledger v0.0.0-20250117163346-1a4b9a580763 h1:mDyX9tfZYYE/bO6AV8PcKCR68RU8c8iaLaWDTDtDNJw=
+github.com/formancehq/ledger v0.0.0-20250117163346-1a4b9a580763/go.mod h1:Gxrq1sRbwk9LiGWuP+JcDS0GpuN84A/SDKBfn8sSWSk=
 github.com/go-chi/chi/v5 v5.2.0 h1:Aj1EtB0qR2Rdo2dG4O94RIU35w2lvQSj6BRA4+qwFL0=
 github.com/go-chi/chi/v5 v5.2.0/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
 github.com/go-chi/render v1.0.3 h1:AsXqd2a1/INaIfUSKq3G5uA8weYx20FOsM7uSoCyyt4=
@@ -236,8 +236,8 @@ github.com/vmihailenco/msgpack/v5 v5.4.1 h1:cQriyiUvjTwOHg8QZaPihLWeRAAVoCpE00IU
 github.com/vmihailenco/msgpack/v5 v5.4.1/go.mod h1:GaZTsDaehaPpQVyxrf5mtQlH+pc21PIudVV/E3rRQok=
 github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=
-github.com/wk8/go-ordered-map/v2 v2.1.8 h1:5h/BUHu93oj4gIdvHHHGsScSTMijfx5PeYkE/fJgbpc=
-github.com/wk8/go-ordered-map/v2 v2.1.8/go.mod h1:5nJHM5DyteebpVlHnWMV0rPz6Zp7+xBAnxjb1X5vnTw=
+github.com/wk8/go-ordered-map/v2 v2.1.9-0.20240816141633-0a40785b4f41 h1:rnB8ZLMeAr3VcqjfRkAm27qb8y6zFKNfuHvy1Gfe7KI=
+github.com/wk8/go-ordered-map/v2 v2.1.9-0.20240816141633-0a40785b4f41/go.mod h1:DbzwytT4g/odXquuOCqroKvtxxldI4nb3nuesHF/Exo=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb h1:zGWFAtiMcyryUHoUjUJX0/lt1H2+i2Ka2n+D3DImSNo=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 h1:EzJWgHovont7NscjpAxXsDA8S8BMYve8Y5+7cuRE7R0=
