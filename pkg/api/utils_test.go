@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	sharedapi "github.com/formancehq/go-libs/api"
-	"github.com/formancehq/go-libs/auth"
-	sharedhealth "github.com/formancehq/go-libs/health"
+	sharedapi "github.com/formancehq/go-libs/v2/api"
+	"github.com/formancehq/go-libs/v2/auth"
+	sharedhealth "github.com/formancehq/go-libs/v2/health"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/stretchr/testify/require"
 )

@@ -5,11 +5,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/service"
+	"github.com/formancehq/go-libs/v2/service"
 
-	sharedapi "github.com/formancehq/go-libs/api"
-	"github.com/formancehq/go-libs/auth"
-	sharedhealth "github.com/formancehq/go-libs/health"
+	sharedapi "github.com/formancehq/go-libs/v2/api"
+	"github.com/formancehq/go-libs/v2/auth"
+	sharedhealth "github.com/formancehq/go-libs/v2/health"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5/middleware"
 )
