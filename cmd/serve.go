@@ -31,6 +31,7 @@ func newServeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "serve",
 		Aliases: []string{"server"},
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stackClientID, _ := cmd.Flags().GetString(StackClientIDFlag)
 			stackClientSecret, _ := cmd.Flags().GetString(StackClientSecretFlag)

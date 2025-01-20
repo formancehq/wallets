@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: de0345f3-2756-4415-852c-a34657f4e97f
 management:
-  docChecksum: 00fb26b79e0b331dba9b9e9a3ce89dc8
+  docChecksum: b72de11c6797ffd9e38fc4fb76f54268
   docVersion: 0.1.0
   speakeasyVersion: 1.351.0
   generationVersion: 2.384.1
-  releaseVersion: 0.6.0
-  configChecksum: 7402711c7e3f026cf2ffe8b053195040
+  releaseVersion: 0.7.0
+  configChecksum: 2f9334027204bf6323e5101bdbdd0368
 features:
   go:
     additionalDependencies: 0.1.0
@@ -14,6 +14,7 @@ features:
     core: 3.5.2
     defaultEnabledRetries: 0.2.0
     envVarSecurityUsage: 0.2.1
+    errors: 2.81.9
     globalSecurity: 2.82.9
     globalSecurityCallbacks: 0.1.0
     globalServerURLs: 2.82.2
@@ -62,7 +63,6 @@ generatedFiles:
   - /models/operations/gethold.go
   - /models/operations/confirmhold.go
   - /models/operations/voidhold.go
-  - /models/components/errorresponse.go
   - /models/components/serverinfo.go
   - /models/components/httpmetadata.go
   - /models/components/gettransactionsresponse.go
@@ -96,6 +96,7 @@ generatedFiles:
   - /models/components/expandeddebithold.go
   - /models/components/confirmholdrequest.go
   - /models/components/security.go
+  - /models/sdkerrors/errorresponse.go
   - docs/models/operations/getserverinforesponse.md
   - docs/models/operations/gettransactionsrequest.md
   - docs/models/operations/gettransactionsresponse.md
@@ -128,8 +129,6 @@ generatedFiles:
   - docs/models/operations/confirmholdresponse.md
   - docs/models/operations/voidholdrequest.md
   - docs/models/operations/voidholdresponse.md
-  - docs/models/components/errorcode.md
-  - docs/models/components/errorresponse.md
   - docs/models/components/serverinfo.md
   - docs/models/components/httpmetadata.md
   - docs/models/components/cursor.md
@@ -169,6 +168,8 @@ generatedFiles:
   - docs/models/components/expandeddebithold.md
   - docs/models/components/confirmholdrequest.md
   - docs/models/components/security.md
+  - docs/models/sdkerrors/errorcode.md
+  - docs/models/sdkerrors/errorresponse.md
   - docs/sdks/formance/README.md
   - docs/sdks/wallets/README.md
   - docs/models/operations/option.md

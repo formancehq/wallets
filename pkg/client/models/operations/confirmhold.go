@@ -36,8 +36,6 @@ func (o *ConfirmHoldRequest) GetConfirmHoldRequest() *components.ConfirmHoldRequ
 
 type ConfirmHoldResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *ConfirmHoldResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -45,11 +43,4 @@ func (o *ConfirmHoldResponse) GetHTTPMeta() components.HTTPMetadata {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
-}
-
-func (o *ConfirmHoldResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

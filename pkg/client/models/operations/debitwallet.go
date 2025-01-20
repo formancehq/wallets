@@ -38,8 +38,6 @@ type DebitWalletResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Wallet successfully debited as a pending hold
 	DebitWalletResponse *components.DebitWalletResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *DebitWalletResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -54,11 +52,4 @@ func (o *DebitWalletResponse) GetDebitWalletResponse() *components.DebitWalletRe
 		return nil
 	}
 	return o.DebitWalletResponse
-}
-
-func (o *DebitWalletResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

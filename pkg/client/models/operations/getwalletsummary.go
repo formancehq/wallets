@@ -21,8 +21,6 @@ type GetWalletSummaryResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Wallet summary
 	GetWalletSummaryResponse *components.GetWalletSummaryResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *GetWalletSummaryResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -37,11 +35,4 @@ func (o *GetWalletSummaryResponse) GetGetWalletSummaryResponse() *components.Get
 		return nil
 	}
 	return o.GetWalletSummaryResponse
-}
-
-func (o *GetWalletSummaryResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

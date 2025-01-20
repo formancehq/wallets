@@ -38,8 +38,6 @@ type CreateBalanceResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Created balance
 	CreateBalanceResponse *components.CreateBalanceResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *CreateBalanceResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -54,11 +52,4 @@ func (o *CreateBalanceResponse) GetCreateBalanceResponse() *components.CreateBal
 		return nil
 	}
 	return o.CreateBalanceResponse
-}
-
-func (o *CreateBalanceResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

@@ -36,8 +36,6 @@ func (o *CreditWalletRequest) GetCreditWalletRequest() *components.CreditWalletR
 
 type CreditWalletResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *CreditWalletResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -45,11 +43,4 @@ func (o *CreditWalletResponse) GetHTTPMeta() components.HTTPMetadata {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
-}
-
-func (o *CreditWalletResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }
