@@ -29,8 +29,6 @@ type GetBalanceResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Balance summary
 	GetBalanceResponse *components.GetBalanceResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *GetBalanceResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -45,11 +43,4 @@ func (o *GetBalanceResponse) GetGetBalanceResponse() *components.GetBalanceRespo
 		return nil
 	}
 	return o.GetBalanceResponse
-}
-
-func (o *GetBalanceResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

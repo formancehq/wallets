@@ -22,8 +22,6 @@ type GetHoldResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Holds
 	GetHoldResponse *components.GetHoldResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *GetHoldResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -38,11 +36,4 @@ func (o *GetHoldResponse) GetGetHoldResponse() *components.GetHoldResponse {
 		return nil
 	}
 	return o.GetHoldResponse
-}
-
-func (o *GetHoldResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

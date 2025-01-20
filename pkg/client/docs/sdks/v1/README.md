@@ -66,9 +66,10 @@ func main() {
 ### Response
 
 **[*operations.GetServerInfoResponse](../../models/operations/getserverinforesponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetTransactions
 
@@ -120,9 +121,10 @@ func main() {
 ### Response
 
 **[*operations.GetTransactionsResponse](../../models/operations/gettransactionsresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## ListWallets
 
@@ -180,9 +182,10 @@ func main() {
 ### Response
 
 **[*operations.ListWalletsResponse](../../models/operations/listwalletsresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## CreateWallet
 
@@ -232,9 +235,10 @@ func main() {
 ### Response
 
 **[*operations.CreateWalletResponse](../../models/operations/createwalletresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetWallet
 
@@ -286,9 +290,10 @@ func main() {
 ### Response
 
 **[*operations.GetWalletResponse](../../models/operations/getwalletresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## UpdateWallet
 
@@ -340,9 +345,10 @@ func main() {
 ### Response
 
 **[*operations.UpdateWalletResponse](../../models/operations/updatewalletresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetWalletSummary
 
@@ -394,9 +400,10 @@ func main() {
 ### Response
 
 **[*operations.GetWalletSummaryResponse](../../models/operations/getwalletsummaryresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## ListBalances
 
@@ -502,9 +509,10 @@ func main() {
 ### Response
 
 **[*operations.CreateBalanceResponse](../../models/operations/createbalanceresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetBalance
 
@@ -557,9 +565,10 @@ func main() {
 ### Response
 
 **[*operations.GetBalanceResponse](../../models/operations/getbalanceresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## DebitWallet
 
@@ -622,9 +631,10 @@ func main() {
 ### Response
 
 **[*operations.DebitWalletResponse](../../models/operations/debitwalletresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## CreditWallet
 
@@ -694,9 +704,10 @@ func main() {
 ### Response
 
 **[*operations.CreditWalletResponse](../../models/operations/creditwalletresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetHolds
 
@@ -753,9 +764,10 @@ func main() {
 ### Response
 
 **[*operations.GetHoldsResponse](../../models/operations/getholdsresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## GetHold
 
@@ -807,9 +819,10 @@ func main() {
 ### Response
 
 **[*operations.GetHoldResponse](../../models/operations/getholdresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## ConfirmHold
 
@@ -866,9 +879,10 @@ func main() {
 ### Response
 
 **[*operations.ConfirmHoldResponse](../../models/operations/confirmholdresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ## VoidHold
 
@@ -920,6 +934,7 @@ func main() {
 ### Response
 
 **[*operations.VoidHoldResponse](../../models/operations/voidholdresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |

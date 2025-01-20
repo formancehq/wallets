@@ -48,8 +48,6 @@ func (o *UpdateWalletRequest) GetRequestBody() *UpdateWalletRequestBody {
 
 type UpdateWalletResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *UpdateWalletResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -57,11 +55,4 @@ func (o *UpdateWalletResponse) GetHTTPMeta() components.HTTPMetadata {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
-}
-
-func (o *UpdateWalletResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

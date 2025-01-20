@@ -5,6 +5,9 @@ info:
 servers:
   - url: http://localhost:8080/
 paths:
+  x-speakeasy-errors:
+    statusCodes:
+      - default
   /_info:
     get:
       summary: Get server info

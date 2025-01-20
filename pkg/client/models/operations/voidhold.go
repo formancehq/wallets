@@ -28,8 +28,6 @@ func (o *VoidHoldRequest) GetIdempotencyKey() *string {
 
 type VoidHoldResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *VoidHoldResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -37,11 +35,4 @@ func (o *VoidHoldResponse) GetHTTPMeta() components.HTTPMetadata {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
-}
-
-func (o *VoidHoldResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

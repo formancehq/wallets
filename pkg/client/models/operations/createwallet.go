@@ -30,8 +30,6 @@ type CreateWalletResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Wallet created
 	CreateWalletResponse *components.CreateWalletResponse
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *CreateWalletResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -46,11 +44,4 @@ func (o *CreateWalletResponse) GetCreateWalletResponse() *components.CreateWalle
 		return nil
 	}
 	return o.CreateWalletResponse
-}
-
-func (o *CreateWalletResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }

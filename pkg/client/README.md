@@ -180,9 +180,10 @@ func main() {
 
 Handling errors in this SDK should largely match your expectations.  All operations return a response object or an error, they will never return both.  When specified by the OpenAPI spec document, the SDK will return the appropriate subclass.
 
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
+| Error Object            | Status Code             | Content Type            |
+| ----------------------- | ----------------------- | ----------------------- |
+| sdkerrors.ErrorResponse | default                 | application/json        |
+| sdkerrors.SDKError      | 4xx-5xx                 | */*                     |
 
 ### Example
 
@@ -209,6 +210,12 @@ func main() {
 	ctx := context.Background()
 	res, err := s.Wallets.V1.GetServerInfo(ctx)
 	if err != nil {
+
+		var e *sdkerrors.ErrorResponse
+		if errors.As(err, &e) {
+			// handle error
+			log.Fatal(e.Error())
+		}
 
 		var e *sdkerrors.SDKError
 		if errors.As(err, &e) {

@@ -10,8 +10,6 @@ type GetServerInfoResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Server information
 	ServerInfo *components.ServerInfo
-	// Error
-	ErrorResponse *components.ErrorResponse
 }
 
 func (o *GetServerInfoResponse) GetHTTPMeta() components.HTTPMetadata {
@@ -26,11 +24,4 @@ func (o *GetServerInfoResponse) GetServerInfo() *components.ServerInfo {
 		return nil
 	}
 	return o.ServerInfo
-}
-
-func (o *GetServerInfoResponse) GetErrorResponse() *components.ErrorResponse {
-	if o == nil {
-		return nil
-	}
-	return o.ErrorResponse
 }
