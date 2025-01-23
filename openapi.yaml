@@ -766,6 +766,13 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/WalletWithBalances'
+    GetWalletSummaryResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletSummary'
     DebitWalletResponse:
       type: object
       required:
@@ -1090,7 +1097,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Balance'
         - $ref: '#/components/schemas/AssetHolder'
-    GetWalletSummaryResponse:
+    WalletSummary:
       type: object
       required:
         - balances
