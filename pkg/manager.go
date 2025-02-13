@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sort"
 
@@ -162,13 +163,9 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
 			Plain: BuildDebitWalletScript(metadata, sources...),
-			Vars: map[string]interface{}{
+			Vars: map[string]string{
 				"destination": dest.getAccount(m.chart),
-				"amount": map[string]any{
-					// @todo: upgrade this to proper int after sdk is updated
-					"amount": debit.Amount.Amount.Uint64(),
-					"asset":  debit.Amount.Asset,
-				},
+				"amount":      fmt.Sprintf("%s %s", debit.Amount.Asset, debit.Amount.Amount),
 			},
 		},
 		Timestamp: debit.Timestamp,
@@ -207,13 +204,10 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 		return err
 	}
 
-	vars := map[string]interface{}{
-		"hold": m.chart.GetHoldAccount(debit.HoldID),
-		"amount": map[string]any{
-			"amount": amount,
-			"asset":  hold.Asset,
-		},
-		"dest": hold.Destination.getAccount(m.chart),
+	vars := map[string]string{
+		"hold":   m.chart.GetHoldAccount(debit.HoldID),
+		"amount": fmt.Sprintf("%s %d", hold.Asset, amount),
+		"dest":   hold.Destination.getAccount(m.chart),
 	}
 	if debit.Final {
 		vars["void_destination"] = m.chart.GetMainBalanceAccount(hold.WalletID)
@@ -235,6 +229,17 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 }
 
 func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error {
+
+	txs, err := m.client.ListTransactions(ctx, m.ledgerName, ListTransactionsQuery{
+		Destination: m.chart.GetHoldAccount(void.HoldID),
+	})
+	if err != nil {
+		return fmt.Errorf("retrieving original transaction: %w", err)
+	}
+	if len(txs.Data) != 1 {
+		return fmt.Errorf("expected 1 transaction, got %d", len(txs.Data))
+	}
+
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetHoldAccount(void.HoldID))
 	if err != nil {
 		return errors.Wrap(err, "getting account")
@@ -247,10 +252,9 @@ func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error 
 
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: BuildCancelHoldScript(hold.Asset),
-			Vars: map[string]interface{}{
+			Plain: BuildCancelHoldScript(hold.Asset, txs.Data[0].Postings...),
+			Vars: map[string]string{
 				"hold": m.chart.GetHoldAccount(void.HoldID),
-				"dest": m.chart.GetMainBalanceAccount(hold.WalletID),
 			},
 		},
 		Metadata: TransactionMetadata(metadata.Metadata{}),
@@ -277,13 +281,9 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
 			Plain: BuildCreditWalletScript(credit.Sources.ResolveAccounts(m.chart)...),
-			Vars: map[string]interface{}{
+			Vars: map[string]string{
 				"destination": credit.destinationAccount(m.chart),
-				"amount": map[string]any{
-					// @todo: upgrade this to proper int after sdk is updated
-					"amount": credit.Amount.Amount.Uint64(),
-					"asset":  credit.Amount.Asset,
-				},
+				"amount":      fmt.Sprintf("%s %s", credit.Amount.Asset, credit.Amount.Amount),
 			},
 		},
 		Timestamp: credit.Timestamp,
@@ -402,10 +402,10 @@ func (m *Manager) ListTransactions(ctx context.Context, query ListQuery[ListTran
 		return nil, errors.Wrap(err, "listing transactions")
 	}
 
-	return newListResponse[shared.V2ExpandedTransaction, Transaction](response, func(tx shared.V2ExpandedTransaction) Transaction {
+	return newListResponse[shared.V2Transaction, Transaction](response, func(tx shared.V2Transaction) Transaction {
 		return Transaction{
-			V2ExpandedTransaction: tx,
-			Ledger:                m.ledgerName,
+			V2Transaction: tx,
+			Ledger:        m.ledgerName,
 		}
 	}), nil
 }

@@ -45,13 +45,47 @@ func TestHoldsVoid(t *testing.T) {
 				},
 			}, nil
 		}),
+		WithListTransactions(func(ctx context.Context, ledger string, query wallet.ListTransactionsQuery) (*shared.V2TransactionsCursorResponseCursor, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+
+			return &shared.V2TransactionsCursorResponseCursor{
+				Data: []shared.V2Transaction{{
+					Postings: []shared.V2Posting{
+						{
+							Source:      testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
+							Destination: testEnv.Chart().GetHoldAccount(hold.ID),
+							Amount:      big.NewInt(100),
+							Asset:       "USD",
+						},
+						{
+							Source:      testEnv.Chart().GetMainBalanceAccount(walletID),
+							Destination: testEnv.Chart().GetHoldAccount(hold.ID),
+							Amount:      big.NewInt(100),
+							Asset:       "USD",
+						},
+					},
+				}},
+			}, nil
+		}),
 		WithCreateTransaction(func(ctx context.Context, name, ik string, script wallet.PostTransaction) (*shared.V2Transaction, error) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildCancelHoldScript("USD"),
-					Vars: map[string]interface{}{
+					Plain: wallet.BuildCancelHoldScript("USD",
+						shared.V2Posting{
+							Source:      testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
+							Destination: testEnv.Chart().GetHoldAccount(hold.ID),
+							Amount:      big.NewInt(100),
+							Asset:       "USD",
+						},
+						shared.V2Posting{
+							Source:      testEnv.Chart().GetMainBalanceAccount(walletID),
+							Destination: testEnv.Chart().GetHoldAccount(hold.ID),
+							Amount:      big.NewInt(100),
+							Asset:       "USD",
+						},
+					),
+					Vars: map[string]string{
 						"hold": testEnv.Chart().GetHoldAccount(hold.ID),
-						"dest": testEnv.Chart().GetMainBalanceAccount(hold.WalletID),
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),

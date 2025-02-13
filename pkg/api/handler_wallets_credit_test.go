@@ -42,12 +42,9 @@ func TestWalletsCredit(t *testing.T) {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
 						Plain: wallet.BuildCreditWalletScript("world"),
-						Vars: map[string]interface{}{
+						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
-							"amount": map[string]any{
-								"amount": uint64(100),
-								"asset":  "USD",
-							},
+							"amount":      "USD 100",
 						},
 					},
 					Metadata: wallet.TransactionMetadata(metadata.Metadata{
@@ -72,12 +69,9 @@ func TestWalletsCredit(t *testing.T) {
 							"emitter1",
 							testEnv.Chart().GetMainBalanceAccount("wallet1"),
 						),
-						Vars: map[string]interface{}{
+						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
-							"amount": map[string]any{
-								"amount": uint64(100),
-								"asset":  "USD",
-							},
+							"amount":      "USD 100",
 						},
 					},
 					Metadata: wallet.TransactionMetadata(nil),
@@ -98,12 +92,9 @@ func TestWalletsCredit(t *testing.T) {
 						Plain: wallet.BuildCreditWalletScript(
 							testEnv.Chart().GetBalanceAccount("emitter1", "secondary"),
 						),
-						Vars: map[string]interface{}{
+						Vars: map[string]string{
 							"destination": testEnv.Chart().GetMainBalanceAccount(walletID),
-							"amount": map[string]any{
-								"amount": uint64(100),
-								"asset":  "USD",
-							},
+							"amount":      "USD 100",
 						},
 					},
 					Metadata: wallet.TransactionMetadata(nil),
@@ -120,12 +111,9 @@ func TestWalletsCredit(t *testing.T) {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
 						Plain: wallet.BuildCreditWalletScript("world"),
-						Vars: map[string]interface{}{
+						Vars: map[string]string{
 							"destination": testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
-							"amount": map[string]any{
-								"amount": uint64(100),
-								"asset":  "USD",
-							},
+							"amount":      "USD 100",
 						},
 					},
 					Metadata: wallet.TransactionMetadata(nil),
@@ -151,12 +139,9 @@ func TestWalletsCredit(t *testing.T) {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
 						Plain: wallet.BuildCreditWalletScript("world"),
-						Vars: map[string]interface{}{
+						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
-							"amount": map[string]any{
-								"amount": uint64(100),
-								"asset":  "USD",
-							},
+							"amount":      "USD 100",
 						},
 					},
 					Metadata:  wallet.TransactionMetadata(nil),

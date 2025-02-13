@@ -4,6 +4,7 @@ package wallet
 import (
 	"bytes"
 	_ "embed"
+	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"strconv"
 	"text/template"
 )
@@ -50,8 +51,9 @@ func BuildDebitWalletScript(metadata map[string]map[string]string, sources ...st
 	})
 }
 
-func BuildCancelHoldScript(asset string) string {
+func BuildCancelHoldScript(asset string, postings ...shared.V2Posting) string {
 	return renderTemplate(CancelHoldScript, map[string]any{
-		"Asset": asset,
+		"Asset":        asset,
+		"Postings": postings,
 	})
 }
