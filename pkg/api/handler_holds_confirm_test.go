@@ -44,13 +44,10 @@ func TestHoldsConfirm(t *testing.T) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildConfirmHoldScript(false, "USD"),
-					Vars: map[string]interface{}{
-						"hold": testEnv.Chart().GetHoldAccount(hold.ID),
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
-						"dest": "bank",
+					Vars: map[string]string{
+						"hold":   testEnv.Chart().GetHoldAccount(hold.ID),
+						"amount": "USD 100",
+						"dest":   "bank",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -99,13 +96,10 @@ func TestHoldsPartialConfirm(t *testing.T) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildConfirmHoldScript(false, "USD"),
-					Vars: map[string]interface{}{
-						"hold": testEnv.Chart().GetHoldAccount(hold.ID),
-						"amount": map[string]any{
-							"amount": uint64(50),
-							"asset":  "USD",
-						},
-						"dest": "bank",
+					Vars: map[string]string{
+						"hold":   testEnv.Chart().GetHoldAccount(hold.ID),
+						"amount": "USD 50",
+						"dest":   "bank",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -234,12 +228,9 @@ func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildConfirmHoldScript(true, "USD"),
-					Vars: map[string]interface{}{
-						"hold": testEnv.Chart().GetHoldAccount(hold.ID),
-						"amount": map[string]any{
-							"amount": uint64(50),
-							"asset":  "USD",
-						},
+					Vars: map[string]string{
+						"hold":             testEnv.Chart().GetHoldAccount(hold.ID),
+						"amount":           "USD 50",
 						"dest":             "bank",
 						"void_destination": testEnv.Chart().GetMainBalanceAccount(hold.WalletID),
 					},

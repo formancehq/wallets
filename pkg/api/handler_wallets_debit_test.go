@@ -55,12 +55,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": wallet.DefaultDebitDest.Identifier,
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -77,12 +74,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": wallet.DefaultDebitDest.Identifier,
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata:  metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -100,12 +94,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": "account1",
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -122,12 +113,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": testEnv.Chart().GetMainBalanceAccount("wallet1"),
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -161,12 +149,9 @@ var walletDebitTestCases = []testCase{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{
 						testEnv.Chart().GetHoldAccount(h.ID): h.LedgerMetadata(testEnv.Chart()),
 					}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": testEnv.Chart().GetHoldAccount(h.ID),
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(metadata.Metadata{
@@ -186,12 +171,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": "world",
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -208,12 +190,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "coupon1"), testEnv.Chart().GetBalanceAccount(walletID, "coupon4"), testEnv.Chart().GetBalanceAccount(walletID, "coupon2"), testEnv.Chart().GetBalanceAccount(walletID, "main")),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": "world",
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -230,12 +209,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": "world",
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
@@ -254,12 +230,9 @@ var walletDebitTestCases = []testCase{
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
-					Vars: map[string]interface{}{
+					Vars: map[string]string{
 						"destination": testEnv.Chart().GetBalanceAccount("wallet1", "secondary"),
-						"amount": map[string]any{
-							"amount": uint64(100),
-							"asset":  "USD",
-						},
+						"amount":      "USD 100",
 					},
 				},
 				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),

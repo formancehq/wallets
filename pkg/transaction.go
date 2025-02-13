@@ -7,12 +7,12 @@ import (
 )
 
 type Transaction struct {
-	shared.V2ExpandedTransaction
+	shared.V2Transaction
 	Ledger string `json:"ledger"`
 }
 
 func (t Transaction) MarshalJSON() ([]byte, error) {
-	asJSON, err := json.Marshal(t.V2ExpandedTransaction)
+	asJSON, err := json.Marshal(t.V2Transaction)
 	if err != nil {
 		return nil, err
 	}
