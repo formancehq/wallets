@@ -48,6 +48,82 @@ var _ = Context("Wallets - debit", func() {
 			)
 			Expect(err).ToNot(HaveOccurred())
 		})
+		When("with a secondary balance", func() {
+			var (
+				createBalanceResponse *operations.CreateBalanceResponse
+			)
+			BeforeEach(func() {
+				createBalanceResponse, err = srv.Client().Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+					CreateBalanceRequest: &components.CreateBalanceRequest{
+						Name: "secondary",
+					},
+					ID: createWalletResponse.CreateWalletResponse.Data.ID,
+				})
+				Expect(err).To(Succeed())
+			})
+			When("crediting it", func() {
+				BeforeEach(func() {
+					_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+						CreditWalletRequest: &components.CreditWalletRequest{
+							Amount: components.Monetary{
+								Amount: big.NewInt(1000),
+								Asset:  "USD/2",
+							},
+							Balance:  pointer.For(createBalanceResponse.CreateBalanceResponse.Data.Name),
+							Sources:  []components.Subject{},
+							Metadata: map[string]string{},
+						},
+						ID: createWalletResponse.CreateWalletResponse.Data.ID,
+					})
+					Expect(err).To(Succeed())
+				})
+				When("debiting it with a hold", func() {
+					var (
+						debitWalletResponse *operations.DebitWalletResponse
+					)
+					BeforeEach(func() {
+						debitWalletResponse, err = srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+							DebitWalletRequest: &components.DebitWalletRequest{
+								Amount: components.Monetary{
+									Amount: big.NewInt(100),
+									Asset:  "USD/2",
+								},
+								Pending:  pointer.For(true),
+								Metadata: map[string]string{},
+								Balances: []string{
+									createBalanceResponse.CreateBalanceResponse.Data.Name,
+								},
+							},
+							ID: createWalletResponse.CreateWalletResponse.Data.ID,
+						})
+						Expect(err).To(Succeed())
+					})
+					When("void the hold", func() {
+						JustBeforeEach(func() {
+							balance, err := srv.Client().Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
+								ID:          createWalletResponse.CreateWalletResponse.Data.ID,
+								BalanceName: createBalanceResponse.CreateBalanceResponse.Data.Name,
+							})
+							Expect(err).To(BeNil())
+							Expect(balance.GetBalanceResponse.Data.Assets["USD/2"]).To(Equal(big.NewInt(900)))
+
+							_, err = srv.Client().Wallets.V1.VoidHold(ctx, operations.VoidHoldRequest{
+								HoldID: debitWalletResponse.DebitWalletResponse.Data.ID,
+							})
+							Expect(err).To(Succeed())
+						})
+						It("should be ok and returned funds to the secondary balance", func() {
+							balance, err := srv.Client().Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
+								ID:          createWalletResponse.CreateWalletResponse.Data.ID,
+								BalanceName: createBalanceResponse.CreateBalanceResponse.Data.Name,
+							})
+							Expect(err).To(BeNil())
+							Expect(balance.GetBalanceResponse.Data.Assets["USD/2"]).To(Equal(big.NewInt(1000)))
+						})
+					})
+				})
+			})
+		})
 		When("crediting it", func() {
 			BeforeEach(func() {
 				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{

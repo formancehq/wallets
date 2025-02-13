@@ -63,8 +63,8 @@ func TestTransactionsList(t *testing.T) {
 					HasMore:  hasMore,
 					Previous: pointer.For(previous),
 					Next:     pointer.For(next),
-					Data: collectionutils.Map(transactions[page*pageSize:(page+1)*pageSize], func(from shared.V2Transaction) shared.V2ExpandedTransaction {
-						return shared.V2ExpandedTransaction{
+					Data: collectionutils.Map(transactions[page*pageSize:(page+1)*pageSize], func(from shared.V2Transaction) shared.V2Transaction {
+						return shared.V2Transaction{
 							ID:                from.ID,
 							Metadata:          from.Metadata,
 							PostCommitVolumes: nil,
@@ -86,8 +86,8 @@ func TestTransactionsList(t *testing.T) {
 				PageSize: pageSize,
 				HasMore:  true,
 				Next:     pointer.For("1"),
-				Data: collectionutils.Map(transactions[:pageSize], func(from shared.V2Transaction) shared.V2ExpandedTransaction {
-					return shared.V2ExpandedTransaction{
+				Data: collectionutils.Map(transactions[:pageSize], func(from shared.V2Transaction) shared.V2Transaction {
+					return shared.V2Transaction{
 						ID:                from.ID,
 						Metadata:          from.Metadata,
 						PostCommitVolumes: nil,
