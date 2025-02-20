@@ -1,6 +1,6 @@
 VERSION 0.8
 
-IMPORT github.com/formancehq/earthly:tags/v0.16.2 AS core
+IMPORT github.com/formancehq/earthly:tags/v0.19.0 AS core
 
 FROM core+base-image
 
@@ -22,7 +22,7 @@ build-image:
     FROM core+final-image
     ENTRYPOINT ["/bin/wallets"]
     CMD ["serve"]
-    COPY (+compile/main) /bin/wallets
+    COPY --pass-args (+compile/main) /bin/wallets
     ARG REPOSITORY=ghcr.io
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=wallets --REPOSITORY=${REPOSITORY} --TAG=$tag

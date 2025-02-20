@@ -3,31 +3,33 @@ version: 2
 project_name: wallets
 
 includes:
-  - from_url:
-      url: https://raw.githubusercontent.com/formancehq/earthly/refs/heads/main/.goreleaser.default.yaml
+- from_url:
+    url: https://raw.githubusercontent.com/formancehq/earthly/refs/heads/main/.goreleaser.default.yaml
 
 builds:
-  - binary: wallets
-    id: wallets
-    ldflags:
-      - -X github.com/formancehq/wallets/cmd.BuildDate={{ .Date }}
-      - -X github.com/formancehq/wallets/cmd.Version=v{{ .Version }}
-      - -X github.com/formancehq/wallets/cmd.Commit={{ .ShortCommit }}
-      - -extldflags "-static"
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-    goarch:
-      - amd64
-      - arm64
+- binary: wallets
+  id: wallets
+  ldflags:
+  - -X github.com/formancehq/wallets/cmd.BuildDate={{ .Date }}
+  - -X github.com/formancehq/wallets/cmd.Version=v{{ .Version }}
+  - -X github.com/formancehq/wallets/cmd.Commit={{ .ShortCommit }}
+  - -extldflags "-static"
+  tags:
+  - production
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  goarch:
+  - amd64
+  - arm64
 
 archives:
-  - id: "{{.ProjectName}}"
-    builds:
-      - wallets
-    format: tar.gz
-    name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
+- id: "{{.ProjectName}}"
+  builds:
+  - wallets
+  format: tar.gz
+  name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
 
 release:
   prerelease: auto
@@ -36,4 +38,4 @@ release:
     - Read the [documentation](https://docs.formance.com/)
     - Join our [Slack server](https://formance.com/slack)
   extra_files:
-    - glob: ./openapi.yaml
+  - glob: ./openapi.yaml
