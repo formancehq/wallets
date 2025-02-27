@@ -30,64 +30,6 @@ func TestWalletSummary(t *testing.T) {
 
 	var testEnv *testEnv
 	testEnv = newTestEnv(
-		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
-			require.Equal(t, testEnv.LedgerName(), ledger)
-			switch account {
-			case testEnv.Chart().GetMainBalanceAccount(w.ID):
-				return &wallet.AccountWithVolumesAndBalances{
-					Account: wallet.Account{
-						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(w.LedgerMetadata()),
-					},
-					Balances: map[string]*big.Int{
-						"USD": big.NewInt(100),
-					},
-				}, nil
-			case testEnv.Chart().GetBalanceAccount(w.ID, coupon1Balance.Name):
-				return &wallet.AccountWithVolumesAndBalances{
-					Account: wallet.Account{
-						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(coupon1Balance.LedgerMetadata(w.ID)),
-					},
-					Balances: map[string]*big.Int{
-						"USD": big.NewInt(10),
-					},
-				}, nil
-			case testEnv.Chart().GetBalanceAccount(w.ID, coupon2Balance.Name):
-				return &wallet.AccountWithVolumesAndBalances{
-					Account: wallet.Account{
-						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(coupon2Balance.LedgerMetadata(w.ID)),
-					},
-					Balances: map[string]*big.Int{
-						"USD": big.NewInt(20),
-					},
-				}, nil
-			case testEnv.Chart().GetHoldAccount(hold1.ID):
-				return &wallet.AccountWithVolumesAndBalances{
-					Account: wallet.Account{
-						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(hold1.LedgerMetadata(testEnv.Chart())),
-					},
-					Balances: map[string]*big.Int{
-						"USD": big.NewInt(10),
-					},
-				}, nil
-			case testEnv.Chart().GetHoldAccount(hold2.ID):
-				return &wallet.AccountWithVolumesAndBalances{
-					Account: wallet.Account{
-						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(hold2.LedgerMetadata(testEnv.Chart())),
-					},
-					Balances: map[string]*big.Int{
-						"USD": big.NewInt(20),
-					},
-				}, nil
-			default:
-				require.Fail(t, "unexpected account query")
-			}
-			panic("should not happen")
-		}),
 		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
 			switch {
 			case query.Metadata[wallet.MetadataKeyWalletID] == w.ID:
@@ -98,17 +40,26 @@ func TestWalletSummary(t *testing.T) {
 								Address:  testEnv.Chart().GetMainBalanceAccount(w.ID),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(w.LedgerMetadata()),
 							},
+							Balances: map[string]*big.Int{
+								"USD": big.NewInt(100),
+							},
 						},
 						{
 							Account: wallet.Account{
 								Address:  testEnv.Chart().GetBalanceAccount(w.ID, "coupon1"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(coupon1Balance.LedgerMetadata(w.ID)),
 							},
+							Balances: map[string]*big.Int{
+								"USD": big.NewInt(10),
+							},
 						},
 						{
 							Account: wallet.Account{
 								Address:  testEnv.Chart().GetBalanceAccount(w.ID, "coupon2"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(coupon2Balance.LedgerMetadata(w.ID)),
+							},
+							Balances: map[string]*big.Int{
+								"USD": big.NewInt(20),
 							},
 						},
 					},
@@ -121,11 +72,17 @@ func TestWalletSummary(t *testing.T) {
 								Address:  testEnv.Chart().GetHoldAccount(hold1.ID),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(hold1.LedgerMetadata(testEnv.Chart())),
 							},
+							Balances: map[string]*big.Int{
+								"USD": big.NewInt(10),
+							},
 						},
 						{
 							Account: wallet.Account{
 								Address:  testEnv.Chart().GetHoldAccount(hold2.ID),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(hold2.LedgerMetadata(testEnv.Chart())),
+							},
+							Balances: map[string]*big.Int{
+								"USD": big.NewInt(20),
 							},
 						},
 					},

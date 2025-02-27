@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: de0345f3-2756-4415-852c-a34657f4e97f
 management:
-  docChecksum: b72de11c6797ffd9e38fc4fb76f54268
+  docChecksum: 4d411bab049511965279aba5b2d780d4
   docVersion: 0.1.0
   speakeasyVersion: 1.351.0
   generationVersion: 2.384.1
-  releaseVersion: 0.7.0
-  configChecksum: 2f9334027204bf6323e5101bdbdd0368
+  releaseVersion: 0.7.1
+  configChecksum: d787f79580a573f484279d2caee866f2
 features:
   go:
     additionalDependencies: 0.1.0
@@ -77,6 +77,7 @@ generatedFiles:
   - /models/components/getwalletresponse.go
   - /models/components/walletwithbalances.go
   - /models/components/getwalletsummaryresponse.go
+  - /models/components/walletsummary.go
   - /models/components/balancewithassets.go
   - /models/components/listbalancesresponse.go
   - /models/components/balance.go
@@ -147,6 +148,7 @@ generatedFiles:
   - docs/models/components/walletwithbalancesbalances.md
   - docs/models/components/walletwithbalances.md
   - docs/models/components/getwalletsummaryresponse.md
+  - docs/models/components/walletsummary.md
   - docs/models/components/balancewithassets.md
   - docs/models/components/listbalancesresponsecursor.md
   - docs/models/components/listbalancesresponse.md

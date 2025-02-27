@@ -91,11 +91,7 @@ func (b Balances) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
 }
 
-func BalanceFromAccount(account interface {
-	MetadataOwner
-	GetAddress() string
-	GetBalances() map[string]*big.Int
-}) Balance {
+func BalanceFromAccount(account AccountWithVolumesAndBalances) Balance {
 	expiresAtRaw := GetMetadata(account, MetadataKeyBalanceExpiresAt)
 	var expiresAt *time.Time
 	if expiresAtRaw != "" {
@@ -126,11 +122,7 @@ type ExpandedBalance struct {
 	Assets map[string]*big.Int `json:"assets"`
 }
 
-func ExpandedBalanceFromAccount(account interface {
-	MetadataOwner
-	GetAddress() string
-	GetBalances() map[string]*big.Int
-}) ExpandedBalance {
+func ExpandedBalanceFromAccount(account AccountWithVolumesAndBalances) ExpandedBalance {
 	return ExpandedBalance{
 		Balance: BalanceFromAccount(account),
 		Assets:  account.GetBalances(),
