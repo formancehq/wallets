@@ -2,61 +2,13 @@
 
 package components
 
-import (
-	"github.com/formancehq/wallets/pkg/client/internal/utils"
-	"math/big"
-)
-
 type GetWalletSummaryResponse struct {
-	Balances       []BalanceWithAssets `json:"balances"`
-	AvailableFunds map[string]*big.Int `json:"availableFunds"`
-	ExpiredFunds   map[string]*big.Int `json:"expiredFunds"`
-	ExpirableFunds map[string]*big.Int `json:"expirableFunds"`
-	HoldFunds      map[string]*big.Int `json:"holdFunds"`
+	Data WalletSummary `json:"data"`
 }
 
-func (g GetWalletSummaryResponse) MarshalJSON() ([]byte, error) {
-	return utils.MarshalJSON(g, "", false)
-}
-
-func (g *GetWalletSummaryResponse) UnmarshalJSON(data []byte) error {
-	if err := utils.UnmarshalJSON(data, &g, "", false, false); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (o *GetWalletSummaryResponse) GetBalances() []BalanceWithAssets {
+func (o *GetWalletSummaryResponse) GetData() WalletSummary {
 	if o == nil {
-		return []BalanceWithAssets{}
+		return WalletSummary{}
 	}
-	return o.Balances
-}
-
-func (o *GetWalletSummaryResponse) GetAvailableFunds() map[string]*big.Int {
-	if o == nil {
-		return map[string]*big.Int{}
-	}
-	return o.AvailableFunds
-}
-
-func (o *GetWalletSummaryResponse) GetExpiredFunds() map[string]*big.Int {
-	if o == nil {
-		return map[string]*big.Int{}
-	}
-	return o.ExpiredFunds
-}
-
-func (o *GetWalletSummaryResponse) GetExpirableFunds() map[string]*big.Int {
-	if o == nil {
-		return map[string]*big.Int{}
-	}
-	return o.ExpirableFunds
-}
-
-func (o *GetWalletSummaryResponse) GetHoldFunds() map[string]*big.Int {
-	if o == nil {
-		return map[string]*big.Int{}
-	}
-	return o.HoldFunds
+	return o.Data
 }
