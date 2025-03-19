@@ -297,7 +297,7 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, q ListAc
 				},
 				Balances: func() map[string]*big.Int {
 					if from.Volumes == nil {
-						return nil
+						return map[string]*big.Int{}
 					}
 					ret := make(map[string]*big.Int)
 					for asset, volumes := range from.Volumes {
