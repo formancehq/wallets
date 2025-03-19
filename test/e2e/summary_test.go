@@ -122,6 +122,14 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
+			_, err = srv.Client().Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+				CreateBalanceRequest: &components.CreateBalanceRequest{
+					Name: "balance4",
+				},
+				ID: createWalletResponse.CreateWalletResponse.Data.ID,
+			})
+			Expect(err).To(Succeed())
+
 			_, err = srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				DebitWalletRequest: &components.DebitWalletRequest{
@@ -190,6 +198,11 @@ var _ = Context("Wallets - summary", func() {
 						Assets: map[string]*big.Int{
 							"USD": big.NewInt(1000),
 						},
+					},
+					{
+						Name:     "balance4",
+						Priority: new(big.Int),
+						Assets:   map[string]*big.Int{},
 					},
 					{
 						Name:     "main",
