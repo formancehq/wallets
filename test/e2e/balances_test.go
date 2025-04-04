@@ -5,9 +5,10 @@ package suite_test
 import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
-	"github.com/formancehq/wallets/pkg/testserver"
+	. "github.com/formancehq/wallets/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,16 +18,15 @@ import (
 var _ = Context("Wallets - balances", func() {
 
 	var (
-		srv *testserver.Server
+		srv = DeferTestServer(stackURL,
+			testservice.WithLogger(GinkgoT()),
+			testservice.WithInstruments(
+				testservice.DebugInstrumentation(debug),
+				testservice.OutputInstrumentation(GinkgoWriter),
+			),
+		)
 		ctx = logging.TestingContext()
 	)
-	BeforeEach(func() {
-		srv = testserver.New(GinkgoT(), testserver.Configuration{
-			Output:   GinkgoWriter,
-			Debug:    debug,
-			StackURL: stackURL.GetValue(),
-		})
-	})
 
 	When("creating a wallet", func() {
 		var (
@@ -34,7 +34,7 @@ var _ = Context("Wallets - balances", func() {
 			err                  error
 		)
 		BeforeEach(func() {
-			createWalletResponse, err = srv.Client().Wallets.V1.CreateWallet(
+			createWalletResponse, err = Client(srv.GetValue()).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{
 					CreateWalletRequest: &components.CreateWalletRequest{
@@ -51,7 +51,7 @@ var _ = Context("Wallets - balances", func() {
 				err                   error
 			)
 			BeforeEach(func() {
-				createBalanceResponse, err = srv.Client().Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+				createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 					CreateBalanceRequest: &components.CreateBalanceRequest{
 						Name:     "balance1",
 						Priority: big.NewInt(10),
@@ -70,7 +70,7 @@ var _ = Context("Wallets - balances", func() {
 					listBalancesResponse *operations.ListBalancesResponse
 				)
 				BeforeEach(func() {
-					listBalancesResponse, err = srv.Client().Wallets.V1.ListBalances(ctx, operations.ListBalancesRequest{
+					listBalancesResponse, err = Client(srv.GetValue()).Wallets.V1.ListBalances(ctx, operations.ListBalancesRequest{
 						ID: createWalletResponse.CreateWalletResponse.Data.ID,
 					})
 					Expect(err).ToNot(HaveOccurred())

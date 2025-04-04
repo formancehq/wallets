@@ -19,8 +19,8 @@ func NewRootCommand() *cobra.Command {
 	cobra.EnableTraverseRunHooks = true
 
 	cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	serverCmd := newServeCommand()
-	cmd.AddCommand(serverCmd)
+	serveCmd := newServeCommand()
+	cmd.AddCommand(serveCmd)
 	return cmd
 }
 
