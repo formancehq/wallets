@@ -3,17 +3,18 @@
 package suite_test
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/testing/deferred"
 	"github.com/formancehq/go-libs/v2/testing/docker"
 	. "github.com/formancehq/go-libs/v2/testing/platform/pgtesting"
-	. "github.com/formancehq/go-libs/v2/testing/utils"
+	"github.com/formancehq/go-libs/v2/testing/testservice"
 	ledgertestserver "github.com/formancehq/ledger/pkg/testserver"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"testing"
 
@@ -27,8 +28,8 @@ func TestExamples(t *testing.T) {
 }
 
 var (
-	dockerPool = NewDeferred[*docker.Pool]()
-	stackURL   = NewDeferred[string]()
+	dockerPool = deferred.New[*docker.Pool]()
+	stackURL   = deferred.New[string]()
 	debug      = os.Getenv("DEBUG") == "true"
 	logger     = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
 )
@@ -38,6 +39,8 @@ type ParallelExecutionContext struct {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+	deferred.RegisterRecoverHandler(GinkgoRecover)
+
 	By("Initializing docker pool")
 	dockerPool.SetValue(docker.NewPool(GinkgoT(), logger))
 
@@ -51,26 +54,20 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	db := ret.NewDatabase(GinkgoT())
 
-	ledgerServer := ledgertestserver.New(GinkgoT(), ledgertestserver.Configuration{
-		PostgresConfiguration: db.ConnectionOptions(),
-		Output:                GinkgoWriter,
-		Debug:                 debug,
-	})
-
-	Expect(ledgerServer.Start()).To(BeNil())
-	DeferCleanup(func() {
-		ctx := logging.TestingContext()
-		Expect(ledgerServer.Stop(ctx)).To(BeNil())
-	})
-
-	ledgerURL, err := url.Parse(ledgerServer.URL())
-	if err != nil {
-		panic(err)
-	}
+	ledgerServer := ledgertestserver.NewTestServer(
+		deferred.FromValue(db.ConnectionOptions()),
+		testservice.WithLogger(GinkgoT()),
+		testservice.WithInstruments(
+			testservice.DebugInstrumentation(debug),
+			testservice.OutputInstrumentation(GinkgoWriter),
+		),
+	)
+	Expect(ledgerServer.Start(context.Background())).To(BeNil())
+	DeferCleanup(ledgerServer.Stop)
 
 	r := chi.NewRouter()
 	r.Mount("/api/ledger",
-		http.StripPrefix("/api/ledger", httputil.NewSingleHostReverseProxy(ledgerURL)),
+		http.StripPrefix("/api/ledger", httputil.NewSingleHostReverseProxy(testservice.GetServerURL(ledgerServer))),
 	)
 
 	srv := httptest.NewServer(r)
