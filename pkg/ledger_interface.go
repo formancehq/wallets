@@ -128,7 +128,7 @@ func (d DefaultLedger) EnsureLedgerExists(ctx context.Context, name string) erro
 	}
 
 	_, err = d.client.Ledger.V2.CreateLedger(ctx, operations.V2CreateLedgerRequest{
-		V2CreateLedgerRequest: &shared.V2CreateLedgerRequest{
+		V2CreateLedgerRequest: shared.V2CreateLedgerRequest{
 			Bucket: pointer.For(name),
 		},
 		Ledger: name,
