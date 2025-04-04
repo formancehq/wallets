@@ -5,10 +5,11 @@ package suite_test
 import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"github.com/formancehq/wallets/pkg/client/models/sdkerrors"
-	"github.com/formancehq/wallets/pkg/testserver"
+	. "github.com/formancehq/wallets/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,16 +21,15 @@ import (
 var _ = Context("Wallets - credit", func() {
 
 	var (
-		srv *testserver.Server
+		srv = DeferTestServer(stackURL,
+			testservice.WithLogger(GinkgoT()),
+			testservice.WithInstruments(
+				testservice.DebugInstrumentation(debug),
+				testservice.OutputInstrumentation(GinkgoWriter),
+			),
+		)
 		ctx = logging.TestingContext()
 	)
-	BeforeEach(func() {
-		srv = testserver.New(GinkgoT(), testserver.Configuration{
-			Output:   GinkgoWriter,
-			Debug:    debug,
-			StackURL: stackURL.GetValue(),
-		})
-	})
 
 	When("creating a wallet", func() {
 		var (
@@ -37,7 +37,7 @@ var _ = Context("Wallets - credit", func() {
 			err      error
 		)
 		BeforeEach(func() {
-			response, err = srv.Client().Wallets.V1.CreateWallet(
+			response, err = Client(srv.GetValue()).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{
 					CreateWalletRequest: &components.CreateWalletRequest{
@@ -50,7 +50,7 @@ var _ = Context("Wallets - credit", func() {
 		})
 		When("crediting it", func() {
 			BeforeEach(func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(1000),
@@ -67,7 +67,7 @@ var _ = Context("Wallets - credit", func() {
 			It("should be ok", func() {})
 			When("crediting again with the same ik", func() {
 				BeforeEach(func() {
-					_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 						CreditWalletRequest: &components.CreditWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(1000),
@@ -82,7 +82,7 @@ var _ = Context("Wallets - credit", func() {
 					Expect(err).To(Succeed())
 				})
 				It("Should not trigger any movements", func() {
-					balance, err := srv.Client().Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
+					balance, err := Client(srv.GetValue()).Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
 						BalanceName: "main",
 						ID:          response.CreateWalletResponse.Data.ID,
 					})
@@ -94,7 +94,7 @@ var _ = Context("Wallets - credit", func() {
 		When("crediting it with specified timestamp", func() {
 			now := time.Now().Round(time.Microsecond).UTC()
 			BeforeEach(func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(1000),
@@ -111,7 +111,7 @@ var _ = Context("Wallets - credit", func() {
 		})
 		When("crediting it with invalid source", func() {
 			It("should fail", func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(1000),
@@ -132,7 +132,7 @@ var _ = Context("Wallets - credit", func() {
 		})
 		When("crediting it with negative amount", func() {
 			It("should fail", func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(-1000),
@@ -152,7 +152,7 @@ var _ = Context("Wallets - credit", func() {
 		})
 		When("crediting it with invalid asset name", func() {
 			It("should fail", func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(1000),

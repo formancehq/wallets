@@ -63,7 +63,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		),
 	)
 	Expect(ledgerServer.Start(context.Background())).To(BeNil())
-	DeferCleanup(ledgerServer.Stop)
+	//	DeferCleanup(ledgerServer.Stop)
 
 	r := chi.NewRouter()
 	r.Mount("/api/ledger",

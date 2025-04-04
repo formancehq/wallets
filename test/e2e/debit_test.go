@@ -5,10 +5,11 @@ package suite_test
 import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
 	"github.com/formancehq/wallets/pkg/client/models/sdkerrors"
-	"github.com/formancehq/wallets/pkg/testserver"
+	. "github.com/formancehq/wallets/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,16 +21,15 @@ import (
 var _ = Context("Wallets - debit", func() {
 
 	var (
-		srv *testserver.Server
+		srv = DeferTestServer(stackURL,
+			testservice.WithLogger(GinkgoT()),
+			testservice.WithInstruments(
+				testservice.DebugInstrumentation(debug),
+				testservice.OutputInstrumentation(GinkgoWriter),
+			),
+		)
 		ctx = logging.TestingContext()
 	)
-	BeforeEach(func() {
-		srv = testserver.New(GinkgoT(), testserver.Configuration{
-			Output:   GinkgoWriter,
-			Debug:    debug,
-			StackURL: stackURL.GetValue(),
-		})
-	})
 
 	When("creating a wallet", func() {
 		var (
@@ -37,7 +37,7 @@ var _ = Context("Wallets - debit", func() {
 			err                  error
 		)
 		BeforeEach(func() {
-			createWalletResponse, err = srv.Client().Wallets.V1.CreateWallet(
+			createWalletResponse, err = Client(srv.GetValue()).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{
 					CreateWalletRequest: &components.CreateWalletRequest{
@@ -53,7 +53,7 @@ var _ = Context("Wallets - debit", func() {
 				createBalanceResponse *operations.CreateBalanceResponse
 			)
 			BeforeEach(func() {
-				createBalanceResponse, err = srv.Client().Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+				createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 					CreateBalanceRequest: &components.CreateBalanceRequest{
 						Name: "secondary",
 					},
@@ -63,7 +63,7 @@ var _ = Context("Wallets - debit", func() {
 			})
 			When("crediting it", func() {
 				BeforeEach(func() {
-					_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 						CreditWalletRequest: &components.CreditWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(1000),
@@ -82,7 +82,7 @@ var _ = Context("Wallets - debit", func() {
 						debitWalletResponse *operations.DebitWalletResponse
 					)
 					BeforeEach(func() {
-						debitWalletResponse, err = srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+						debitWalletResponse, err = Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 							DebitWalletRequest: &components.DebitWalletRequest{
 								Amount: components.Monetary{
 									Amount: big.NewInt(100),
@@ -100,20 +100,20 @@ var _ = Context("Wallets - debit", func() {
 					})
 					When("void the hold", func() {
 						JustBeforeEach(func() {
-							balance, err := srv.Client().Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
+							balance, err := Client(srv.GetValue()).Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
 								ID:          createWalletResponse.CreateWalletResponse.Data.ID,
 								BalanceName: createBalanceResponse.CreateBalanceResponse.Data.Name,
 							})
 							Expect(err).To(BeNil())
 							Expect(balance.GetBalanceResponse.Data.Assets["USD/2"]).To(Equal(big.NewInt(900)))
 
-							_, err = srv.Client().Wallets.V1.VoidHold(ctx, operations.VoidHoldRequest{
+							_, err = Client(srv.GetValue()).Wallets.V1.VoidHold(ctx, operations.VoidHoldRequest{
 								HoldID: debitWalletResponse.DebitWalletResponse.Data.ID,
 							})
 							Expect(err).To(Succeed())
 						})
 						It("should be ok and returned funds to the secondary balance", func() {
-							balance, err := srv.Client().Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
+							balance, err := Client(srv.GetValue()).Wallets.V1.GetBalance(ctx, operations.GetBalanceRequest{
 								ID:          createWalletResponse.CreateWalletResponse.Data.ID,
 								BalanceName: createBalanceResponse.CreateBalanceResponse.Data.Name,
 							})
@@ -126,7 +126,7 @@ var _ = Context("Wallets - debit", func() {
 		})
 		When("crediting it", func() {
 			BeforeEach(func() {
-				_, err := srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err := Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(1000),
@@ -141,7 +141,7 @@ var _ = Context("Wallets - debit", func() {
 			})
 			When("debiting it", func() {
 				BeforeEach(func() {
-					_, err := srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(100),
@@ -158,7 +158,7 @@ var _ = Context("Wallets - debit", func() {
 			When("debiting it using timestamp", func() {
 				now := time.Now().Round(time.Microsecond).UTC()
 				BeforeEach(func() {
-					_, err := srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(100),
@@ -178,7 +178,7 @@ var _ = Context("Wallets - debit", func() {
 					ts                  *time.Time
 				)
 				JustBeforeEach(func() {
-					debitWalletResponse, err = srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					debitWalletResponse, err = Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(100),
@@ -195,7 +195,7 @@ var _ = Context("Wallets - debit", func() {
 				It("should be ok", func() {})
 				When("confirm the hold", func() {
 					JustBeforeEach(func() {
-						_, err := srv.Client().Wallets.V1.ConfirmHold(ctx, operations.ConfirmHoldRequest{
+						_, err := Client(srv.GetValue()).Wallets.V1.ConfirmHold(ctx, operations.ConfirmHoldRequest{
 							HoldID: debitWalletResponse.DebitWalletResponse.Data.ID,
 						})
 						Expect(err).To(Succeed())
@@ -204,7 +204,7 @@ var _ = Context("Wallets - debit", func() {
 				})
 				When("void the hold", func() {
 					JustBeforeEach(func() {
-						_, err := srv.Client().Wallets.V1.VoidHold(ctx, operations.VoidHoldRequest{
+						_, err := Client(srv.GetValue()).Wallets.V1.VoidHold(ctx, operations.VoidHoldRequest{
 							HoldID: debitWalletResponse.DebitWalletResponse.Data.ID,
 						})
 						Expect(err).To(Succeed())
@@ -214,7 +214,7 @@ var _ = Context("Wallets - debit", func() {
 			})
 			When("debiting it using invalid destination", func() {
 				It("should fail", func() {
-					_, err := srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(100),
@@ -235,7 +235,7 @@ var _ = Context("Wallets - debit", func() {
 			})
 			When("debiting it using negative amount", func() {
 				It("should fail", func() {
-					_, err := srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(-100),
@@ -253,7 +253,7 @@ var _ = Context("Wallets - debit", func() {
 			})
 			When("debiting it using invalid asset", func() {
 				It("should fail", func() {
-					_, err := srv.Client().Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+					_, err := Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 						DebitWalletRequest: &components.DebitWalletRequest{
 							Amount: components.Monetary{
 								Amount: big.NewInt(100),

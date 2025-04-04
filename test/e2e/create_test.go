@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
-	"github.com/formancehq/wallets/pkg/testserver"
+	. "github.com/formancehq/wallets/pkg/testserver"
 	"math/big"
 
 	"github.com/google/uuid"
@@ -24,19 +25,18 @@ var _ = Context("Wallets - create", func() {
 	)
 	When(fmt.Sprintf("creating %d wallets", countWallets), func() {
 		var (
-			srv *testserver.Server
+			srv = DeferTestServer(stackURL,
+				testservice.WithLogger(GinkgoT()),
+				testservice.WithInstruments(
+					testservice.DebugInstrumentation(debug),
+					testservice.OutputInstrumentation(GinkgoWriter),
+				),
+			)
 		)
-		BeforeEach(func() {
-			srv = testserver.New(GinkgoT(), testserver.Configuration{
-				Output:   GinkgoWriter,
-				Debug:    debug,
-				StackURL: stackURL.GetValue(),
-			})
-		})
 		JustBeforeEach(func() {
 			for i := 0; i < countWallets; i++ {
 				name := uuid.NewString()
-				response, err := srv.Client().Wallets.V1.CreateWallet(
+				response, err := Client(srv.GetValue()).Wallets.V1.CreateWallet(
 					context.Background(),
 					operations.CreateWalletRequest{
 						CreateWalletRequest: &components.CreateWalletRequest{
@@ -49,7 +49,7 @@ var _ = Context("Wallets - create", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = srv.Client().Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(100),
@@ -72,7 +72,7 @@ var _ = Context("Wallets - create", func() {
 			})
 			JustBeforeEach(func() {
 				Eventually(func(g Gomega) bool {
-					response, err = srv.Client().Wallets.V1.ListWallets(ctx, request)
+					response, err = Client(srv.GetValue()).Wallets.V1.ListWallets(ctx, request)
 					g.Expect(err).ToNot(HaveOccurred())
 
 					return true
