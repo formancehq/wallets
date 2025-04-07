@@ -9,14 +9,14 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/formancehq/go-libs/v2/collectionutils"
+	"github.com/formancehq/go-libs/v3/collectionutils"
 
-	sharedapi "github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	sharedapi "github.com/formancehq/go-libs/v3/bun/bunpaginate"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v3/pointer"
 
-	"github.com/formancehq/go-libs/v2/metadata"
+	"github.com/formancehq/go-libs/v3/metadata"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"

@@ -8,8 +8,8 @@ replace github.com/formancehq/wallets/pkg/client => ./pkg/client
 
 require (
 	github.com/formancehq/formance-sdk-go/v3 v3.4.1
-	github.com/formancehq/go-libs/v2 v2.2.3-0.20250404150347-dfce43bb3362
-	github.com/formancehq/ledger v0.0.0-20250404150904-7e24697d3fc0
+	github.com/formancehq/go-libs/v3 v3.0.0-20250408113106-7b3525e0b25b
+	github.com/formancehq/ledger v0.0.0-20250407103637-f973f2332587
 	github.com/formancehq/wallets/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-chi/render v1.0.3
@@ -72,7 +72,7 @@ require (
 	github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/formancehq/ledger/pkg/client v0.0.0-20250404150904-7e24697d3fc0 // indirect
+	github.com/formancehq/ledger/pkg/client v0.0.0-20250408121800-0b65ce144caf // indirect
 	github.com/formancehq/numscript v0.0.15 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
