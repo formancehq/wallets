@@ -6,12 +6,12 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/formancehq/go-libs/v2/time"
+	"github.com/formancehq/go-libs/v3/time"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v2/metadata"
+	"github.com/formancehq/go-libs/v3/metadata"
 	"github.com/pkg/errors"
 )
 

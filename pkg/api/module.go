@@ -1,9 +1,9 @@
 package api
 
 import (
-	sharedapi "github.com/formancehq/go-libs/v2/api"
-	sharedhealth "github.com/formancehq/go-libs/v2/health"
-	"github.com/formancehq/go-libs/v2/httpserver"
+	sharedapi "github.com/formancehq/go-libs/v3/api"
+	sharedhealth "github.com/formancehq/go-libs/v3/health"
+	"github.com/formancehq/go-libs/v3/httpserver"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
 )
