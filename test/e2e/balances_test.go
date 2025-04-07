@@ -5,6 +5,7 @@ package suite_test
 import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	. "github.com/formancehq/go-libs/v2/testing/deferred/ginkgo"
 	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
@@ -33,8 +34,8 @@ var _ = Context("Wallets - balances", func() {
 			createWalletResponse *operations.CreateWalletResponse
 			err                  error
 		)
-		BeforeEach(func() {
-			createWalletResponse, err = Client(srv.GetValue()).Wallets.V1.CreateWallet(
+		BeforeEach(func(specContext SpecContext) {
+			createWalletResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{
 					CreateWalletRequest: &components.CreateWalletRequest{
@@ -50,8 +51,8 @@ var _ = Context("Wallets - balances", func() {
 				createBalanceResponse *operations.CreateBalanceResponse
 				err                   error
 			)
-			BeforeEach(func() {
-				createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+			BeforeEach(func(specContext SpecContext) {
+				createBalanceResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 					CreateBalanceRequest: &components.CreateBalanceRequest{
 						Name:     "balance1",
 						Priority: big.NewInt(10),
@@ -69,8 +70,8 @@ var _ = Context("Wallets - balances", func() {
 				var (
 					listBalancesResponse *operations.ListBalancesResponse
 				)
-				BeforeEach(func() {
-					listBalancesResponse, err = Client(srv.GetValue()).Wallets.V1.ListBalances(ctx, operations.ListBalancesRequest{
+				BeforeEach(func(specContext SpecContext) {
+					listBalancesResponse, err = Client(Wait(specContext, srv)).Wallets.V1.ListBalances(ctx, operations.ListBalancesRequest{
 						ID: createWalletResponse.CreateWalletResponse.Data.ID,
 					})
 					Expect(err).ToNot(HaveOccurred())

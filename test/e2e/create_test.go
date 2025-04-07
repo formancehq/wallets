@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	. "github.com/formancehq/go-libs/v2/testing/deferred/ginkgo"
 	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
@@ -33,10 +34,10 @@ var _ = Context("Wallets - create", func() {
 				),
 			)
 		)
-		JustBeforeEach(func() {
+		JustBeforeEach(func(specContext SpecContext) {
 			for i := 0; i < countWallets; i++ {
 				name := uuid.NewString()
-				response, err := Client(srv.GetValue()).Wallets.V1.CreateWallet(
+				response, err := Client(Wait(specContext, srv)).Wallets.V1.CreateWallet(
 					context.Background(),
 					operations.CreateWalletRequest{
 						CreateWalletRequest: &components.CreateWalletRequest{
@@ -49,7 +50,7 @@ var _ = Context("Wallets - create", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+				_, err = Client(Wait(specContext, srv)).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 					CreditWalletRequest: &components.CreditWalletRequest{
 						Amount: components.Monetary{
 							Amount: big.NewInt(100),
@@ -70,9 +71,9 @@ var _ = Context("Wallets - create", func() {
 			BeforeEach(func() {
 				request = operations.ListWalletsRequest{}
 			})
-			JustBeforeEach(func() {
+			JustBeforeEach(func(specContext SpecContext) {
 				Eventually(func(g Gomega) bool {
-					response, err = Client(srv.GetValue()).Wallets.V1.ListWallets(ctx, request)
+					response, err = Client(Wait(specContext, srv)).Wallets.V1.ListWallets(ctx, request)
 					g.Expect(err).ToNot(HaveOccurred())
 
 					return true
