@@ -5,6 +5,7 @@ package suite_test
 import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
+	. "github.com/formancehq/go-libs/v2/testing/deferred/ginkgo"
 	"github.com/formancehq/go-libs/v2/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
@@ -36,8 +37,8 @@ var _ = Context("Wallets - summary", func() {
 			now                   = time.Now().Round(time.Second).UTC()
 			err                   error
 		)
-		BeforeEach(func() {
-			createWalletResponse, err = Client(srv.GetValue()).Wallets.V1.CreateWallet(
+		BeforeEach(func(specContext SpecContext) {
+			createWalletResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{
 					CreateWalletRequest: &components.CreateWalletRequest{
@@ -48,7 +49,7 @@ var _ = Context("Wallets - summary", func() {
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				CreditWalletRequest: &components.CreditWalletRequest{
 					Amount: components.Monetary{
@@ -59,7 +60,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+			createBalanceResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 				CreateBalanceRequest: &components.CreateBalanceRequest{
 					Name:     "balance1",
 					Priority: big.NewInt(10),
@@ -68,7 +69,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).To(Succeed())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				CreditWalletRequest: &components.CreditWalletRequest{
 					Amount: components.Monetary{
@@ -80,7 +81,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+			createBalanceResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 				CreateBalanceRequest: &components.CreateBalanceRequest{
 					Name:      "balance2",
 					ExpiresAt: pointer.For(now.Add(time.Minute)),
@@ -89,7 +90,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).To(Succeed())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				CreditWalletRequest: &components.CreditWalletRequest{
 					Amount: components.Monetary{
@@ -101,7 +102,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			createBalanceResponse, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+			createBalanceResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 				CreateBalanceRequest: &components.CreateBalanceRequest{
 					Name:      "balance3",
 					ExpiresAt: pointer.For(now.Add(-time.Minute)),
@@ -110,7 +111,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).To(Succeed())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.CreditWallet(ctx, operations.CreditWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				CreditWalletRequest: &components.CreditWalletRequest{
 					Amount: components.Monetary{
@@ -122,7 +123,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.CreateBalance(ctx, operations.CreateBalanceRequest{
 				CreateBalanceRequest: &components.CreateBalanceRequest{
 					Name: "balance4",
 				},
@@ -130,7 +131,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).To(Succeed())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				DebitWalletRequest: &components.DebitWalletRequest{
 					Amount: components.Monetary{
@@ -143,7 +144,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				DebitWalletRequest: &components.DebitWalletRequest{
 					Amount: components.Monetary{
@@ -156,7 +157,7 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = Client(srv.GetValue()).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
+			_, err = Client(Wait(specContext, srv)).Wallets.V1.DebitWallet(ctx, operations.DebitWalletRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 				DebitWalletRequest: &components.DebitWalletRequest{
 					Amount: components.Monetary{
@@ -169,8 +170,8 @@ var _ = Context("Wallets - summary", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("the summary should be correct", func() {
-			summary, err := Client(srv.GetValue()).Wallets.V1.GetWalletSummary(ctx, operations.GetWalletSummaryRequest{
+		It("the summary should be correct", func(specContext SpecContext) {
+			summary, err := Client(Wait(specContext, srv)).Wallets.V1.GetWalletSummary(ctx, operations.GetWalletSummaryRequest{
 				ID: createWalletResponse.CreateWalletResponse.Data.ID,
 			})
 			Expect(err).ToNot(HaveOccurred())

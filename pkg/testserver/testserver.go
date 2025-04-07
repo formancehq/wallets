@@ -5,6 +5,7 @@ import (
 	"github.com/formancehq/go-libs/v2/httpserver"
 	"github.com/formancehq/go-libs/v2/testing/deferred"
 	"github.com/formancehq/go-libs/v2/testing/testservice"
+	. "github.com/formancehq/go-libs/v2/testing/testservice/ginkgo"
 	"github.com/formancehq/wallets/cmd"
 	walletsclient "github.com/formancehq/wallets/pkg/client"
 	. "github.com/onsi/ginkgo/v2/dsl/core"
@@ -25,7 +26,7 @@ func StackURLInstrumentation(stackURL *deferred.Deferred[string]) testservice.In
 }
 
 func DeferTestServer(stackURL *deferred.Deferred[string], options ...testservice.Option) *deferred.Deferred[*testservice.Service] {
-	return testservice.DeferNew(cmd.NewRootCommand,
+	return DeferNew(cmd.NewRootCommand,
 		append([]testservice.Option{
 			testservice.WithLogger(GinkgoT()),
 			testservice.WithInstruments(
