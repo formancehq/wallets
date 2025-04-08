@@ -714,6 +714,8 @@ components:
           description: Metadata associated with the hold.
           additionalProperties:
             type: string
+        asset:
+          type: string
         description:
           type: string
         destination:

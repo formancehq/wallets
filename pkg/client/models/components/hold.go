@@ -9,6 +9,7 @@ type Hold struct {
 	WalletID string `json:"walletID"`
 	// Metadata associated with the hold.
 	Metadata    map[string]string `json:"metadata"`
+	Asset       *string           `json:"asset,omitempty"`
 	Description string            `json:"description"`
 	Destination *Subject          `json:"destination,omitempty"`
 }
@@ -32,6 +33,13 @@ func (o *Hold) GetMetadata() map[string]string {
 		return map[string]string{}
 	}
 	return o.Metadata
+}
+
+func (o *Hold) GetAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Asset
 }
 
 func (o *Hold) GetDescription() string {
