@@ -701,6 +701,7 @@ components:
         - walletID
         - metadata
         - description
+        - asset
       properties:
         id:
           type: string
