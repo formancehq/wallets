@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -257,6 +258,69 @@ func TestWalletsDebit(t *testing.T) {
 				postTransaction wallet.PostTransaction
 			)
 			testEnv = newTestEnv(
+				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+					switch account {
+					case testEnv.Chart().GetMainBalanceAccount(walletID):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetMainBalanceAccount(walletID),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name: "main",
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "coupon1"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name:      "coupon1",
+									ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "coupon2"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon2"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name:     "coupon2",
+									Priority: 10,
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "coupon3"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name:      "coupon3",
+									ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "coupon4"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon4"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name: "coupon4",
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "secondary"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name: "secondary",
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					default:
+						return nil, errors.New("unexpected account: " + account)
+					}
+				}),
 				WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
 					require.Equal(t, testEnv.LedgerName(), ledger)
 					require.Equal(t, query.Metadata, wallet.BalancesMetadataFilter(walletID))
