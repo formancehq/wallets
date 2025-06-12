@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"slices"
 	"sort"
 
 	"github.com/formancehq/go-libs/v3/time"
@@ -132,32 +133,42 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		dest = NewLedgerAccountSubject(holdAccount)
 	}
 
-	sources := make([]string, 0)
+	var (
+		balances Balances
+		err      error
+	)
 	switch {
 	case len(debit.Balances) == 0:
-		sources = append(sources, m.chart.GetMainBalanceAccount(debit.WalletID))
+		balances = Balances{{
+			Name: MainBalance,
+		}}
 	case len(debit.Balances) == 1 && debit.Balances[0] == "*":
-		balancesRaw, err := fetchAndMapAllAccounts[Balance](ctx, m, BalancesMetadataFilter(debit.WalletID), false, BalanceFromAccount)
+		balances, err = fetchAndMapAllAccounts[Balance](ctx, m, BalancesMetadataFilter(debit.WalletID), false, BalanceFromAccount)
 		if err != nil {
 			return nil, err
 		}
-		balances := Balances(balancesRaw)
 		sort.Stable(balances)
-
-		// Filter expired and generate sources
-		for _, balance := range balances {
-			if balance.ExpiresAt != nil && balance.ExpiresAt.Before(time.Now()) {
-				continue
-			}
-			sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance.Name))
-		}
 	default:
-		for _, balance := range debit.Balances {
-			if balance == "*" {
-				return nil, ErrInvalidBalanceSpecified
-			}
-			sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance))
+		if slices.Contains(debit.Balances, "*") {
+			return nil, ErrInvalidBalanceSpecified
 		}
+
+		for _, balance := range debit.Balances {
+			account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetBalanceAccount(debit.WalletID, balance))
+			if err != nil {
+				return nil, err
+			}
+			balances = append(balances, BalanceFromAccount(*account))
+		}
+	}
+
+	var sources []string
+	// Filter expired and generate sources
+	for _, balance := range balances {
+		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() && balance.ExpiresAt.Before(time.Now()) {
+			continue
+		}
+		sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance.Name))
 	}
 
 	postTransaction := PostTransaction{
