@@ -11,7 +11,7 @@ require (
 	github.com/formancehq/go-libs/v3 v3.0.0-20250408113106-7b3525e0b25b
 	github.com/formancehq/ledger v0.0.0-20250407103637-f973f2332587
 	github.com/formancehq/wallets/pkg/client v0.0.0-00010101000000-000000000000
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/render v1.0.3
 	github.com/google/uuid v1.6.0
 	github.com/onsi/ginkgo/v2 v2.22.1
