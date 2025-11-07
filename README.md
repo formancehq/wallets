@@ -13,9 +13,6 @@ Wallets is a fully managed, white-label wallet service to materialize and spend 
 - Reserved funds
 - Expirable fungibles
 
-- [Documentation](https://docs.formance.com/modules/wallets)
-- [API Reference](https://docs.formance.com/api-reference/introduction)
-
 ## Documentation
 
 - [Documentation](https://docs.formance.com/modules/wallets)
