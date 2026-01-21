@@ -1,0 +1,75 @@
+volumes:
+  postgres:
+
+services:
+  # API Gateway - routes to ledger and wallets
+  gateway:
+    image: caddy:2-alpine
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/_healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      ledger:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./deployments/docker-compose/Caddyfile:/etc/caddy/Caddyfile
+
+  # PostgreSQL database for Ledger
+  postgres:
+    image: postgres:16-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ledger
+      POSTGRES_PASSWORD: ledger
+      POSTGRES_DB: ledger
+    command: -c max_connections=200
+    # Uncomment for persistent data:
+    # volumes:
+    #   - postgres:/var/lib/postgresql/data
+
+  # Ledger service - the backing store for wallets
+  ledger:
+    image: ghcr.io/formancehq/ledger:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3068/_healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${LEDGER_PORT:-3068}:3068"
+    environment:
+      DEBUG: ${DEBUG:-true}
+      POSTGRES_URI: postgres://ledger:ledger@postgres:5432/ledger?sslmode=disable
+      EXPERIMENTAL_FEATURES: "true"
+      AUTO_UPGRADE: "true"
+
+  # Wallets service (runs from local source)
+  wallets:
+    image: golang:1.24-alpine
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8081/_healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - "${WALLETS_PORT:-8082}:8081"
+    volumes:
+      - .:/src
+    working_dir: /src
+    environment:
+      DEBUG: ${DEBUG:-true}
+    command: ["go", "run", ".", "serve", "--stack-url", "http://gateway", "--ledger", "wallets-001", "--listen", ":8081"]
