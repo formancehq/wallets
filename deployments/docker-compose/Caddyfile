@@ -1,0 +1,39 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	# Route ledger API requests
+	handle /api/ledger/* {
+		uri strip_prefix /api/ledger
+		reverse_proxy ledger:3068
+	}
+
+	# Route wallets API requests
+	handle /api/wallets/* {
+		uri strip_prefix /api/wallets
+		reverse_proxy wallets:8081
+	}
+
+	# Health check endpoint
+	handle /_healthcheck {
+		respond "OK" 200
+	}
+
+	# Service info endpoint
+	handle /_info {
+		header Content-Type application/json
+		respond `{"services":{"ledger":"/api/ledger","wallets":"/api/wallets"},"version":"standalone"}` 200
+	}
+
+	# Catch-all for unknown /api/* routes
+	handle /api/* {
+		respond "Bad Gateway" 502
+	}
+
+	# Default handler
+	handle {
+		respond "Not Found" 404
+	}
+}

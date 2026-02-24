@@ -5,10 +5,10 @@ import (
 	"github.com/formancehq/go-libs/v3/httpserver"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/go-libs/v3/testing/testservice"
-	. "github.com/formancehq/go-libs/v3/testing/testservice/ginkgo"
+	. "github.com/formancehq/go-libs/v3/testing/testservice/ginkgo" //nolint:staticcheck
 	"github.com/formancehq/wallets/cmd"
 	walletsclient "github.com/formancehq/wallets/pkg/client"
-	. "github.com/onsi/ginkgo/v2/dsl/core"
+	. "github.com/onsi/ginkgo/v2/dsl/core" //nolint:staticcheck
 )
 
 func StackURLInstrumentation(stackURL *deferred.Deferred[string]) testservice.Instrumentation {
