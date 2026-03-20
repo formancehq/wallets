@@ -5,10 +5,10 @@ import (
 	"github.com/formancehq/go-libs/v3/httpserver"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/go-libs/v3/testing/testservice"
-	. "github.com/formancehq/go-libs/v3/testing/testservice/ginkgo"
+	testserviceginkgo "github.com/formancehq/go-libs/v3/testing/testservice/ginkgo"
 	"github.com/formancehq/wallets/cmd"
 	walletsclient "github.com/formancehq/wallets/pkg/client"
-	. "github.com/onsi/ginkgo/v2/dsl/core"
+	ginkgocore "github.com/onsi/ginkgo/v2/dsl/core"
 )
 
 func StackURLInstrumentation(stackURL *deferred.Deferred[string]) testservice.Instrumentation {
@@ -26,9 +26,9 @@ func StackURLInstrumentation(stackURL *deferred.Deferred[string]) testservice.In
 }
 
 func DeferTestServer(stackURL *deferred.Deferred[string], options ...testservice.Option) *deferred.Deferred[*testservice.Service] {
-	return DeferNew(cmd.NewRootCommand,
+	return testserviceginkgo.DeferNew(cmd.NewRootCommand,
 		append([]testservice.Option{
-			testservice.WithLogger(GinkgoT()),
+			testservice.WithLogger(ginkgocore.GinkgoT()),
 			testservice.WithInstruments(
 				testservice.AppendArgsInstrumentation("serve", "--"+cmd.ListenFlag, ":0"),
 				testservice.InstrumentationFunc(func(ctx context.Context, cfg *testservice.RunConfiguration) error {
