@@ -9,7 +9,8 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -70,7 +71,7 @@ func TestHoldsVoid(t *testing.T) {
 		WithCreateTransaction(func(ctx context.Context, name, ik string, script wallet.PostTransaction) (*shared.V2Transaction, error) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildCancelHoldScript("USD",
+					Plain: pointer.For(wallet.BuildCancelHoldScript("USD",
 						shared.V2Posting{
 							Source:      testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
 							Destination: testEnv.Chart().GetHoldAccount(hold.ID),
@@ -83,7 +84,7 @@ func TestHoldsVoid(t *testing.T) {
 							Amount:      big.NewInt(100),
 							Asset:       "USD",
 						},
-					),
+					)),
 					Vars: map[string]string{
 						"hold": testEnv.Chart().GetHoldAccount(hold.ID),
 					},

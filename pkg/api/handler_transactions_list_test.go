@@ -9,14 +9,14 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/collectionutils"
+	"github.com/formancehq/go-libs/v5/pkg/types/collections"
 
-	sharedapi "github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func TestTransactionsList(t *testing.T) {
 					HasMore:  hasMore,
 					Previous: pointer.For(previous),
 					Next:     pointer.For(next),
-					Data: collectionutils.Map(transactions[page*pageSize:(page+1)*pageSize], func(from shared.V2Transaction) shared.V2Transaction {
+					Data: collections.Map(transactions[page*pageSize:(page+1)*pageSize], func(from shared.V2Transaction) shared.V2Transaction {
 						return shared.V2Transaction{
 							ID:                from.ID,
 							Metadata:          from.Metadata,
@@ -86,7 +86,7 @@ func TestTransactionsList(t *testing.T) {
 				PageSize: pageSize,
 				HasMore:  true,
 				Next:     pointer.For("1"),
-				Data: collectionutils.Map(transactions[:pageSize], func(from shared.V2Transaction) shared.V2Transaction {
+				Data: collections.Map(transactions[:pageSize], func(from shared.V2Transaction) shared.V2Transaction {
 					return shared.V2Transaction{
 						ID:                from.ID,
 						Metadata:          from.Metadata,

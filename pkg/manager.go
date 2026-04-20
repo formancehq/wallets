@@ -7,12 +7,13 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 	"github.com/pkg/errors"
 )
 
@@ -173,7 +174,7 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: BuildDebitWalletScript(metadata, sources...),
+			Plain: pointer.For(BuildDebitWalletScript(metadata, sources...)),
 			Vars: map[string]string{
 				"destination": dest.getAccount(m.chart),
 				"amount":      fmt.Sprintf("%s %s", debit.Amount.Asset, debit.Amount.Amount),
@@ -226,7 +227,7 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: BuildConfirmHoldScript(debit.Final, hold.Asset),
+			Plain: pointer.For(BuildConfirmHoldScript(debit.Final, hold.Asset)),
 			Vars:  vars,
 		},
 		Metadata: TransactionMetadata(metadata.Metadata{}),
@@ -263,7 +264,7 @@ func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error 
 
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: BuildCancelHoldScript(hold.Asset, txs.Data[0].Postings...),
+			Plain: pointer.For(BuildCancelHoldScript(hold.Asset, txs.Data[0].Postings...)),
 			Vars: map[string]string{
 				"hold": m.chart.GetHoldAccount(void.HoldID),
 			},
@@ -291,7 +292,7 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: BuildCreditWalletScript(credit.Sources.ResolveAccounts(m.chart)...),
+			Plain: pointer.For(BuildCreditWalletScript(credit.Sources.ResolveAccounts(m.chart)...)),
 			Vars: map[string]string{
 				"destination": credit.destinationAccount(m.chart),
 				"amount":      fmt.Sprintf("%s %s", credit.Amount.Asset, credit.Amount.Amount),

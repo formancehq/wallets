@@ -9,12 +9,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -55,7 +56,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": wallet.DefaultDebitDest.Identifier,
 						"amount":      "USD 100",
@@ -74,7 +75,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": wallet.DefaultDebitDest.Identifier,
 						"amount":      "USD 100",
@@ -94,7 +95,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": "account1",
 						"amount":      "USD 100",
@@ -113,7 +114,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": testEnv.Chart().GetMainBalanceAccount("wallet1"),
 						"amount":      "USD 100",
@@ -147,9 +148,9 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{
 						testEnv.Chart().GetHoldAccount(h.ID): h.LedgerMetadata(testEnv.Chart()),
-					}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": testEnv.Chart().GetHoldAccount(h.ID),
 						"amount":      "USD 100",
@@ -171,7 +172,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary"))),
 					Vars: map[string]string{
 						"destination": "world",
 						"amount":      "USD 100",
@@ -190,7 +191,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "coupon1"), testEnv.Chart().GetBalanceAccount(walletID, "coupon4"), testEnv.Chart().GetBalanceAccount(walletID, "coupon2"), testEnv.Chart().GetBalanceAccount(walletID, "main")),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "coupon1"), testEnv.Chart().GetBalanceAccount(walletID, "coupon4"), testEnv.Chart().GetBalanceAccount(walletID, "coupon2"), testEnv.Chart().GetBalanceAccount(walletID, "main"))),
 					Vars: map[string]string{
 						"destination": "world",
 						"amount":      "USD 100",
@@ -209,7 +210,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary"))),
 					Vars: map[string]string{
 						"destination": "world",
 						"amount":      "USD 100",
@@ -230,7 +231,7 @@ var walletDebitTestCases = []testCase{
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID))),
 					Vars: map[string]string{
 						"destination": testEnv.Chart().GetBalanceAccount("wallet1", "secondary"),
 						"amount":      "USD 100",

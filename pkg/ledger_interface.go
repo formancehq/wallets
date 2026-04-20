@@ -10,16 +10,16 @@ import (
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
 	"github.com/pkg/errors"
 
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
 	sdk "github.com/formancehq/formance-sdk-go/v3"
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/operations"
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
-	"github.com/formancehq/go-libs/v3/collectionutils"
-	"github.com/formancehq/go-libs/v3/metadata"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/collections"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 )
 
 type ListAccountsQuery struct {
@@ -166,7 +166,7 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, q Li
 			if err := json.Unmarshal(data, &body); err != nil {
 				panic(err)
 			}
-			req.RequestBody = body
+			req.Query = body
 		}
 	} else {
 		req.Cursor = pointer.For(q.Cursor)
@@ -277,7 +277,7 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, q ListAc
 			if err := json.Unmarshal(data, &body); err != nil {
 				panic(err)
 			}
-			req.RequestBody = body
+			req.Query = body
 		}
 	} else {
 		req.Cursor = pointer.For(q.Cursor)
@@ -289,7 +289,7 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, q ListAc
 	}
 
 	return &AccountsCursorResponseCursor{
-		Data: collectionutils.Map(ret.V2AccountsCursorResponse.Cursor.Data, func(from shared.V2Account) AccountWithVolumesAndBalances {
+		Data: collections.Map(ret.V2AccountsCursorResponse.Cursor.Data, func(from shared.V2Account) AccountWithVolumesAndBalances {
 			return AccountWithVolumesAndBalances{
 				Account: Account{
 					Address:  from.Address,

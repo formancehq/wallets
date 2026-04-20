@@ -3,7 +3,7 @@ package wallet
 import (
 	"math/big"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 	"github.com/google/uuid"
 )
 

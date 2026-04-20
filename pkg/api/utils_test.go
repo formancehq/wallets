@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	sharedapi "github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/auth"
-	sharedhealth "github.com/formancehq/go-libs/v3/health"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
+	sharedhealth "github.com/formancehq/go-libs/v5/pkg/service/health"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func readResponse[T any](t *testing.T, rec *httptest.ResponseRecorder, to T) {
 	reflect.ValueOf(to).Elem().Set(reflect.ValueOf(*ret.Data).Elem())
 }
 
-func readCursor[T any](t *testing.T, rec *httptest.ResponseRecorder, to *bunpaginate.Cursor[T]) {
+func readCursor[T any](t *testing.T, rec *httptest.ResponseRecorder, to *paginate.Cursor[T]) {
 	t.Helper()
 	ret := &sharedapi.BaseResponse[T]{}
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(ret))
@@ -89,7 +89,7 @@ func newTestEnv(opts ...Option) *testEnv {
 	ret.router = NewRouter(manager, &sharedhealth.HealthController{}, sharedapi.ServiceInfo{
 		Version: "latest",
 		Debug:   testing.Verbose(),
-	}, auth.NewNoAuth())
+	}, jwt.NewNoAuth())
 	return ret
 }
 

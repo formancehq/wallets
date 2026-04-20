@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/ledger/pkg/assets"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 )
 
 var DefaultDebitDest = NewLedgerAccountSubject("world")
