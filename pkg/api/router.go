@@ -5,11 +5,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
 
-	sharedapi "github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/auth"
-	sharedhealth "github.com/formancehq/go-libs/v3/health"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
+	sharedhealth "github.com/formancehq/go-libs/v5/pkg/service/health"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -18,7 +18,7 @@ func NewRouter(
 	manager *wallet.Manager,
 	healthController *sharedhealth.HealthController,
 	serviceInfo sharedapi.ServiceInfo,
-	authenticator auth.Authenticator,
+	authenticator jwt.Authenticator,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -32,8 +32,8 @@ func NewRouter(
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", sharedapi.InfoHandler(serviceInfo))
 	r.Group(func(r chi.Router) {
-		r.Use(auth.Middleware(authenticator))
-		r.Use(service.OTLPMiddleware("wallets", serviceInfo.Debug))
+		r.Use(jwt.Middleware(authenticator))
+		r.Use(httpserver.OTLPMiddleware("wallets", serviceInfo.Debug))
 		r.Use(middleware.AllowContentType("application/json"))
 
 		main := NewMainHandler(manager)

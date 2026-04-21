@@ -9,7 +9,8 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestHoldsConfirm(t *testing.T) {
 		WithCreateTransaction(func(ctx context.Context, name, ik string, postTransaction wallet.PostTransaction) (*shared.V2Transaction, error) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildConfirmHoldScript(false, "USD"),
+					Plain: pointer.For(wallet.BuildConfirmHoldScript(false, "USD")),
 					Vars: map[string]string{
 						"hold":   testEnv.Chart().GetHoldAccount(hold.ID),
 						"amount": "USD 100",
@@ -95,7 +96,7 @@ func TestHoldsPartialConfirm(t *testing.T) {
 		WithCreateTransaction(func(ctx context.Context, name, ik string, postTransaction wallet.PostTransaction) (*shared.V2Transaction, error) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildConfirmHoldScript(false, "USD"),
+					Plain: pointer.For(wallet.BuildConfirmHoldScript(false, "USD")),
 					Vars: map[string]string{
 						"hold":   testEnv.Chart().GetHoldAccount(hold.ID),
 						"amount": "USD 50",
@@ -227,7 +228,7 @@ func TestHoldsPartialConfirmWithFinal(t *testing.T) {
 		WithCreateTransaction(func(ctx context.Context, name, ik string, script wallet.PostTransaction) (*shared.V2Transaction, error) {
 			compareJSON(t, wallet.PostTransaction{
 				Script: &shared.V2PostTransactionScript{
-					Plain: wallet.BuildConfirmHoldScript(true, "USD"),
+					Plain: pointer.For(wallet.BuildConfirmHoldScript(true, "USD")),
 					Vars: map[string]string{
 						"hold":             testEnv.Chart().GetHoldAccount(hold.ID),
 						"amount":           "USD 50",

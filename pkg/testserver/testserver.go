@@ -2,10 +2,10 @@ package testserver
 
 import (
 	"context"
-	"github.com/formancehq/go-libs/v3/httpserver"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/go-libs/v3/testing/testservice"
-	testserviceginkgo "github.com/formancehq/go-libs/v3/testing/testservice/ginkgo"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/testing/testservice"
+	testserviceginkgo "github.com/formancehq/go-libs/v5/pkg/testing/testservice/ginkgo"
 	"github.com/formancehq/wallets/cmd"
 	walletsclient "github.com/formancehq/wallets/pkg/client"
 	ginkgocore "github.com/onsi/ginkgo/v2/dsl/core"

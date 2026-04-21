@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	sharedapi "github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/auth"
-	"github.com/formancehq/go-libs/v3/licence"
-	"github.com/formancehq/go-libs/v3/otlp"
-	"github.com/formancehq/go-libs/v3/otlp/otlptraces"
-	"github.com/formancehq/go-libs/v3/service"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
+	"github.com/formancehq/go-libs/v5/pkg/fx/authnfx"
+	"github.com/formancehq/go-libs/v5/pkg/fx/observefx"
+	"github.com/formancehq/go-libs/v5/pkg/observe"
+	"github.com/formancehq/go-libs/v5/pkg/observe/traces"
+	"github.com/formancehq/go-libs/v5/pkg/authn/licence"
+	"github.com/formancehq/go-libs/v5/pkg/service"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/formancehq/wallets/pkg/api"
 	"github.com/spf13/cobra"
@@ -41,7 +43,7 @@ func newServeCommand() *cobra.Command {
 			listen, _ := cmd.Flags().GetString(ListenFlag)
 
 			options := []fx.Option{
-				fx.Provide(func() (*http.Client, error) {
+				fx.Decorate(func() (*http.Client, error) {
 					return GetHTTPClient(
 						cmd.Context(),
 						stackClientID,
@@ -59,10 +61,10 @@ func newServeCommand() *cobra.Command {
 					Version: Version,
 					Debug:   service.IsDebug(cmd),
 				}, listen),
-				otlp.FXModuleFromFlags(cmd),
-				otlptraces.FXModuleFromFlags(cmd),
-				auth.FXModuleFromFlags(cmd),
-				licence.FXModuleFromFlags(cmd, ServiceName),
+				observefx.ResourceModuleFromFlags(cmd),
+				observefx.TracesModuleFromFlags(cmd),
+				authnfx.JWTModuleFromFlags(cmd),
+				authnfx.LicenceModuleFromFlags(cmd, ServiceName),
 			}
 
 			return service.New(cmd.OutOrStdout(), options...).Run(cmd)
@@ -77,15 +79,15 @@ func newServeCommand() *cobra.Command {
 
 	service.AddFlags(cmd.Flags())
 	licence.AddFlags(cmd.Flags())
-	auth.AddFlags(cmd.Flags())
-	otlptraces.AddFlags(cmd.Flags())
+	jwt.AddFlags(cmd.Flags())
+	traces.AddFlags(cmd.Flags())
 
 	return cmd
 }
 
 func GetHTTPClient(ctx context.Context, clientID, clientSecret, stackURL string, debug bool) (*http.Client, error) {
 	httpClient := &http.Client{
-		Transport: otlp.NewRoundTripper(http.DefaultTransport, debug),
+		Transport: observe.NewRoundTripper(http.DefaultTransport, debug),
 	}
 
 	if clientID == "" {

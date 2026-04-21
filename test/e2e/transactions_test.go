@@ -4,10 +4,10 @@ package suite_test
 
 import (
 	"fmt"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	. "github.com/formancehq/go-libs/v3/testing/deferred/ginkgo"
-	"github.com/formancehq/go-libs/v3/testing/testservice"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	. "github.com/formancehq/go-libs/v5/pkg/testing/deferred/ginkgo"
+	"github.com/formancehq/go-libs/v5/pkg/testing/testservice"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
 	. "github.com/formancehq/wallets/pkg/testserver"

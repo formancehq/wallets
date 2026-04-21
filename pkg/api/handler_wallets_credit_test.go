@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func TestWalletsCredit(t *testing.T) {
 			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
-						Plain: wallet.BuildCreditWalletScript("world"),
+						Plain: pointer.For(wallet.BuildCreditWalletScript("world")),
 						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
 							"amount":      "USD 100",
@@ -65,10 +66,10 @@ func TestWalletsCredit(t *testing.T) {
 			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
-						Plain: wallet.BuildCreditWalletScript(
+						Plain: pointer.For(wallet.BuildCreditWalletScript(
 							"emitter1",
 							testEnv.Chart().GetMainBalanceAccount("wallet1"),
-						),
+						)),
 						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
 							"amount":      "USD 100",
@@ -89,9 +90,9 @@ func TestWalletsCredit(t *testing.T) {
 			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
-						Plain: wallet.BuildCreditWalletScript(
+						Plain: pointer.For(wallet.BuildCreditWalletScript(
 							testEnv.Chart().GetBalanceAccount("emitter1", "secondary"),
-						),
+						)),
 						Vars: map[string]string{
 							"destination": testEnv.Chart().GetMainBalanceAccount(walletID),
 							"amount":      "USD 100",
@@ -110,7 +111,7 @@ func TestWalletsCredit(t *testing.T) {
 			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
-						Plain: wallet.BuildCreditWalletScript("world"),
+						Plain: pointer.For(wallet.BuildCreditWalletScript("world")),
 						Vars: map[string]string{
 							"destination": testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
 							"amount":      "USD 100",
@@ -138,7 +139,7 @@ func TestWalletsCredit(t *testing.T) {
 			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
 				return wallet.PostTransaction{
 					Script: &shared.V2PostTransactionScript{
-						Plain: wallet.BuildCreditWalletScript("world"),
+						Plain: pointer.For(wallet.BuildCreditWalletScript("world")),
 						Vars: map[string]string{
 							"destination": testEnv.chart.GetMainBalanceAccount(walletID),
 							"amount":      "USD 100",

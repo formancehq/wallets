@@ -9,7 +9,7 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
-	"github.com/formancehq/go-libs/v3/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
