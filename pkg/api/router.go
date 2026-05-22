@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
-	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver/audit"
+	"github.com/formancehq/go-libs/v5/pkg/audit/httpaudit"
 
 	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
@@ -31,7 +31,7 @@ func NewRouter(
 			handler.ServeHTTP(w, r)
 		})
 	})
-	r.Use(audit.Middleware(publisher, "audit-events", "wallets"))
+	r.Use(httpaudit.Middleware(publisher, "audit-events", "wallets", nil))
 
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", sharedapi.InfoHandler(serviceInfo))
