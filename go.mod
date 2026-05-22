@@ -5,8 +5,9 @@ go 1.26.0
 replace github.com/formancehq/wallets/pkg/client => ./pkg/client
 
 require (
+	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/formancehq/formance-sdk-go/v3 v3.8.1
-	github.com/formancehq/go-libs/v5 v5.0.1
+	github.com/formancehq/go-libs/v5 v5.1.1-0.20260522083443-d2a60ed2e0dd
 	github.com/formancehq/ledger v0.0.0-20260420112415-04500870a72d
 	github.com/formancehq/wallets/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/go-chi/chi/v5 v5.2.5
@@ -31,7 +32,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/ThreeDotsLabs/watermill v1.5.1 // indirect
 	github.com/ThreeDotsLabs/watermill-aws v1.0.1 // indirect
 	github.com/ThreeDotsLabs/watermill-http/v2 v2.3.1 // indirect
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2 // indirect
