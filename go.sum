@@ -136,8 +136,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/formancehq/formance-sdk-go/v3 v3.8.1 h1:nKWcpZT70vegEUV+/Xl/wekiI1PsCFVe7mvGgwaA9fk=
 github.com/formancehq/formance-sdk-go/v3 v3.8.1/go.mod h1:2Kb2Z4bN8/I4MQQnuSilvThqeaUtuLaTdmMGIb3nMJY=
-github.com/formancehq/go-libs/v5 v5.0.1 h1:So9QPvNEhjQN7+qqoZdac4RmTB9zo5c9IBPCjr8Q4AQ=
-github.com/formancehq/go-libs/v5 v5.0.1/go.mod h1:DPhflA156M13nyGCsGS2XAVtyZwYBkUo+jjCSvs9UF8=
+github.com/formancehq/go-libs/v5 v5.1.1-0.20260522070511-b6560f0a520c h1:Ru8+qSTDXaamCVemCzZmVCHgcJFZ0tBc4V0WCRr7WVc=
+github.com/formancehq/go-libs/v5 v5.1.1-0.20260522070511-b6560f0a520c/go.mod h1:0zJ6yzF4/Pu9lmKpswaEdQChpnxuMFsTxmhTCE1raXk=
 github.com/formancehq/ledger v0.0.0-20260420112415-04500870a72d h1:K9/kJT5MgJMtr53IXphaJZvYqsPsveWTTaQwflHsfbk=
 github.com/formancehq/ledger v0.0.0-20260420112415-04500870a72d/go.mod h1:97C6bg7eJ/sIRMnrc6YY4V9AYlKd7alcBSsvqTboweo=
 github.com/formancehq/ledger/pkg/client v0.0.0-20260416070424-5a335109905b h1:ZdqiY3SB3bQWgN5VJyW2WRicSQhTqayVtIoKt+x1dug=
