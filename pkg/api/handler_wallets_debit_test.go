@@ -435,9 +435,11 @@ func TestWalletsDebitPendingIdempotency(t *testing.T) {
 	const idempotencyKey = "debit-pending-key-1"
 	walletID := uuid.NewString()
 
+	var bodies []wallet.PostTransaction
 	testEnv := newTestEnv(
 		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
 			require.Equal(t, idempotencyKey, ik)
+			bodies = append(bodies, p)
 			//nolint:nilnil
 			return nil, nil
 		}),
@@ -457,8 +459,11 @@ func TestWalletsDebitPendingIdempotency(t *testing.T) {
 		return hold
 	}
 
-	// Retrying a pending debit with the same Idempotency-Key yields the same
-	// hold ID, so the ledger request body is identical and no duplicate hold
-	// is created.
+	// With a stable (explicit, non-expiring) source set, retrying a pending
+	// debit under the same Idempotency-Key yields the same hold ID *and* a
+	// byte-identical ledger request body — so the ledger sees a genuine replay,
+	// not a conflict, and no duplicate hold is created.
 	require.Equal(t, debit().ID, debit().ID)
+	require.Len(t, bodies, 2)
+	require.Equal(t, bodies[0], bodies[1])
 }

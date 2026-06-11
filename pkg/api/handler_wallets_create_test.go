@@ -57,16 +57,25 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 
 	const idempotencyKey = "create-wallet-key-1"
 
-	var forwardedKeys []string
+	// A real idempotent retry replays the *same* request body, so the payload
+	// is fixed across both calls (a regenerated name would be a different body
+	// with the same key, which the ledger treats as a conflict, not a replay).
+	request := wallet.CreateRequest{Name: "savings-account"}
+
+	var (
+		forwardedKeys    []string
+		targetedAccounts []string
+	)
 	testEnv := newTestEnv(
 		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
 			forwardedKeys = append(forwardedKeys, ik)
+			targetedAccounts = append(targetedAccounts, a)
 			return nil
 		}),
 	)
 
 	create := func() *wallet.Wallet {
-		req := newRequest(t, http.MethodPost, "/wallets", wallet.CreateRequest{Name: uuid.NewString()})
+		req := newRequest(t, http.MethodPost, "/wallets", request)
 		req.Header.Set("Idempotency-Key", idempotencyKey)
 		rec := httptest.NewRecorder()
 		testEnv.Router().ServeHTTP(rec, req)
@@ -79,8 +88,10 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 	first := create()
 	second := create()
 
-	// The Idempotency-Key is forwarded to the ledger and the derived wallet
-	// ID is stable across retries, so no duplicate wallet is created.
+	// The Idempotency-Key is forwarded to the ledger and the derived wallet ID
+	// (hence the targeted account) is stable across retries, so the retry hits
+	// the same account instead of creating a duplicate wallet.
 	require.Equal(t, []string{idempotencyKey, idempotencyKey}, forwardedKeys)
 	require.Equal(t, first.ID, second.ID)
+	require.Equal(t, targetedAccounts[0], targetedAccounts[1])
 }

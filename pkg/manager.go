@@ -138,6 +138,16 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		// Derive the hold ID from the Idempotency-Key so a retry produces an
 		// identical ledger request (the ledger hashes the body to enforce
 		// idempotency) and returns the same hold.
+		//
+		// NOTE: this stabilises the hold ID, but not necessarily the whole
+		// ledger body. The source set below is resolved against live ledger
+		// state and filtered with time.Now(): a pending debit using
+		// balances:["*"] or a named balance that expires between two attempts
+		// can still yield a different script on retry and be rejected. Full
+		// idempotency therefore holds only for an explicit, non-expiring source
+		// set; the wildcard/expiry case needs deterministic source resolution
+		// (e.g. persisting the resolved request per key) and is tracked
+		// separately.
 		if ik != "" {
 			hold.ID = deterministicID(ik)
 		}
