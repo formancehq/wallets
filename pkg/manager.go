@@ -12,8 +12,19 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
+
+// idempotencyNamespace seeds deterministic resource IDs derived from an
+// Idempotency-Key, so that retrying a creation request resolves to the same
+// wallet/hold rather than creating a duplicate.
+var idempotencyNamespace = uuid.MustParse("0b6f2d6e-4e2a-4f3a-9f0a-2b9c1d8e7a31")
+
+// deterministicID derives a stable UUID from an Idempotency-Key.
+func deterministicID(ik string) string {
+	return uuid.NewSHA1(idempotencyNamespace, []byte(ik)).String()
+}
 
 type ListResponse[T any] struct {
 	Data           []T
@@ -124,6 +135,12 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		}
 
 		hold = Ptr(debit.newHold())
+		// Derive the hold ID from the Idempotency-Key so a retry produces an
+		// identical ledger request (the ledger hashes the body to enforce
+		// idempotency) and returns the same hold.
+		if ik != "" {
+			hold.ID = deterministicID(ik)
+		}
 		holdAccount := m.chart.GetHoldAccount(hold.ID)
 		metadata = map[string]map[string]string{
 			holdAccount: hold.LedgerMetadata(m.chart),
@@ -433,14 +450,19 @@ func (m *Manager) ListTransactions(ctx context.Context, query ListQuery[ListTran
 	}), nil
 }
 
-func (m *Manager) CreateWallet(ctx context.Context, data *CreateRequest) (*Wallet, error) {
+func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateRequest) (*Wallet, error) {
 	wallet := NewWallet(data.Name, m.ledgerName, data.Metadata)
+	// Derive the wallet ID from the Idempotency-Key so a retry targets the
+	// same account instead of creating a duplicate wallet.
+	if ik != "" {
+		wallet.ID = deterministicID(ik)
+	}
 
 	if err := m.client.AddMetadataToAccount(
 		ctx,
 		m.ledgerName,
 		m.chart.GetMainBalanceAccount(wallet.ID),
-		"",
+		ik,
 		wallet.LedgerMetadata(),
 	); err != nil {
 		return nil, errors.Wrap(err, "adding metadata to account")

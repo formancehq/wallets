@@ -51,3 +51,36 @@ func TestWalletsCreate(t *testing.T) {
 	require.Equal(t, wallet.Metadata, createWalletRequest.Metadata)
 	require.Equal(t, wallet.Name, createWalletRequest.Name)
 }
+
+func TestWalletsCreateIdempotency(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-wallet-key-1"
+
+	var forwardedKeys []string
+	testEnv := newTestEnv(
+		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
+			forwardedKeys = append(forwardedKeys, ik)
+			return nil
+		}),
+	)
+
+	create := func() *wallet.Wallet {
+		req := newRequest(t, http.MethodPost, "/wallets", wallet.CreateRequest{Name: uuid.NewString()})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		w := &wallet.Wallet{}
+		readResponse(t, rec, w)
+		return w
+	}
+
+	first := create()
+	second := create()
+
+	// The Idempotency-Key is forwarded to the ledger and the derived wallet
+	// ID is stable across retries, so no duplicate wallet is created.
+	require.Equal(t, []string{idempotencyKey, idempotencyKey}, forwardedKeys)
+	require.Equal(t, first.ID, second.ID)
+}

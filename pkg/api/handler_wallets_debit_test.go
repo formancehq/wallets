@@ -428,3 +428,37 @@ func TestWalletsDebit(t *testing.T) {
 		})
 	}
 }
+
+func TestWalletsDebitPendingIdempotency(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "debit-pending-key-1"
+	walletID := uuid.NewString()
+
+	testEnv := newTestEnv(
+		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+			require.Equal(t, idempotencyKey, ik)
+			//nolint:nilnil
+			return nil, nil
+		}),
+	)
+
+	debit := func() *wallet.DebitHold {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+			Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
+			Pending: true,
+		})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		hold := &wallet.DebitHold{}
+		readResponse(t, rec, hold)
+		return hold
+	}
+
+	// Retrying a pending debit with the same Idempotency-Key yields the same
+	// hold ID, so the ledger request body is identical and no duplicate hold
+	// is created.
+	require.Equal(t, debit().ID, debit().ID)
+}
