@@ -8,12 +8,16 @@ import (
 )
 
 func (m *MainHandler) listBalancesHandler(w http.ResponseWriter, r *http.Request) {
-	query := readPaginatedRequest(r, func(r *http.Request) wallet.ListBalances {
+	query, err := readPaginatedRequest(r, func(r *http.Request) wallet.ListBalances {
 		return wallet.ListBalances{
 			WalletID: chi.URLParam(r, "walletID"),
 			Metadata: getQueryMap(r.URL.Query(), "metadata"),
 		}
 	})
+	if err != nil {
+		badRequest(w, ErrorCodeValidation, err)
+		return
+	}
 
 	holds, err := m.manager.ListBalances(r.Context(), query)
 	if err != nil {

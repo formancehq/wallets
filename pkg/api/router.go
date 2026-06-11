@@ -16,6 +16,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// maxRequestBodyBytes caps the size of request bodies the service will read.
+// The JSON payloads handled here are small; this protects the service (and the
+// audit middleware, which buffers the whole body) from memory-exhaustion DoS.
+const maxRequestBodyBytes = 1 << 20 // 1 MiB
+
 func NewRouter(
 	manager *wallet.Manager,
 	healthController *sharedhealth.HealthController,
@@ -25,8 +30,10 @@ func NewRouter(
 ) *chi.Mux {
 	r := chi.NewRouter()
 
+	r.Use(middleware.Recoverer)
 	r.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 			w.Header().Set("Content-Type", "application/json")
 			handler.ServeHTTP(w, r)
 		})

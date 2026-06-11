@@ -24,6 +24,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParsePageSize(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		query     string
+		expected  int
+		expectErr bool
+	}{
+		{query: "", expected: defaultLimit},
+		{query: "pageSize=20", expected: 20},
+		{query: "pageSize=100", expected: maxPageSize},
+		{query: "pageSize=100000", expected: maxPageSize},
+		{query: "pageSize=abc", expectErr: true},
+		{query: "pageSize=0", expectErr: true},
+		{query: "pageSize=-5", expectErr: true},
+	} {
+		tc := tc
+		t.Run(tc.query, func(t *testing.T) {
+			t.Parallel()
+			req := httptest.NewRequest(http.MethodGet, "/?"+tc.query, nil)
+			v, err := parsePageSize(req)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, v)
+		})
+	}
+}
+
+func TestListHandlerRejectsInvalidPageSize(t *testing.T) {
+	t.Parallel()
+
+	testEnv := newTestEnv(
+		WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
+			return &wallet.AccountsCursorResponseCursor{}, nil
+		}),
+	)
+	req := httptest.NewRequest(http.MethodGet, "/wallets?pageSize=abc", nil)
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	require.Equal(t, ErrorCodeValidation, readErrorResponse(t, rec).ErrorCode)
+}
+
 func readErrorResponse(t *testing.T, rec *httptest.ResponseRecorder) *sharedapi.ErrorResponse {
 	t.Helper()
 	ret := &sharedapi.ErrorResponse{}
