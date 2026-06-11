@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
 )
 
-var balanceNameRegex = regexp.MustCompile("[0-9A-Za-z_-]+")
+var balanceNameRegex = regexp.MustCompile("^[0-9A-Za-z_-]+$")
 
 type CreateBalance struct {
 	WalletID  string     `json:"walletID"`

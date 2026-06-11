@@ -40,6 +40,24 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 		expectedErrorCode:  ErrorCodeValidation,
 	},
 	{
+		// The name contains valid characters but also an account separator;
+		// an unanchored regex would have accepted it, allowing address/script injection.
+		name: "with name containing an account separator",
+		request: wallet.CreateBalance{
+			Name: "balance:injected",
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
+		name: "with name containing whitespace and numscript tokens",
+		request: wallet.CreateBalance{
+			Name: "x\n@world",
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
 		name: "with reserved name",
 		request: wallet.CreateBalance{
 			Name: wallet.MainBalance,

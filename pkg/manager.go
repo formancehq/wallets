@@ -14,6 +14,7 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/ledger/pkg/accounts"
 	"github.com/pkg/errors"
 )
 
@@ -282,6 +283,10 @@ func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error 
 func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 	if err := credit.Validate(); err != nil {
 		return err
+	}
+
+	if !accounts.ValidateAddress(credit.WalletID) {
+		return newErrInvalidAccountName(credit.WalletID)
 	}
 
 	if credit.Balance != "" {

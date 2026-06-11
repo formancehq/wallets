@@ -43,6 +43,12 @@ func (s Subject) Validate() error {
 		if s.Identifier == "" {
 			return fmt.Errorf("wallet identifier cannot be empty")
 		}
+		if !accounts.ValidateAddress(s.Identifier) {
+			return newErrInvalidAccountName(s.Identifier)
+		}
+		if s.Balance != "" && !accounts.ValidateAddress(s.Balance) {
+			return newErrInvalidAccountName(s.Balance)
+		}
 	}
 	return nil
 }
