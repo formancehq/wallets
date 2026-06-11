@@ -58,6 +58,32 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 	},
 }
 
+func TestBalancesCreateForwardsIdempotencyKey(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-balance-key-1"
+	walletID := uuid.NewString()
+
+	var forwardedKey string
+	testEnv := newTestEnv(
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, metadata map[string]string) error {
+			forwardedKey = ik
+			return nil
+		}),
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			return nil, wallet.ErrAccountNotFound
+		}),
+	)
+
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/balances", wallet.CreateBalance{Name: uuid.NewString()})
+	req.Header.Set("Idempotency-Key", idempotencyKey)
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+	require.Equal(t, idempotencyKey, forwardedKey)
+}
+
 func TestBalancesCreate(t *testing.T) {
 	t.Parallel()
 

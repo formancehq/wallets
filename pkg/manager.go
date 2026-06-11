@@ -580,7 +580,16 @@ func (m *Manager) GetHold(ctx context.Context, id string) (*ExpandedDebitHold, e
 	return Ptr(ExpandedDebitHoldFromLedgerAccount(*account)), nil
 }
 
-func (m *Manager) CreateBalance(ctx context.Context, data *CreateBalance) (*Balance, error) {
+// CreateBalance creates a named balance for a wallet.
+//
+// This is a check-then-act on account metadata: the existence check and the
+// metadata write are not a single atomic operation. The Idempotency-Key makes
+// retries of the same request safe (the ledger deduplicates the write), but two
+// genuinely concurrent first-time creations of the same balance can both pass
+// the existence check; the writes are then last-write-wins on priority/expiresAt
+// for that single account. A fully atomic create would require a conditional
+// metadata write on the ledger side, which the API does not currently expose.
+func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBalance) (*Balance, error) {
 	if err := data.Validate(); err != nil {
 		return nil, err
 	}
@@ -603,7 +612,7 @@ func (m *Manager) CreateBalance(ctx context.Context, data *CreateBalance) (*Bala
 		ctx,
 		m.ledgerName,
 		m.chart.GetBalanceAccount(data.WalletID, balance.Name),
-		"",
+		ik,
 		balance.LedgerMetadata(data.WalletID),
 	); err != nil {
 		return nil, errors.Wrap(err, "adding metadata to account")
