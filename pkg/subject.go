@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/formancehq/ledger/pkg/accounts"
 )
@@ -10,6 +11,13 @@ const (
 	SubjectTypeLedgerAccount string = "ACCOUNT"
 	SubjectTypeWallet        string = "WALLET"
 )
+
+// accountSegmentRegexp matches a single ledger account segment (no ':'
+// separator), anchored. WALLET identifiers and balance names are used as
+// individual chart segments, so — unlike a full ledger address — they must
+// not contain ':' (which would resolve to a nested account outside the
+// expected balance model and is the Numscript-injection vector).
+var accountSegmentRegexp = regexp.MustCompile("^" + accounts.SegmentRegex + "$")
 
 type Subject struct {
 	Type       string `json:"type"`
@@ -43,10 +51,12 @@ func (s Subject) Validate() error {
 		if s.Identifier == "" {
 			return fmt.Errorf("wallet identifier cannot be empty")
 		}
-		if !accounts.ValidateAddress(s.Identifier) {
+		if !accountSegmentRegexp.MatchString(s.Identifier) {
 			return newErrInvalidAccountName(s.Identifier)
 		}
-		if s.Balance != "" && !accounts.ValidateAddress(s.Balance) {
+		// The balance is a single chart segment too, so apply the same
+		// single-segment rule (rejecting ':' and any Numscript metacharacter).
+		if s.Balance != "" && !accountSegmentRegexp.MatchString(s.Balance) {
 			return newErrInvalidAccountName(s.Balance)
 		}
 	}

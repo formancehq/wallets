@@ -14,7 +14,6 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
-	"github.com/formancehq/ledger/pkg/accounts"
 	"github.com/pkg/errors"
 )
 
@@ -285,7 +284,7 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 		return err
 	}
 
-	if !accounts.ValidateAddress(credit.WalletID) {
+	if !accountSegmentRegexp.MatchString(credit.WalletID) {
 		return newErrInvalidAccountName(credit.WalletID)
 	}
 

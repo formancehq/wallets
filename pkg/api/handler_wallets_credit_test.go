@@ -114,6 +114,17 @@ func TestWalletsCredit(t *testing.T) {
 			expectedErrorCode:  ErrorCodeValidation,
 		},
 		{
+			name: "with wallet source spanning multiple account segments",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1", "balance:injected"),
+				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
 			name: "with wallet source containing numscript injection in identifier",
 			request: wallet.CreditRequest{
 				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),

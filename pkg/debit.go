@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
-	"github.com/formancehq/ledger/pkg/accounts"
 	"github.com/formancehq/ledger/pkg/assets"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
@@ -56,7 +55,7 @@ func (d Debit) getDestination() Subject {
 }
 
 func (d Debit) Validate() error {
-	if !accounts.ValidateAddress(d.WalletID) {
+	if !accountSegmentRegexp.MatchString(d.WalletID) {
 		return newErrInvalidAccountName(d.WalletID)
 	}
 	if d.Destination != nil {

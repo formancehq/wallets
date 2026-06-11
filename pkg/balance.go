@@ -12,6 +12,17 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
 )
 
+// balanceNameRegex constrains a user-supplied balance name to a single,
+// anchored ledger segment (no ':' separator), which closes the Numscript
+// injection vector while still allowing names clients rely on, including
+// dashed names and UUIDs.
+//
+// NOTE: Address.String() currently strips '-', so "foo-bar" and "foobar"
+// resolve to the same ledger account. Forbidding '-' here would break
+// legitimate dashed/UUID names, and removing the global strip would change
+// the address of every already-created wallet/balance; resolving that
+// collision cleanly needs a coordinated change to Address.String() plus a
+// data migration, tracked separately.
 var balanceNameRegex = regexp.MustCompile("^[0-9A-Za-z_-]+$")
 
 type CreateBalance struct {
