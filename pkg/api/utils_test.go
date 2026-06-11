@@ -71,6 +71,27 @@ func TestListHandlerRejectsInvalidPageSize(t *testing.T) {
 	require.Equal(t, ErrorCodeValidation, readErrorResponse(t, rec).ErrorCode)
 }
 
+func TestRequestBodyTooLarge(t *testing.T) {
+	t.Parallel()
+
+	testEnv := newTestEnv(
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, metadata map[string]string) error {
+			return nil
+		}),
+	)
+
+	// A body larger than maxRequestBodyBytes must be rejected with 413 before
+	// the audit middleware reads it — not surface as a 500.
+	body := bytes.NewReader(make([]byte, (1<<20)+1024))
+	req := httptest.NewRequest(http.MethodPost, "/wallets", body)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusRequestEntityTooLarge, rec.Result().StatusCode)
+	require.Equal(t, "REQUEST_TOO_LARGE", readErrorResponse(t, rec).ErrorCode)
+}
+
 func readErrorResponse(t *testing.T, rec *httptest.ResponseRecorder) *sharedapi.ErrorResponse {
 	t.Helper()
 	ret := &sharedapi.ErrorResponse{}

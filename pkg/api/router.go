@@ -1,6 +1,9 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -21,6 +24,42 @@ import (
 // audit middleware, which buffers the whole body) from memory-exhaustion DoS.
 const maxRequestBodyBytes = 1 << 20 // 1 MiB
 
+// limitRequestBody reads the request body up to maxRequestBodyBytes and rejects
+// anything larger with 413. It buffers the (bounded) body and resets r.Body so
+// the audit middleware and the handlers can still read it.
+//
+// We do this instead of http.MaxBytesReader because the audit middleware reads
+// the body with io.ReadAll *before* the handler and turns any non-EOF error
+// (including MaxBytesReader's overflow error) into a 500 — so an oversized body
+// would surface as "500 failed to read request body" instead of 413.
+func limitRequestBody(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Body != nil && r.Body != http.NoBody {
+			buf, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBodyBytes+1))
+			_ = r.Body.Close()
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+					ErrorCode:    ErrorCodeValidation,
+					ErrorMessage: "failed to read request body",
+				})
+				return
+			}
+			if int64(len(buf)) > maxRequestBodyBytes {
+				w.WriteHeader(http.StatusRequestEntityTooLarge)
+				_ = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+					ErrorCode:    "REQUEST_TOO_LARGE",
+					ErrorMessage: "request body too large",
+				})
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(buf))
+			r.ContentLength = int64(len(buf))
+		}
+		handler.ServeHTTP(w, r)
+	})
+}
+
 func NewRouter(
 	manager *wallet.Manager,
 	healthController *sharedhealth.HealthController,
@@ -33,11 +72,11 @@ func NewRouter(
 	r.Use(middleware.Recoverer)
 	r.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 			w.Header().Set("Content-Type", "application/json")
 			handler.ServeHTTP(w, r)
 		})
 	})
+	r.Use(limitRequestBody)
 	r.Use(httpaudit.Middleware(publisher, "audit-events", "wallets", nil))
 
 	r.Get("/_healthcheck", healthController.Check)
