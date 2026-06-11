@@ -84,6 +84,60 @@ func TestBalancesCreateForwardsIdempotencyKey(t *testing.T) {
 	require.Equal(t, idempotencyKey, forwardedKey)
 }
 
+func TestBalancesCreateIdempotentReplay(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-balance-key-replay"
+	walletID := uuid.NewString()
+	const balanceName = "savings"
+
+	var (
+		created  bool
+		addCalls int
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if created {
+				return &wallet.AccountWithVolumesAndBalances{
+					Account: wallet.Account{
+						Address:  account,
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{Name: balanceName}.LedgerMetadata(walletID)),
+					},
+				}, nil
+			}
+			return nil, wallet.ErrAccountNotFound
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, md map[string]string) error {
+			addCalls++
+			created = true
+			return nil
+		}),
+	)
+
+	create := func() *httptest.ResponseRecorder {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/balances", wallet.CreateBalance{Name: balanceName})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		return rec
+	}
+
+	first := create()
+	require.Equal(t, http.StatusCreated, first.Result().StatusCode)
+
+	// The retry under the same key replays the existing balance (201) instead
+	// of failing with 400 ALREADY_EXISTS, and does not re-write metadata.
+	second := create()
+	require.Equal(t, http.StatusCreated, second.Result().StatusCode)
+	require.Equal(t, 1, addCalls)
+
+	b1, b2 := &wallet.Balance{}, &wallet.Balance{}
+	readResponse(t, first, b1)
+	readResponse(t, second, b2)
+	require.Equal(t, balanceName, b1.Name)
+	require.Equal(t, b1.Name, b2.Name)
+}
+
 func TestBalancesCreate(t *testing.T) {
 	t.Parallel()
 

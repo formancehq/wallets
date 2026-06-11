@@ -599,6 +599,13 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	case err == nil:
 		if ret.Metadata != nil &&
 			ret.Metadata[MetadataKeyWalletBalance] == TrueValue {
+			// Idempotent replay: with an Idempotency-Key, a balance that already
+			// exists is treated as the result of a previous successful attempt
+			// under the same key, so we replay it instead of returning 400.
+			// Without a key, keep the explicit "already exists" conflict.
+			if ik != "" {
+				return Ptr(BalanceFromAccount(*ret)), nil
+			}
 			return nil, ErrBalanceAlreadyExists
 		}
 	default:
