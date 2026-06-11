@@ -17,6 +17,8 @@ func (m *MainHandler) voidHoldHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		switch {
+		case errors.Is(err, wallet.ErrHoldNotFound):
+			notFound(w)
 		case errors.Is(err, wallet.ErrClosedHold):
 			badRequest(w, ErrorCodeClosedHold, err)
 		default:

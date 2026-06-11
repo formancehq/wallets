@@ -10,8 +10,6 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
-	"github.com/formancehq/formance-sdk-go/v3/pkg/models/sdkerrors"
-
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
 	"github.com/pkg/errors"
@@ -172,6 +170,13 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance.Name))
 	}
 
+	// All resolved balances are expired: there is nothing to debit from.
+	// Return a domain error rather than building a script with an empty
+	// source set, which the ledger would reject as a compile error (500).
+	if len(sources) == 0 {
+		return nil, ErrInsufficientFundError
+	}
+
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
 			Plain: pointer.For(BuildDebitWalletScript(metadata, sources...)),
@@ -200,6 +205,9 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold) error {
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetHoldAccount(debit.HoldID))
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return ErrHoldNotFound
+		}
 		return errors.Wrap(err, "getting account")
 	}
 	if !IsHold(account) {
@@ -248,13 +256,22 @@ func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error 
 	if err != nil {
 		return fmt.Errorf("retrieving original transaction: %w", err)
 	}
+	if len(txs.Data) == 0 {
+		return ErrHoldNotFound
+	}
 	if len(txs.Data) != 1 {
 		return fmt.Errorf("expected 1 transaction, got %d", len(txs.Data))
 	}
 
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetHoldAccount(void.HoldID))
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return ErrHoldNotFound
+		}
 		return errors.Wrap(err, "getting account")
+	}
+	if !IsHold(account) {
+		return ErrHoldNotFound
 	}
 
 	hold := ExpandedDebitHoldFromLedgerAccount(*account)
@@ -314,13 +331,11 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 
 func (m *Manager) CreateTransaction(ctx context.Context, ik string, postTransaction PostTransaction) error {
 	if _, err := m.client.CreateTransaction(ctx, m.ledgerName, ik, postTransaction); err != nil {
-		switch err := err.(type) {
-		case *sdkerrors.WalletsErrorResponse:
-			if err.ErrorCode == sdkerrors.SchemasWalletsErrorResponseErrorCodeInsufficientFund {
-				return ErrInsufficientFundError
-			}
+		// The ledger SDK returns a *sdkerrors.V2ErrorResponse, which the
+		// ledger layer already translates to ErrInsufficientFundError.
+		if errors.Is(err, ErrInsufficientFundError) {
+			return ErrInsufficientFundError
 		}
-
 		return errors.Wrap(err, "creating transaction")
 	}
 
@@ -465,6 +480,9 @@ func (m *Manager) GetWallet(ctx context.Context, id string) (*Wallet, error) {
 		m.chart.GetMainBalanceAccount(id),
 	)
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return nil, ErrWalletNotFound
+		}
 		return nil, errors.Wrap(err, "getting account")
 	}
 
@@ -549,7 +567,14 @@ func (m *Manager) GetWalletSummary(ctx context.Context, id string) (*Summary, er
 func (m *Manager) GetHold(ctx context.Context, id string) (*ExpandedDebitHold, error) {
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetHoldAccount(id))
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return nil, ErrHoldNotFound
+		}
 		return nil, err
+	}
+
+	if !IsHold(account) {
+		return nil, ErrHoldNotFound
 	}
 
 	return Ptr(ExpandedDebitHoldFromLedgerAccount(*account)), nil
@@ -590,6 +615,9 @@ func (m *Manager) CreateBalance(ctx context.Context, data *CreateBalance) (*Bala
 func (m *Manager) GetBalance(ctx context.Context, walletID string, balanceName string) (*ExpandedBalance, error) {
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetBalanceAccount(walletID, balanceName))
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return nil, ErrBalanceNotExists
+		}
 		return nil, err
 	}
 

@@ -40,7 +40,7 @@ func compareJSON(t *testing.T, expected, actual any) {
 type testCase struct {
 	name                    string
 	request                 wallet.DebitRequest
-	postTransactionError    *sdkerrors.WalletsErrorResponse
+	postTransactionError    error
 	expectedPostTransaction func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction
 	expectedStatusCode      int
 	expectedErrorCode       string
@@ -129,8 +129,20 @@ var walletDebitTestCases = []testCase{
 		request: wallet.DebitRequest{
 			Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
 		},
-		postTransactionError: &sdkerrors.WalletsErrorResponse{
-			ErrorCode: sdkerrors.SchemasWalletsErrorResponseErrorCodeInsufficientFund,
+		// The Ledger interface (DefaultLedger) translates the SDK's
+		// *sdkerrors.V2ErrorResponse into wallet.ErrInsufficientFundError,
+		// so the mock returns that domain error directly.
+		postTransactionError: wallet.ErrInsufficientFundError,
+		expectedStatusCode:   http.StatusBadRequest,
+		expectedErrorCode:    string(shared.ErrorsEnumInsufficientFund),
+	},
+	{
+		// Every resolved balance is expired, so the source set is empty.
+		// This must surface as INSUFFICIENT_FUND, not a ledger compile 500.
+		name: "with only expired balance",
+		request: wallet.DebitRequest{
+			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+			Balances: []string{"coupon3"},
 		},
 		expectedStatusCode: http.StatusBadRequest,
 		expectedErrorCode:  string(shared.ErrorsEnumInsufficientFund),

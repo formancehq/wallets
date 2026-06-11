@@ -174,10 +174,23 @@ func (d DefaultLedger) ListTransactions(ctx context.Context, ledger string, q Li
 
 	rsp, err := d.client.Ledger.V2.ListTransactions(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, mapListError(err)
 	}
 
 	return &rsp.V2TransactionsCursorResponse.Cursor, nil
+}
+
+// mapListError translates a ledger validation error (e.g. a malformed
+// pagination cursor) into ErrValidation so handlers can answer 400 instead
+// of leaking a 500.
+func mapListError(err error) error {
+	switch v := err.(type) {
+	case *sdkerrors.V2ErrorResponse:
+		if v.ErrorCode == shared.V2ErrorsEnumValidation {
+			return errors.Wrap(ErrValidation, err.Error())
+		}
+	}
+	return err
 }
 
 func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger, ik string, transaction PostTransaction) (*shared.V2Transaction, error) {
@@ -198,6 +211,12 @@ func (d DefaultLedger) CreateTransaction(ctx context.Context, ledger, ik string,
 		IdempotencyKey: pointer.For(ik),
 	})
 	if err != nil {
+		switch v := err.(type) {
+		case *sdkerrors.V2ErrorResponse:
+			if v.ErrorCode == shared.V2ErrorsEnumInsufficientFund {
+				return nil, errors.Wrap(ErrInsufficientFundError, err.Error())
+			}
+		}
 		return nil, err
 	}
 
@@ -285,7 +304,7 @@ func (d DefaultLedger) ListAccounts(ctx context.Context, ledger string, q ListAc
 
 	ret, err := d.client.Ledger.V2.ListAccounts(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, mapListError(err)
 	}
 
 	return &AccountsCursorResponseCursor{

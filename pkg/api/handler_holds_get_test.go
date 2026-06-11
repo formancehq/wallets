@@ -59,3 +59,38 @@ func TestHoldsGet(t *testing.T) {
 		Remaining:      big.NewInt(50),
 	}, ret)
 }
+
+func TestHoldsGetNotFound(t *testing.T) {
+	t.Parallel()
+
+	req := newRequest(t, http.MethodGet, "/holds/"+uuid.NewString(), nil)
+	rec := httptest.NewRecorder()
+
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			return nil, wallet.ErrAccountNotFound
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func TestHoldsGetWrongAccountType(t *testing.T) {
+	t.Parallel()
+
+	// A non-hold account (no hold metadata) must not be returned as a hold.
+	req := newRequest(t, http.MethodGet, "/holds/"+uuid.NewString(), nil)
+	rec := httptest.NewRecorder()
+
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{Metadata: map[string]string{}},
+			}, nil
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusNotFound, rec.Result().StatusCode)
+}
