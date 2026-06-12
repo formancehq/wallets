@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -14,7 +15,10 @@ import (
 	wallet "github.com/formancehq/wallets/pkg"
 )
 
-const defaultLimit = 15
+const (
+	defaultLimit = 15
+	maxPageSize  = 100
+)
 
 func notFound(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
@@ -81,31 +85,41 @@ func parsePaginationToken(r *http.Request) string {
 	return r.URL.Query().Get("cursor")
 }
 
-func parsePageSize(r *http.Request) int {
+func parsePageSize(r *http.Request) (int, error) {
 	pageSize := r.URL.Query().Get("pageSize")
 	if pageSize == "" {
-		return defaultLimit
+		return defaultLimit, nil
 	}
 
 	v, err := strconv.ParseInt(pageSize, 10, 32)
 	if err != nil {
-		panic(err)
+		return 0, fmt.Errorf("invalid pageSize: %w", err)
 	}
-	return int(v)
+	if v < 1 {
+		return 0, fmt.Errorf("pageSize must be a positive integer")
+	}
+	if v > maxPageSize {
+		v = maxPageSize
+	}
+	return int(v), nil
 }
 
-func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) wallet.ListQuery[T] {
+func readPaginatedRequest[T any](r *http.Request, f func(r *http.Request) T) (wallet.ListQuery[T], error) {
+	pageSize, err := parsePageSize(r)
+	if err != nil {
+		return wallet.ListQuery[T]{}, err
+	}
 	var payload T
 	if f != nil {
 		payload = f(r)
 	}
 	return wallet.ListQuery[T]{
 		Pagination: wallet.Pagination{
-			Limit:           parsePageSize(r),
+			Limit:           pageSize,
 			PaginationToken: parsePaginationToken(r),
 		},
 		Payload: payload,
-	}
+	}, nil
 }
 
 func getQueryMap(m map[string][]string, key string) map[string]string {
