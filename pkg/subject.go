@@ -54,9 +54,9 @@ func (s Subject) Validate() error {
 		if !accountSegmentRegexp.MatchString(s.Identifier) {
 			return newErrInvalidAccountName(s.Identifier)
 		}
-		// The balance is a single chart segment too, so apply the same
-		// single-segment rule (rejecting ':' and any Numscript metacharacter).
-		if s.Balance != "" && !accountSegmentRegexp.MatchString(s.Balance) {
+		// Balance names are stricter than wallet identifiers because
+		// Address.String() strips dashes globally, creating aliases.
+		if s.Balance != "" && !balanceNameRegex.MatchString(s.Balance) {
 			return newErrInvalidAccountName(s.Balance)
 		}
 	}

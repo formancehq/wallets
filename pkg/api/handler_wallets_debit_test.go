@@ -183,6 +183,15 @@ var walletDebitTestCases = []testCase{
 		},
 	},
 	{
+		name: "with dash in balance source",
+		request: wallet.DebitRequest{
+			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+			Balances: []string{"foo-bar"},
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  string(sdkerrors.SchemasErrorCodeValidation),
+	},
+	{
 		name: "with wildcard balance as source",
 		request: wallet.DebitRequest{
 			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
@@ -415,4 +424,44 @@ func TestWalletsDebit(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWalletsDebitRejectsInvalidBalanceMetadata(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+		Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+		Balances: []string{"legacy"},
+	})
+	rec := httptest.NewRecorder()
+
+	var (
+		createdTransaction bool
+		testEnv            *testEnv
+	)
+	testEnv = newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			require.Equal(t, testEnv.Chart().GetBalanceAccount(walletID, "legacy"), account)
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address: account,
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+						Name: "foo-bar",
+					}.LedgerMetadata(walletID)),
+				},
+			}, nil
+		}),
+		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+			createdTransaction = true
+			return nil, nil
+		}),
+	)
+
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+	require.False(t, createdTransaction)
 }

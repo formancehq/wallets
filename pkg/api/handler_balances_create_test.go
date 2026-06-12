@@ -28,7 +28,7 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 	{
 		name: "nominal",
 		request: wallet.CreateBalance{
-			Name: uuid.NewString(),
+			Name: "balance1",
 		},
 	},
 	{
@@ -53,6 +53,14 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 		name: "with name containing whitespace and numscript tokens",
 		request: wallet.CreateBalance{
 			Name: "x\n@world",
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
+		name: "with name containing a dash",
+		request: wallet.CreateBalance{
+			Name: "foo-bar",
 		},
 		expectedStatusCode: http.StatusBadRequest,
 		expectedErrorCode:  ErrorCodeValidation,

@@ -36,6 +36,9 @@ func (c CreditRequest) Validate() error {
 	if !assets.IsValid(c.Amount.Asset) {
 		return newErrInvalidAsset(c.Amount.Asset)
 	}
+	if c.Balance != "" && !balanceNameRegex.MatchString(c.Balance) {
+		return newErrInvalidAccountName(c.Balance)
+	}
 
 	return nil
 }

@@ -69,5 +69,10 @@ func (d Debit) Validate() error {
 	if !assets.IsValid(d.Amount.Asset) {
 		return newErrInvalidAsset(d.Amount.Asset)
 	}
+	for _, balance := range d.Balances {
+		if balance != "*" && !balanceNameRegex.MatchString(balance) {
+			return newErrInvalidAccountName(balance)
+		}
+	}
 	return nil
 }

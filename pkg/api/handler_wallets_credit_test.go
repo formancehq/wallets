@@ -125,12 +125,32 @@ func TestWalletsCredit(t *testing.T) {
 			expectedErrorCode:  ErrorCodeValidation,
 		},
 		{
+			name: "with wallet source containing dash in balance",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1", "foo-bar"),
+				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
 			name: "with wallet source containing numscript injection in identifier",
 			request: wallet.CreditRequest{
 				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
 				Sources: []wallet.Subject{
 					wallet.NewWalletSubject("emitter1 @world", ""),
 				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
+			name: "with dash in destination balance",
+			request: wallet.CreditRequest{
+				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
+				Balance: "foo-bar",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrorCode:  ErrorCodeValidation,
@@ -158,7 +178,7 @@ func TestWalletsCredit(t *testing.T) {
 			name: "with not existing secondary balance as destination",
 			request: wallet.CreditRequest{
 				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
-				Balance: "not-existing",
+				Balance: "not_existing",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrorCode:  ErrorCodeValidation,
