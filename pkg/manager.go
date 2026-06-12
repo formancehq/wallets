@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"slices"
@@ -584,11 +586,11 @@ func (m *Manager) GetHold(ctx context.Context, id string) (*ExpandedDebitHold, e
 //
 // This is a check-then-act on account metadata: the existence check and the
 // metadata write are not a single atomic operation. The Idempotency-Key makes
-// retries of the same request safe (the ledger deduplicates the write), but two
-// genuinely concurrent first-time creations of the same balance can both pass
-// the existence check; the writes are then last-write-wins on priority/expiresAt
-// for that single account. A fully atomic create would require a conditional
-// metadata write on the ledger side, which the API does not currently expose.
+// retries of a previously recorded create safe, but two genuinely concurrent
+// first-time creations of the same balance can both pass the existence check;
+// the writes are then last-write-wins on priority/expiresAt for that single
+// account. A fully atomic create would require a conditional metadata write on
+// the ledger side, which the API does not currently expose.
 func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBalance) (*Balance, error) {
 	if err := data.Validate(); err != nil {
 		return nil, err
@@ -599,11 +601,7 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	case err == nil:
 		if ret.Metadata != nil &&
 			ret.Metadata[MetadataKeyWalletBalance] == TrueValue {
-			// Idempotent replay: with an Idempotency-Key, a balance that already
-			// exists is treated as the result of a previous successful attempt
-			// under the same key, so we replay it instead of returning 400.
-			// Without a key, keep the explicit "already exists" conflict.
-			if ik != "" {
+			if ik != "" && ret.Metadata[MetadataKeyBalanceIdempotencyKey] == hashIdempotencyKey(ik) {
 				return Ptr(BalanceFromAccount(*ret)), nil
 			}
 			return nil, ErrBalanceAlreadyExists
@@ -614,18 +612,27 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 
 	balance := NewBalance(data.Name, data.ExpiresAt)
 	balance.Priority = data.Priority
+	balanceMetadata := balance.LedgerMetadata(data.WalletID)
+	if ik != "" {
+		balanceMetadata[MetadataKeyBalanceIdempotencyKey] = hashIdempotencyKey(ik)
+	}
 
 	if err := m.client.AddMetadataToAccount(
 		ctx,
 		m.ledgerName,
 		m.chart.GetBalanceAccount(data.WalletID, balance.Name),
 		ik,
-		balance.LedgerMetadata(data.WalletID),
+		balanceMetadata,
 	); err != nil {
 		return nil, errors.Wrap(err, "adding metadata to account")
 	}
 
 	return &balance, nil
+}
+
+func hashIdempotencyKey(ik string) string {
+	hash := sha256.Sum256([]byte(ik))
+	return hex.EncodeToString(hash[:])
 }
 
 func (m *Manager) GetBalance(ctx context.Context, walletID string, balanceName string) (*ExpandedBalance, error) {

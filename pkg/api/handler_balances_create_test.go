@@ -92,8 +92,9 @@ func TestBalancesCreateIdempotentReplay(t *testing.T) {
 	const balanceName = "savings"
 
 	var (
-		created  bool
-		addCalls int
+		created         bool
+		addCalls        int
+		appliedMetadata map[string]string
 	)
 	testEnv := newTestEnv(
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
@@ -101,7 +102,7 @@ func TestBalancesCreateIdempotentReplay(t *testing.T) {
 				return &wallet.AccountWithVolumesAndBalances{
 					Account: wallet.Account{
 						Address:  account,
-						Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{Name: balanceName}.LedgerMetadata(walletID)),
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
 					},
 				}, nil
 			}
@@ -109,6 +110,7 @@ func TestBalancesCreateIdempotentReplay(t *testing.T) {
 		}),
 		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, md map[string]string) error {
 			addCalls++
+			appliedMetadata = md
 			created = true
 			return nil
 		}),
@@ -136,6 +138,53 @@ func TestBalancesCreateIdempotentReplay(t *testing.T) {
 	readResponse(t, second, b2)
 	require.Equal(t, balanceName, b1.Name)
 	require.Equal(t, b1.Name, b2.Name)
+}
+
+func TestBalancesCreateWithDifferentIdempotencyKeyDoesNotReplay(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	const balanceName = "savings"
+
+	var (
+		created         bool
+		addCalls        int
+		appliedMetadata map[string]string
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if created {
+				return &wallet.AccountWithVolumesAndBalances{
+					Account: wallet.Account{
+						Address:  account,
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
+					},
+				}, nil
+			}
+			return nil, wallet.ErrAccountNotFound
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, md map[string]string) error {
+			addCalls++
+			appliedMetadata = md
+			created = true
+			return nil
+		}),
+	)
+
+	create := func(idempotencyKey string) *httptest.ResponseRecorder {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/balances", wallet.CreateBalance{Name: balanceName})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		return rec
+	}
+
+	first := create("create-balance-key-1")
+	require.Equal(t, http.StatusCreated, first.Result().StatusCode)
+
+	second := create("create-balance-key-2")
+	require.Equal(t, http.StatusBadRequest, second.Result().StatusCode)
+	require.Equal(t, 1, addCalls)
 }
 
 func TestBalancesCreate(t *testing.T) {
