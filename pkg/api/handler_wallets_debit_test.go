@@ -467,3 +467,64 @@ func TestWalletsDebitPendingIdempotency(t *testing.T) {
 	require.Len(t, bodies, 2)
 	require.Equal(t, bodies[0], bodies[1])
 }
+
+func TestWalletsDebitPendingIdempotencyWithExpiringBalance(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "debit-pending-expiring-key-1"
+	walletID := uuid.NewString()
+
+	var (
+		getAccountCalls int
+		bodies          []wallet.PostTransaction
+		testEnv         *testEnv
+	)
+	testEnv = newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			require.Equal(t, testEnv.LedgerName(), ledger)
+			require.Equal(t, testEnv.Chart().GetBalanceAccount(walletID, "promo"), account)
+
+			getAccountCalls++
+			expiresAt := time.Now().Add(time.Hour)
+			if getAccountCalls > 1 {
+				expiresAt = time.Now().Add(-time.Hour)
+			}
+
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address: account,
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+						Name:      "promo",
+						ExpiresAt: ptr(expiresAt),
+					}.LedgerMetadata(walletID)),
+				},
+			}, nil
+		}),
+		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+			require.Equal(t, idempotencyKey, ik)
+			bodies = append(bodies, p)
+			//nolint:nilnil
+			return nil, nil
+		}),
+	)
+
+	debit := func() {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+			Pending:  true,
+			Balances: []string{"promo"},
+		})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+	}
+
+	// This covers the limitation documented in Manager.Debit: source
+	// resolution still depends on live ledger state and time.Now(), so crossing
+	// an expiry boundary changes the ledger body even with the same key.
+	debit()
+	debit()
+	require.Len(t, bodies, 2)
+	require.NotEqual(t, bodies[0], bodies[1])
+}
