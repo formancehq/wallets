@@ -54,8 +54,9 @@ func (s Subject) Validate() error {
 		if !accountSegmentRegexp.MatchString(s.Identifier) {
 			return newErrInvalidAccountName(s.Identifier)
 		}
-		// Balance names are stricter than wallet identifiers because
-		// Address.String() strips dashes globally, creating aliases.
+		// Balance names use the same single-segment charset as wallet
+		// identifiers (dashes allowed). Both remain subject to the
+		// dash-aliasing collision documented on Address.String().
 		if s.Balance != "" && !balanceNameRegex.MatchString(s.Balance) {
 			return newErrInvalidAccountName(s.Balance)
 		}
