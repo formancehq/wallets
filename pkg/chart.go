@@ -8,6 +8,24 @@ const MainBalance = "main"
 
 type Address []string
 
+// String renders the address as a ledger account path by joining the
+// segments with ':'.
+//
+// WARNING — known aliasing hazard: every '-' is stripped from the joined
+// result. This means any two segments that differ only by dashes collapse
+// to the same ledger account: "foo-bar" and "foobar" both render to
+// "foobar", as do wallet IDs / balance names / hold IDs differing only in
+// dash placement. Because wallet and hold IDs are UUIDs (which contain
+// dashes), distinct inputs can therefore resolve to the SAME underlying
+// account, causing silent collisions on create/get/debit/credit — two
+// wallets, balances, or holds sharing one ledger account.
+//
+// The strip cannot simply be removed: all existing accounts were created
+// with dashes already stripped, so dropping it would change the address of
+// every wallet/balance/hold already in the ledger and requires a data
+// migration. Fixing this properly (stop stripping + migrate) should be a
+// dedicated ticket. Until then, callers validate user-supplied segments to
+// limit — but do not fully eliminate — the collision surface.
 func (addr Address) String() string {
 	s := strings.Join(addr, ":")
 	s = strings.ReplaceAll(s, "-", "")
