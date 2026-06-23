@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
@@ -258,6 +259,45 @@ func TestWalletsCredit(t *testing.T) {
 				errorResponse := readErrorResponse(t, rec)
 				require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
 			}
+		})
+	}
+}
+
+// TestWalletsCreditRejectsInvalidWalletID guards the WalletID supplied via the
+// URL path: a value spanning multiple account segments or carrying Numscript
+// tokens must be rejected before any ledger transaction is created.
+func TestWalletsCreditRejectsInvalidWalletID(t *testing.T) {
+	t.Parallel()
+
+	for _, walletID := range []string{
+		"wallet:injected",
+		"wallet\n@world",
+	} {
+		walletID := walletID
+		t.Run(walletID, func(t *testing.T) {
+			t.Parallel()
+
+			req := newRequest(t, http.MethodPost, "/wallets/"+url.PathEscape(walletID)+"/credit", wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+			})
+			rec := httptest.NewRecorder()
+
+			var (
+				testEnv            *testEnv
+				createdTransaction bool
+			)
+			testEnv = newTestEnv(
+				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+					createdTransaction = true
+					return &shared.V2Transaction{}, nil
+				}),
+			)
+			testEnv.Router().ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+			errorResponse := readErrorResponse(t, rec)
+			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+			require.False(t, createdTransaction)
 		})
 	}
 }
