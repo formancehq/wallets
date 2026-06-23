@@ -184,13 +184,25 @@ var walletDebitTestCases = []testCase{
 		},
 	},
 	{
-		name: "with dash in balance source",
+		// Dashes are allowed in balance names (still alias under
+		// Address.String(); see chart.go), so a dashed balance source resolves.
+		name: "with dashed balance source",
 		request: wallet.DebitRequest{
 			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
 			Balances: []string{"foo-bar"},
 		},
-		expectedStatusCode: http.StatusBadRequest,
-		expectedErrorCode:  string(sdkerrors.SchemasErrorCodeValidation),
+		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
+			return wallet.PostTransaction{
+				Script: &shared.V2PostTransactionScript{
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"))),
+					Vars: map[string]string{
+						"destination": "world",
+						"amount":      "USD 100",
+					},
+				},
+				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
+			}
+		},
 	},
 	{
 		name: "with wildcard balance as source",
@@ -328,6 +340,15 @@ func TestWalletsDebit(t *testing.T) {
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name: "foo-bar",
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
 					default:
 						return nil, errors.New("unexpected account: " + account)
 					}
@@ -447,8 +468,12 @@ func TestWalletsDebitRejectsInvalidBalanceMetadata(t *testing.T) {
 			return &wallet.AccountWithVolumesAndBalances{
 				Account: wallet.Account{
 					Address: account,
+					// A stored balance name carrying Numscript tokens (e.g. tampered
+					// ledger metadata) must be rejected on read-back before any
+					// transaction is built. Dashes alone are valid, so use a real
+					// injection vector here.
 					Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-						Name: "foo-bar",
+						Name: "injected\n@world",
 					}.LedgerMetadata(walletID)),
 				},
 			}, nil

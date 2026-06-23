@@ -126,15 +126,29 @@ func TestWalletsCredit(t *testing.T) {
 			expectedErrorCode:  ErrorCodeValidation,
 		},
 		{
-			name: "with wallet source containing dash in balance",
+			// Dashes are allowed in balance names (they still alias under
+			// Address.String(); see chart.go), so a dashed wallet source resolves.
+			name: "with dashed balance in wallet source",
 			request: wallet.CreditRequest{
 				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
 				Sources: []wallet.Subject{
 					wallet.NewWalletSubject("emitter1", "foo-bar"),
 				},
 			},
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrorCode:  ErrorCodeValidation,
+			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
+				return wallet.PostTransaction{
+					Script: &shared.V2PostTransactionScript{
+						Plain: pointer.For(wallet.BuildCreditWalletScript(
+							testEnv.Chart().GetBalanceAccount("emitter1", "foo-bar"),
+						)),
+						Vars: map[string]string{
+							"destination": testEnv.Chart().GetMainBalanceAccount(walletID),
+							"amount":      "USD 100",
+						},
+					},
+					Metadata: wallet.TransactionMetadata(nil),
+				}
+			},
 		},
 		{
 			name: "with wallet source containing numscript injection in identifier",
@@ -148,13 +162,25 @@ func TestWalletsCredit(t *testing.T) {
 			expectedErrorCode:  ErrorCodeValidation,
 		},
 		{
-			name: "with dash in destination balance",
+			// Dashes are allowed in balance names (still alias under
+			// Address.String(); see chart.go), so a dashed destination resolves.
+			name: "with dashed destination balance",
 			request: wallet.CreditRequest{
 				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
 				Balance: "foo-bar",
 			},
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrorCode:  ErrorCodeValidation,
+			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
+				return wallet.PostTransaction{
+					Script: &shared.V2PostTransactionScript{
+						Plain: pointer.For(wallet.BuildCreditWalletScript("world")),
+						Vars: map[string]string{
+							"destination": testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"),
+							"amount":      "USD 100",
+						},
+					},
+					Metadata: wallet.TransactionMetadata(nil),
+				}
+			},
 		},
 		{
 			name: "with secondary balance as destination",
@@ -212,6 +238,7 @@ func TestWalletsCredit(t *testing.T) {
 			t.Parallel()
 			walletID := uuid.NewString()
 			secondaryBalance := wallet.NewBalance("secondary", nil)
+			dashedBalance := wallet.NewBalance("foo-bar", nil)
 
 			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/credit", testCase.request)
 			rec := httptest.NewRecorder()
@@ -227,13 +254,15 @@ func TestWalletsCredit(t *testing.T) {
 					return &testCase.postTransactionResult, nil
 				}),
 				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
-					if testEnv.Chart().GetBalanceAccount(walletID, secondaryBalance.Name) == account {
-						return &wallet.AccountWithVolumesAndBalances{
-							Account: wallet.Account{
-								Address:  account,
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(secondaryBalance.LedgerMetadata(walletID)),
-							},
-						}, nil
+					for _, b := range []wallet.Balance{secondaryBalance, dashedBalance} {
+						if testEnv.Chart().GetBalanceAccount(walletID, b.Name) == account {
+							return &wallet.AccountWithVolumesAndBalances{
+								Account: wallet.Account{
+									Address:  account,
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(b.LedgerMetadata(walletID)),
+								},
+							}, nil
+						}
 					}
 					return &wallet.AccountWithVolumesAndBalances{
 						Account: wallet.Account{

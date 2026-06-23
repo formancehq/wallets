@@ -58,12 +58,12 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 		expectedErrorCode:  ErrorCodeValidation,
 	},
 	{
+		// Dashes are allowed: dashed/UUID balance names must keep working.
+		// (They still alias under Address.String(); see chart.go.)
 		name: "with name containing a dash",
 		request: wallet.CreateBalance{
 			Name: "foo-bar",
 		},
-		expectedStatusCode: http.StatusBadRequest,
-		expectedErrorCode:  ErrorCodeValidation,
 	},
 	{
 		name: "with reserved name",
