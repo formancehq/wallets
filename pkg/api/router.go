@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
+	"github.com/formancehq/go-libs/v5/pkg/audit"
 	"github.com/formancehq/go-libs/v5/pkg/audit/httpaudit"
 
 	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
@@ -66,6 +67,7 @@ func NewRouter(
 	serviceInfo sharedapi.ServiceInfo,
 	authenticator jwt.Authenticator,
 	publisher message.Publisher,
+	auditConfig audit.Config,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -77,7 +79,7 @@ func NewRouter(
 		})
 	})
 	r.Use(limitRequestBody)
-	r.Use(httpaudit.Middleware(publisher, "audit-events", "wallets", nil))
+	r.Use(httpaudit.Middleware(publisher, "audit-events", "wallets", nil, httpaudit.WithConfig(auditConfig)))
 
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", sharedapi.InfoHandler(serviceInfo))

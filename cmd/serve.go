@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/formancehq/go-libs/v5/pkg/audit"
 	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
 	"github.com/formancehq/go-libs/v5/pkg/authn/licence"
 	"github.com/formancehq/go-libs/v5/pkg/fx/authnfx"
@@ -43,8 +44,10 @@ func newServeCommand() *cobra.Command {
 			ledgerName, _ := cmd.Flags().GetString(LedgerNameFlag)
 			accountPrefix, _ := cmd.Flags().GetString(AccountPrefixFlag)
 			listen, _ := cmd.Flags().GetString(ListenFlag)
+			auditEnabled, _ := cmd.Flags().GetBool(audit.AuditEnabledFlag)
 
 			options := []fx.Option{
+				fx.Supply(audit.Config{Enabled: auditEnabled}),
 				fx.Provide(func() (*http.Client, error) {
 					return GetHTTPClient(
 						cmd.Context(),
@@ -79,6 +82,7 @@ func newServeCommand() *cobra.Command {
 	cmd.Flags().String(LedgerNameFlag, "wallets-002", "Target ledger")
 	cmd.Flags().String(AccountPrefixFlag, "", "Account prefix flag")
 	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
+	cmd.Flags().Bool(audit.AuditEnabledFlag, true, "Enable HTTP audit")
 
 	service.AddFlags(cmd.Flags())
 	licence.AddFlags(cmd.Flags())
