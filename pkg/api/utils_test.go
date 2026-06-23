@@ -16,6 +16,7 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
+	"github.com/formancehq/go-libs/v5/pkg/audit"
 	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
 	"github.com/formancehq/go-libs/v5/pkg/messaging/publish"
@@ -158,7 +159,7 @@ func newTestEnv(opts ...Option) *testEnv {
 	ret.router = NewRouter(manager, &sharedhealth.HealthController{}, sharedapi.ServiceInfo{
 		Version: "latest",
 		Debug:   testing.Verbose(),
-	}, jwt.NewNoAuth(), publish.InMemory())
+	}, jwt.NewNoAuth(), publish.InMemory(), audit.Config{Enabled: true})
 	return ret
 }
 
