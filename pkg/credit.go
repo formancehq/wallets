@@ -48,6 +48,20 @@ type Credit struct {
 	WalletID string `json:"walletID"`
 }
 
+// Validate centralizes all credit validation, including the WalletID, so it
+// cannot be bypassed by callers that only invoke Validate() (mirrors
+// Debit.Validate). The WalletID is used as a chart segment, so it must be a
+// single anchored segment with no ':' separator or Numscript metacharacters.
+func (c Credit) Validate() error {
+	if err := c.CreditRequest.Validate(); err != nil {
+		return err
+	}
+	if !accountSegmentRegexp.MatchString(c.WalletID) {
+		return newErrInvalidAccountName(c.WalletID)
+	}
+	return nil
+}
+
 func (c Credit) destinationAccount(chart *Chart) string {
 	if c.Balance == "" {
 		return chart.GetMainBalanceAccount(c.WalletID)

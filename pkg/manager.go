@@ -287,10 +287,6 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 		return err
 	}
 
-	if !accountSegmentRegexp.MatchString(credit.WalletID) {
-		return newErrInvalidAccountName(credit.WalletID)
-	}
-
 	if credit.Balance != "" {
 		if _, err := m.GetBalance(ctx, credit.WalletID, credit.Balance); err != nil {
 			return err
