@@ -475,6 +475,24 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 	// same account instead of creating a duplicate wallet.
 	if ik != "" {
 		wallet.ID = deterministicID("wallet", ik)
+
+		// NewWallet stamps CreatedAt with time.Now(), which LedgerMetadata()
+		// serialises into the request body. The ledger hashes that body to
+		// enforce idempotency, so re-sending it on a retry — with a later
+		// CreatedAt — is rejected as a conflict rather than replayed. If a prior
+		// attempt already created the wallet, replay the persisted one instead
+		// of writing a fresh, divergent body.
+		existing, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID))
+		switch {
+		case errors.Is(err, ErrAccountNotFound):
+			// First attempt for this key: fall through to create below.
+		case err == nil:
+			if IsPrimary(existing) {
+				return Ptr(WithBalancesFromAccount(m.ledgerName, existing)), nil
+			}
+		default:
+			return nil, errors.Wrap(err, "getting account")
+		}
 	}
 
 	if err := m.client.AddMetadataToAccount(

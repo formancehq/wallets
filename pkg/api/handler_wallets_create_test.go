@@ -63,13 +63,28 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 	request := wallet.CreateRequest{Name: "savings-account"}
 
 	var (
-		forwardedKeys    []string
-		targetedAccounts []string
+		created         bool
+		forwardedKeys   []string
+		targetAccount   string
+		appliedMetadata map[string]string
 	)
 	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if created {
+				return &wallet.AccountWithVolumesAndBalances{
+					Account: wallet.Account{
+						Address:  account,
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
+					},
+				}, nil
+			}
+			return nil, wallet.ErrAccountNotFound
+		}),
 		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
 			forwardedKeys = append(forwardedKeys, ik)
-			targetedAccounts = append(targetedAccounts, a)
+			targetAccount = a
+			appliedMetadata = m
+			created = true
 			return nil
 		}),
 	)
@@ -88,10 +103,13 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 	first := create()
 	second := create()
 
-	// The Idempotency-Key is forwarded to the ledger and the derived wallet ID
-	// (hence the targeted account) is stable across retries, so the retry hits
-	// the same account instead of creating a duplicate wallet.
-	require.Equal(t, []string{idempotencyKey, idempotencyKey}, forwardedKeys)
+	// The first create writes once (forwarding the key); the retry under the
+	// same key finds the persisted wallet and replays it rather than re-sending
+	// a body whose CreatedAt would have drifted to time.Now() and been rejected
+	// by the ledger's body-hash idempotency as a conflict.
+	require.Equal(t, []string{idempotencyKey}, forwardedKeys)
+	require.Equal(t, targetAccount, testEnv.Chart().GetMainBalanceAccount(first.ID))
 	require.Equal(t, first.ID, second.ID)
-	require.Equal(t, targetedAccounts[0], targetedAccounts[1])
+	require.Equal(t, first.Name, second.Name)
+	require.Equal(t, first.CreatedAt, second.CreatedAt)
 }
