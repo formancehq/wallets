@@ -497,21 +497,18 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 		return existing, nil
 	}
 
-	err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, wallet.LedgerMetadata())
-	switch {
-	case errors.Is(err, ErrIdempotencyConflict):
-		// A concurrent attempt committed first under this key before our
-		// existence check saw it (its body carried a different CreatedAt, so the
-		// ledger rejected ours). Replay the wallet that attempt created.
-		existing, gerr := m.existingWallet(ctx, wallet.ID)
-		if gerr != nil {
+	if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, wallet.LedgerMetadata()); err != nil {
+		// A concurrent attempt may have created the wallet between our existence
+		// check and this write. The ledger then rejects our body because its
+		// CreatedAt differs — reported as a validation or a conflict error
+		// depending on timing — so we don't classify the error: re-check
+		// existence, replay the persisted wallet if it now exists, and otherwise
+		// surface the original error.
+		if existing, gerr := m.existingWallet(ctx, wallet.ID); gerr != nil {
 			return nil, gerr
+		} else if existing != nil {
+			return existing, nil
 		}
-		if existing == nil {
-			return nil, errors.Wrap(err, "adding metadata to account")
-		}
-		return existing, nil
-	case err != nil:
 		return nil, errors.Wrap(err, "adding metadata to account")
 	}
 

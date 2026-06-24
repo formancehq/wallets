@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -114,7 +115,7 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 	require.Equal(t, first.CreatedAt, second.CreatedAt)
 }
 
-func TestWalletsCreateConcurrentReplaysViaLedgerConflict(t *testing.T) {
+func TestWalletsCreateConcurrentReplaysOnWriteRejection(t *testing.T) {
 	t.Parallel()
 
 	const idempotencyKey = "create-wallet-concurrent-key"
@@ -122,10 +123,11 @@ func TestWalletsCreateConcurrentReplaysViaLedgerConflict(t *testing.T) {
 
 	// Model two concurrent creates under the same key: both existence checks
 	// miss (the account is not yet visible), so both reach the ledger. The first
-	// commits; the second submits a body with a different CreatedAt and the
-	// ledger rejects it as an idempotency conflict. The manager then reloads and
-	// replays the persisted wallet rather than surfacing the conflict, because
-	// the request was in fact identical.
+	// commits; the second submits a body with a different CreatedAt, which the
+	// ledger rejects. The rejection may surface as VALIDATION (key replayed with
+	// a different body hash) or CONFLICT (simultaneous insert), so the manager
+	// does not classify it: it re-checks existence and replays the persisted
+	// wallet because the request was in fact identical.
 	var (
 		getCalls        int
 		addCalls        int
@@ -151,7 +153,9 @@ func TestWalletsCreateConcurrentReplaysViaLedgerConflict(t *testing.T) {
 				appliedMetadata = m
 				return nil
 			}
-			return wallet.ErrIdempotencyConflict
+			// The ledger's body-hash mismatch under a reused key surfaces as a
+			// VALIDATION error (not CONFLICT) in the common case.
+			return errors.New("ledger: idempotency key reused with a different request (VALIDATION)")
 		}),
 	)
 
@@ -169,8 +173,8 @@ func TestWalletsCreateConcurrentReplaysViaLedgerConflict(t *testing.T) {
 	first := create()
 	second := create()
 
-	// Both attempts tried to write (the second hit the ledger conflict), and the
-	// second resolved to a replay of the persisted wallet.
+	// Both attempts tried to write (the second was rejected by the ledger), and
+	// the second resolved to a replay of the persisted wallet rather than a 500.
 	require.Equal(t, 2, addCalls)
 	require.Equal(t, first.ID, second.ID)
 	require.Equal(t, first.Name, second.Name)
