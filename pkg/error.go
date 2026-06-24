@@ -25,6 +25,11 @@ var (
 	// might resolve to a different body and be rejected as a conflict. We reject
 	// it up front rather than offer a false idempotency guarantee.
 	ErrNonIdempotentDebit = errors.New("debit cannot be made idempotent: wildcard or expiring balances are not allowed with an idempotency key")
+	// ErrIdempotencyConflict is returned when an Idempotency-Key is reused with a
+	// different request body. The ledger hashes the body to enforce idempotency
+	// and rejects such reuse with a conflict; we surface it rather than silently
+	// returning the originally created resource.
+	ErrIdempotencyConflict = errors.New("idempotency key reused with a different request")
 )
 
 type GenericOpenAPIError interface {

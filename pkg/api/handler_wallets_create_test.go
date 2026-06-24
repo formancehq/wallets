@@ -113,3 +113,115 @@ func TestWalletsCreateIdempotency(t *testing.T) {
 	require.Equal(t, first.Name, second.Name)
 	require.Equal(t, first.CreatedAt, second.CreatedAt)
 }
+
+func TestWalletsCreateIdempotencyKeyConflict(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-wallet-conflict-key"
+
+	var (
+		created         bool
+		addCalls        int
+		appliedMetadata map[string]string
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if created {
+				return &wallet.AccountWithVolumesAndBalances{
+					Account: wallet.Account{
+						Address:  account,
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
+					},
+				}, nil
+			}
+			return nil, wallet.ErrAccountNotFound
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
+			addCalls++
+			appliedMetadata = m
+			created = true
+			return nil
+		}),
+	)
+
+	create := func(name string) *httptest.ResponseRecorder {
+		req := newRequest(t, http.MethodPost, "/wallets", wallet.CreateRequest{Name: name})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		return rec
+	}
+
+	require.Equal(t, http.StatusCreated, create("first-name").Result().StatusCode)
+
+	// Reusing the same key with a different body must not silently replay the
+	// original wallet: it is reported as a 409 conflict, and no second write is
+	// sent to the ledger.
+	second := create("different-name")
+	require.Equal(t, http.StatusConflict, second.Result().StatusCode)
+	require.Equal(t, ErrorCodeConflict, readErrorResponse(t, second).ErrorCode)
+	require.Equal(t, 1, addCalls)
+}
+
+func TestWalletsCreateConcurrentReplaysViaLedgerConflict(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-wallet-concurrent-key"
+	request := wallet.CreateRequest{Name: "savings-account"}
+
+	// Model two concurrent creates under the same key: both existence checks
+	// miss (the account is not yet visible), so both reach the ledger. The first
+	// commits; the second submits a body with a different CreatedAt and the
+	// ledger rejects it as an idempotency conflict. The manager then reloads and
+	// replays the persisted wallet rather than surfacing the conflict, because
+	// the request was in fact identical.
+	var (
+		getCalls        int
+		addCalls        int
+		appliedMetadata map[string]string
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			getCalls++
+			// The first two reads are the racing pre-write existence checks.
+			if getCalls <= 2 {
+				return nil, wallet.ErrAccountNotFound
+			}
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address:  account,
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
+				},
+			}, nil
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
+			addCalls++
+			if addCalls == 1 {
+				appliedMetadata = m
+				return nil
+			}
+			return wallet.ErrIdempotencyConflict
+		}),
+	)
+
+	create := func() *wallet.Wallet {
+		req := newRequest(t, http.MethodPost, "/wallets", request)
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		w := &wallet.Wallet{}
+		readResponse(t, rec, w)
+		return w
+	}
+
+	first := create()
+	second := create()
+
+	// Both attempts tried to write (the second hit the ledger conflict), and the
+	// second resolved to a replay of the persisted wallet.
+	require.Equal(t, 2, addCalls)
+	require.Equal(t, first.ID, second.ID)
+	require.Equal(t, first.Name, second.Name)
+	require.Equal(t, first.CreatedAt, second.CreatedAt)
+}

@@ -232,6 +232,12 @@ func (d DefaultLedger) AddMetadataToAccount(ctx context.Context, ledger, account
 		IdempotencyKey: pointer.For(ik),
 	})
 	if err != nil {
+		// The ledger rejects an Idempotency-Key reused with a different body
+		// hash as a CONFLICT. Translate it so callers can replay or report it.
+		var v2 *sdkerrors.V2ErrorResponse
+		if errors.As(err, &v2) && v2.ErrorCode == shared.V2ErrorsEnumConflict {
+			return errors.Wrap(ErrIdempotencyConflict, err.Error())
+		}
 		return err
 	}
 	return nil
