@@ -138,16 +138,6 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		// Derive the hold ID from the Idempotency-Key so a retry produces an
 		// identical ledger request (the ledger hashes the body to enforce
 		// idempotency) and returns the same hold.
-		//
-		// NOTE: this stabilises the hold ID, but not necessarily the whole
-		// ledger body. The source set below is resolved against live ledger
-		// state and filtered with time.Now(): a pending debit using
-		// balances:["*"] or a named balance that expires between two attempts
-		// can still yield a different script on retry and be rejected. Full
-		// idempotency therefore holds only for an explicit, non-expiring source
-		// set; the wildcard/expiry case needs deterministic source resolution
-		// (e.g. persisting the resolved request per key) and is tracked
-		// separately.
 		if ik != "" {
 			hold.ID = deterministicID(ik)
 		}
@@ -169,6 +159,12 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 			Name: MainBalance,
 		}}
 	case len(debit.Balances) == 1 && debit.Balances[0] == "*":
+		// A wildcard source set is resolved from live ledger state, so it can
+		// differ between two attempts. We cannot guarantee an identical ledger
+		// body on retry, so refuse to pretend the call is idempotent.
+		if ik != "" {
+			return nil, ErrNonIdempotentDebit
+		}
 		balances, err = fetchAndMapAllAccounts[Balance](ctx, m, BalancesMetadataFilter(debit.WalletID), false, BalanceFromAccount)
 		if err != nil {
 			return nil, err
@@ -191,8 +187,17 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 	var sources []string
 	// Filter expired and generate sources
 	for _, balance := range balances {
-		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() && balance.ExpiresAt.Before(time.Now()) {
-			continue
+		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() {
+			if balance.ExpiresAt.Before(time.Now()) {
+				continue
+			}
+			// The balance is live now but will expire: crossing that boundary
+			// between two attempts would drop it from the source set and change
+			// the ledger body. We cannot honour idempotency in that case, so
+			// reject rather than offer a false guarantee.
+			if ik != "" {
+				return nil, ErrNonIdempotentDebit
+			}
 		}
 		sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance.Name))
 	}

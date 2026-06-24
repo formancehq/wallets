@@ -18,6 +18,13 @@ var (
 	ErrInvalidBalanceSpecified = errors.New("invalid balance specified")
 	ErrNegativeAmount          = errors.New("negative amount provided")
 	ErrValidation              = errors.New("validation error")
+	// ErrNonIdempotentDebit is returned when a debit carries an Idempotency-Key
+	// but its source set cannot be resolved deterministically (wildcard sources
+	// or sources with an expiry). The ledger enforces idempotency by hashing the
+	// whole request body, so such a debit could not be safely replayed: a retry
+	// might resolve to a different body and be rejected as a conflict. We reject
+	// it up front rather than offer a false idempotency guarantee.
+	ErrNonIdempotentDebit = errors.New("debit cannot be made idempotent: wildcard or expiring balances are not allowed with an idempotency key")
 )
 
 type GenericOpenAPIError interface {

@@ -468,63 +468,80 @@ func TestWalletsDebitPendingIdempotency(t *testing.T) {
 	require.Equal(t, bodies[0], bodies[1])
 }
 
-func TestWalletsDebitPendingIdempotencyWithExpiringBalance(t *testing.T) {
+func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T) {
 	t.Parallel()
 
-	const idempotencyKey = "debit-pending-expiring-key-1"
-	walletID := uuid.NewString()
+	// A debit body resolved from live ledger state cannot be replayed
+	// byte-for-byte: an expiring balance can cross its expiry boundary and a
+	// wildcard set can change between attempts, so the ledger (which hashes the
+	// body to enforce idempotency) would reject the retry as a conflict. We
+	// therefore refuse such debits up front when an Idempotency-Key is present
+	// rather than offer a false idempotency guarantee.
+	for _, tc := range []struct {
+		name     string
+		balances []string
+	}{
+		{name: "expiring balance", balances: []string{"promo"}},
+		{name: "wildcard balance", balances: []string{"*"}},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-	var (
-		getAccountCalls int
-		bodies          []wallet.PostTransaction
-		testEnv         *testEnv
-	)
-	testEnv = newTestEnv(
-		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
-			require.Equal(t, testEnv.LedgerName(), ledger)
-			require.Equal(t, testEnv.Chart().GetBalanceAccount(walletID, "promo"), account)
+			const idempotencyKey = "debit-non-replayable-key-1"
+			walletID := uuid.NewString()
 
-			getAccountCalls++
-			expiresAt := time.Now().Add(time.Hour)
-			if getAccountCalls > 1 {
-				expiresAt = time.Now().Add(-time.Hour)
-			}
+			var (
+				chart   *wallet.Chart
+				created bool
+			)
+			testEnv := newTestEnv(
+				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+					return &wallet.AccountWithVolumesAndBalances{
+						Account: wallet.Account{
+							Address: account,
+							Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+								Name:      "promo",
+								ExpiresAt: ptr(time.Now().Add(time.Hour)),
+							}.LedgerMetadata(walletID)),
+						},
+					}, nil
+				}),
+				WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
+					return &wallet.AccountsCursorResponseCursor{
+						Data: []wallet.AccountWithVolumesAndBalances{
+							{
+								Account: wallet.Account{
+									Address: chart.GetBalanceAccount(walletID, "main"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name: "main",
+									}.LedgerMetadata(walletID)),
+								},
+							},
+						},
+					}, nil
+				}),
+				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+					created = true
+					//nolint:nilnil
+					return nil, nil
+				}),
+			)
+			chart = testEnv.Chart()
 
-			return &wallet.AccountWithVolumesAndBalances{
-				Account: wallet.Account{
-					Address: account,
-					Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-						Name:      "promo",
-						ExpiresAt: ptr(expiresAt),
-					}.LedgerMetadata(walletID)),
-				},
-			}, nil
-		}),
-		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
-			require.Equal(t, idempotencyKey, ik)
-			bodies = append(bodies, p)
-			//nolint:nilnil
-			return nil, nil
-		}),
-	)
+			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+				Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+				Pending:  true,
+				Balances: tc.balances,
+			})
+			req.Header.Set("Idempotency-Key", idempotencyKey)
+			rec := httptest.NewRecorder()
+			testEnv.Router().ServeHTTP(rec, req)
 
-	debit := func() {
-		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
-			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
-			Pending:  true,
-			Balances: []string{"promo"},
+			require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+			errorResponse := readErrorResponse(t, rec)
+			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+			require.False(t, created, "no transaction should be submitted to the ledger")
 		})
-		req.Header.Set("Idempotency-Key", idempotencyKey)
-		rec := httptest.NewRecorder()
-		testEnv.Router().ServeHTTP(rec, req)
-		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
 	}
-
-	// This covers the limitation documented in Manager.Debit: source
-	// resolution still depends on live ledger state and time.Now(), so crossing
-	// an expiry boundary changes the ledger body even with the same key.
-	debit()
-	debit()
-	require.Len(t, bodies, 2)
-	require.NotEqual(t, bodies[0], bodies[1])
 }
