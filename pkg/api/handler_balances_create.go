@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/render"
 )
@@ -17,7 +18,7 @@ func (m *MainHandler) createBalanceHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	balance, err := m.manager.CreateBalance(r.Context(), data)
+	balance, err := m.manager.CreateBalance(r.Context(), api.IdempotencyKeyFromRequest(r), data)
 	if err != nil {
 		switch {
 		case errors.Is(err, wallet.ErrInvalidBalanceName):
