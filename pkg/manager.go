@@ -21,9 +21,13 @@ import (
 // wallet/hold rather than creating a duplicate.
 var idempotencyNamespace = uuid.MustParse("0b6f2d6e-4e2a-4f3a-9f0a-2b9c1d8e7a31")
 
-// deterministicID derives a stable UUID from an Idempotency-Key.
-func deterministicID(ik string) string {
-	return uuid.NewSHA1(idempotencyNamespace, []byte(ik)).String()
+// deterministicID derives a stable UUID from an Idempotency-Key, scoped by a
+// resource kind ("wallet", "hold", ...). The kind discriminator keeps the
+// derived IDs of different resource types disjoint, so reusing the same
+// Idempotency-Key across, say, a wallet creation and a pending debit cannot
+// collide on the same UUID.
+func deterministicID(kind, ik string) string {
+	return uuid.NewSHA1(idempotencyNamespace, []byte(kind+":"+ik)).String()
 }
 
 type ListResponse[T any] struct {
@@ -139,7 +143,7 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		// identical ledger request (the ledger hashes the body to enforce
 		// idempotency) and returns the same hold.
 		if ik != "" {
-			hold.ID = deterministicID(ik)
+			hold.ID = deterministicID("hold", ik)
 		}
 		holdAccount := m.chart.GetHoldAccount(hold.ID)
 		metadata = map[string]map[string]string{
@@ -470,7 +474,7 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 	// Derive the wallet ID from the Idempotency-Key so a retry targets the
 	// same account instead of creating a duplicate wallet.
 	if ik != "" {
-		wallet.ID = deterministicID(ik)
+		wallet.ID = deterministicID("wallet", ik)
 	}
 
 	if err := m.client.AddMetadataToAccount(
