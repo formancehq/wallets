@@ -39,12 +39,14 @@ func badRequest(w http.ResponseWriter, code string, err error) {
 }
 
 func internalError(w http.ResponseWriter, r *http.Request, err error) {
+	// Log the full error server-side, but never echo it to the client:
+	// wrapped errors leak ledger URLs, account addresses and SDK internals.
 	sharedlogging.FromContext(r.Context()).Error(err)
 
 	w.WriteHeader(http.StatusInternalServerError)
 	if err := json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
 		ErrorCode:    "INTERNAL_ERROR",
-		ErrorMessage: err.Error(),
+		ErrorMessage: "internal server error",
 	}); err != nil {
 		panic(err)
 	}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	wallet "github.com/formancehq/wallets/pkg"
@@ -20,6 +21,10 @@ func (m *MainHandler) listWalletsHandler(w http.ResponseWriter, r *http.Request)
 	}
 	response, err := m.manager.ListWallets(r.Context(), query)
 	if err != nil {
+		if errors.Is(err, wallet.ErrValidation) {
+			badRequest(w, ErrorCodeValidation, err)
+			return
+		}
 		internalError(w, r, err)
 		return
 	}

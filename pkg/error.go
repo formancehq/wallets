@@ -17,6 +17,7 @@ var (
 	ErrBalanceNotExists        = errors.New("balance not exists")
 	ErrInvalidBalanceSpecified = errors.New("invalid balance specified")
 	ErrNegativeAmount          = errors.New("negative amount provided")
+	ErrValidation              = errors.New("validation error")
 )
 
 type GenericOpenAPIError interface {
