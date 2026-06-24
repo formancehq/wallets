@@ -3,7 +3,6 @@ package wallet
 import (
 	"context"
 	"fmt"
-	"maps"
 	"math/big"
 	"slices"
 	"sort"
@@ -488,14 +487,14 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 
 	// NewWallet stamps CreatedAt with time.Now(), which LedgerMetadata()
 	// serialises into the ledger body; the ledger hashes that body to enforce
-	// idempotency, so a retry cannot re-send it verbatim. Resolve idempotency
-	// against the persisted wallet instead: if it already exists, replay it when
-	// the request matches or report a conflict when the same key is reused with
-	// a different body.
+	// idempotency, so a retry cannot re-send it verbatim. Replay the persisted
+	// wallet instead when one already exists for this key — the idempotency
+	// guarantee is "same key, same result", so we return the original wallet
+	// regardless of the retried body.
 	if existing, err := m.existingWallet(ctx, wallet.ID); err != nil {
 		return nil, err
 	} else if existing != nil {
-		return replayOrConflict(existing, &wallet)
+		return existing, nil
 	}
 
 	err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, wallet.LedgerMetadata())
@@ -503,16 +502,15 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 	case errors.Is(err, ErrIdempotencyConflict):
 		// A concurrent attempt committed first under this key before our
 		// existence check saw it (its body carried a different CreatedAt, so the
-		// ledger rejected ours as a conflict). Reload and either replay the
-		// persisted wallet or surface the conflict if the request truly differs.
+		// ledger rejected ours). Replay the wallet that attempt created.
 		existing, gerr := m.existingWallet(ctx, wallet.ID)
 		if gerr != nil {
 			return nil, gerr
 		}
 		if existing == nil {
-			return nil, ErrIdempotencyConflict
+			return nil, errors.Wrap(err, "adding metadata to account")
 		}
-		return replayOrConflict(existing, &wallet)
+		return existing, nil
 	case err != nil:
 		return nil, errors.Wrap(err, "adding metadata to account")
 	}
@@ -535,18 +533,6 @@ func (m *Manager) existingWallet(ctx context.Context, id string) (*Wallet, error
 		w := WithBalancesFromAccount(m.ledgerName, account)
 		return &w, nil
 	}
-}
-
-// replayOrConflict returns the persisted wallet when the incoming request is the
-// same (an idempotent replay), or ErrIdempotencyConflict when the same key was
-// reused with a different name/metadata. CreatedAt is intentionally excluded
-// from the comparison: it legitimately differs between attempts and must not be
-// treated as a conflicting change.
-func replayOrConflict(existing, requested *Wallet) (*Wallet, error) {
-	if existing.Name != requested.Name || !maps.Equal(existing.Metadata, requested.Metadata) {
-		return nil, ErrIdempotencyConflict
-	}
-	return existing, nil
 }
 
 func (m *Manager) UpdateWallet(ctx context.Context, id, ik string, data *PatchRequest) error {

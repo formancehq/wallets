@@ -17,7 +17,6 @@ const (
 	ErrorCodeInsufficientFund = "INSUFFICIENT_FUND"
 	ErrorCodeValidation       = "VALIDATION"
 	ErrorCodeClosedHold       = "HOLD_CLOSED"
-	ErrorCodeConflict         = "CONFLICT"
 )
 
 func (m *MainHandler) creditWalletHandler(w http.ResponseWriter, r *http.Request) {
