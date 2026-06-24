@@ -288,7 +288,7 @@ func TestWalletsDebit(t *testing.T) {
 								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon1",
-									ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+									ExpiresAt: pointer.For(time.Now().Add(5 * time.Second)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
@@ -308,7 +308,7 @@ func TestWalletsDebit(t *testing.T) {
 								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon3",
-									ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+									ExpiresAt: pointer.For(time.Now().Add(-time.Minute)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
@@ -354,7 +354,7 @@ func TestWalletsDebit(t *testing.T) {
 									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon1",
-										ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+										ExpiresAt: pointer.For(time.Now().Add(5 * time.Second)),
 									}.LedgerMetadata(walletID)),
 								},
 							},
@@ -363,7 +363,7 @@ func TestWalletsDebit(t *testing.T) {
 									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon3",
-										ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+										ExpiresAt: pointer.For(time.Now().Add(-time.Minute)),
 									}.LedgerMetadata(walletID)),
 								},
 							},

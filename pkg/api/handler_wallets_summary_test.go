@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/time"
-
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -23,8 +23,8 @@ func TestWalletSummary(t *testing.T) {
 	req := newRequest(t, http.MethodGet, "/wallets/"+w.ID+"/summary", nil)
 	rec := httptest.NewRecorder()
 
-	coupon1Balance := wallet.NewBalance("coupon1", ptr(time.Now().Add(-time.Minute).Round(time.Second).UTC()))
-	coupon2Balance := wallet.NewBalance("coupon2", ptr(time.Now().Add(time.Minute).Round(time.Second).UTC()))
+	coupon1Balance := wallet.NewBalance("coupon1", pointer.For(time.Now().Add(-time.Minute).Round(time.Second).UTC()))
+	coupon2Balance := wallet.NewBalance("coupon2", pointer.For(time.Now().Add(time.Minute).Round(time.Second).UTC()))
 	hold1 := wallet.NewDebitHold(w.ID, wallet.NewLedgerAccountSubject("bank"), "USD", "", metadata.Metadata{})
 	hold2 := wallet.NewDebitHold(w.ID, wallet.NewLedgerAccountSubject("bank"), "USD", "", metadata.Metadata{})
 

@@ -6,16 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
 
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
-
-func ptr[V any](v V) *V {
-	return &v
-}
 
 type balanceCreateTestCase struct {
 	name               string
@@ -51,7 +48,7 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 		name: "with expiration",
 		request: wallet.CreateBalance{
 			Name:      wallet.MainBalance,
-			ExpiresAt: ptr(time.Now().Add(10 * time.Second)),
+			ExpiresAt: pointer.For(time.Now().Add(10 * time.Second)),
 		},
 		expectedStatusCode: http.StatusBadRequest,
 		expectedErrorCode:  ErrorCodeValidation,
