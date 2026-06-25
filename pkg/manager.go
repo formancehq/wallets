@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"slices"
@@ -559,22 +560,19 @@ func replayOrConflict(ledger string, existing *AccountWithVolumesAndBalances, fi
 // fields of a create-wallet request (name and custom metadata). It is stored
 // with the wallet so retries can be distinguished from key reuse with a
 // different body, independently of any later metadata changes.
+//
+// The fields are hashed as canonical JSON (encoding/json sorts map keys) rather
+// than concatenated with a separator: quoting and escaping make the encoding
+// unambiguous, so distinct requests cannot collide via separator bytes embedded
+// in a name or metadata value.
 func walletCreateRequestFingerprint(name string, md metadata.Metadata) string {
-	keys := make([]string, 0, len(md))
-	for k := range md {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	payload, _ := json.Marshal(struct {
+		Name     string            `json:"name"`
+		Metadata metadata.Metadata `json:"metadata"`
+	}{Name: name, Metadata: md})
 
-	h := sha256.New()
-	_, _ = h.Write([]byte(name))
-	for _, k := range keys {
-		_, _ = h.Write([]byte{0})
-		_, _ = h.Write([]byte(k))
-		_, _ = h.Write([]byte{0})
-		_, _ = h.Write([]byte(md[k]))
-	}
-	return hex.EncodeToString(h.Sum(nil))
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:])
 }
 
 func (m *Manager) UpdateWallet(ctx context.Context, id, ik string, data *PatchRequest) error {
