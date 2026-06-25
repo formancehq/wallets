@@ -23,6 +23,12 @@ const (
 	MetadataKeyBalancePriority       = "wallets/balances/priority"
 	MetadataKeyWalletBalance         = "wallets/balances"
 	MetadataKeyCreatedAt             = "wallets/createdAt"
+	// MetadataKeyWalletCreateRequestHash stores an immutable fingerprint of the
+	// original create-wallet request (name + custom metadata) when an
+	// Idempotency-Key is used. Retries are matched against this fingerprint
+	// rather than the wallet's live metadata, so UpdateWallet cannot change the
+	// idempotency replay/conflict outcome.
+	MetadataKeyWalletCreateRequestHash = "wallets/createRequestHash"
 
 	PrimaryWallet = "wallets.primary"
 	HoldWallet    = "wallets.hold"

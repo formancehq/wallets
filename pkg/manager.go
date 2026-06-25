@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"slices"
@@ -487,37 +489,44 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 
 	// NewWallet stamps CreatedAt with time.Now(), which LedgerMetadata()
 	// serialises into the ledger body; the ledger hashes that body to enforce
-	// idempotency, so a retry cannot re-send it verbatim. Replay the persisted
-	// wallet instead when one already exists for this key — the idempotency
-	// guarantee is "same key, same result", so we return the original wallet
-	// regardless of the retried body.
-	if existing, err := m.existingWallet(ctx, wallet.ID); err != nil {
+	// idempotency, so a retry cannot re-send it verbatim. Resolve idempotency
+	// against the persisted wallet instead, matching the retry against an
+	// immutable fingerprint of the original create request (stored at creation),
+	// never against the wallet's live metadata which UpdateWallet can mutate.
+	fingerprint := walletCreateRequestFingerprint(data.Name, data.Metadata)
+	body := wallet.LedgerMetadata()
+	body[MetadataKeyWalletCreateRequestHash] = fingerprint
+
+	if existing, err := m.existingWalletAccount(ctx, wallet.ID); err != nil {
 		return nil, err
 	} else if existing != nil {
-		return existing, nil
+		return replayOrConflict(m.ledgerName, existing, fingerprint)
 	}
 
-	if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, wallet.LedgerMetadata()); err != nil {
+	if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, body); err != nil {
 		// A concurrent attempt may have created the wallet between our existence
 		// check and this write. The ledger then rejects our body because its
 		// CreatedAt differs — reported as a validation or a conflict error
 		// depending on timing — so we don't classify the error: re-check
-		// existence, replay the persisted wallet if it now exists, and otherwise
-		// surface the original error.
-		if existing, gerr := m.existingWallet(ctx, wallet.ID); gerr != nil {
+		// existence and, if a wallet now exists, replay it (or report a conflict
+		// when the persisted request differs); otherwise surface the error.
+		existing, gerr := m.existingWalletAccount(ctx, wallet.ID)
+		if gerr != nil {
 			return nil, gerr
-		} else if existing != nil {
-			return existing, nil
 		}
-		return nil, errors.Wrap(err, "adding metadata to account")
+		if existing == nil {
+			return nil, errors.Wrap(err, "adding metadata to account")
+		}
+		return replayOrConflict(m.ledgerName, existing, fingerprint)
 	}
 
 	return &wallet, nil
 }
 
-// existingWallet returns the persisted primary wallet stored at the main
-// balance account for id, or (nil, nil) when no wallet exists there yet.
-func (m *Manager) existingWallet(ctx context.Context, id string) (*Wallet, error) {
+// existingWalletAccount returns the persisted primary wallet account stored at
+// the main balance account for id, or (nil, nil) when no wallet exists there
+// yet.
+func (m *Manager) existingWalletAccount(ctx context.Context, id string) (*AccountWithVolumesAndBalances, error) {
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(id))
 	switch {
 	case errors.Is(err, ErrAccountNotFound):
@@ -527,9 +536,45 @@ func (m *Manager) existingWallet(ctx context.Context, id string) (*Wallet, error
 	case !IsPrimary(account):
 		return nil, nil
 	default:
-		w := WithBalancesFromAccount(m.ledgerName, account)
-		return &w, nil
+		return account, nil
 	}
+}
+
+// replayOrConflict returns the persisted wallet when the incoming request
+// matches the one that originally created it (an idempotent replay), or
+// ErrIdempotencyConflict when the same key was reused with a different request.
+// The comparison is against the create-request fingerprint stored at creation,
+// which is immutable: UpdateWallet never rewrites it, so the replay/conflict
+// outcome does not depend on later wallet mutations. CreatedAt is not part of
+// the fingerprint, since it legitimately differs between attempts.
+func replayOrConflict(ledger string, existing *AccountWithVolumesAndBalances, fingerprint string) (*Wallet, error) {
+	if GetMetadata(existing, MetadataKeyWalletCreateRequestHash) != fingerprint {
+		return nil, ErrIdempotencyConflict
+	}
+	w := WithBalancesFromAccount(ledger, existing)
+	return &w, nil
+}
+
+// walletCreateRequestFingerprint is a stable hash of the idempotency-relevant
+// fields of a create-wallet request (name and custom metadata). It is stored
+// with the wallet so retries can be distinguished from key reuse with a
+// different body, independently of any later metadata changes.
+func walletCreateRequestFingerprint(name string, md metadata.Metadata) string {
+	keys := make([]string, 0, len(md))
+	for k := range md {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	h := sha256.New()
+	_, _ = h.Write([]byte(name))
+	for _, k := range keys {
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(k))
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(md[k]))
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func (m *Manager) UpdateWallet(ctx context.Context, id, ik string, data *PatchRequest) error {

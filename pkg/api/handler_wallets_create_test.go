@@ -180,3 +180,111 @@ func TestWalletsCreateConcurrentReplaysOnWriteRejection(t *testing.T) {
 	require.Equal(t, first.Name, second.Name)
 	require.Equal(t, first.CreatedAt, second.CreatedAt)
 }
+
+func TestWalletsCreateIdempotencyKeyConflict(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-wallet-conflict-key"
+
+	var (
+		created         bool
+		addCalls        int
+		appliedMetadata map[string]string
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if created {
+				return &wallet.AccountWithVolumesAndBalances{
+					Account: wallet.Account{
+						Address:  account,
+						Metadata: metadataWithExpectingTypesAfterUnmarshalling(appliedMetadata),
+					},
+				}, nil
+			}
+			return nil, wallet.ErrAccountNotFound
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
+			addCalls++
+			appliedMetadata = m
+			created = true
+			return nil
+		}),
+	)
+
+	create := func(name string) *httptest.ResponseRecorder {
+		req := newRequest(t, http.MethodPost, "/wallets", wallet.CreateRequest{Name: name})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		return rec
+	}
+
+	require.Equal(t, http.StatusCreated, create("first-name").Result().StatusCode)
+
+	// Reusing the same key with a different body is reported as a 409 conflict
+	// rather than silently replaying the original wallet, and no second write is
+	// sent to the ledger.
+	second := create("different-name")
+	require.Equal(t, http.StatusConflict, second.Result().StatusCode)
+	require.Equal(t, ErrorCodeConflict, readErrorResponse(t, second).ErrorCode)
+	require.Equal(t, 1, addCalls)
+}
+
+func TestWalletsCreateIdempotentReplayAfterPatch(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "create-wallet-patched-key"
+	request := wallet.CreateRequest{
+		PatchRequest: wallet.PatchRequest{Metadata: metadata.Metadata{"foo": "bar"}},
+		Name:         "savings-account",
+	}
+
+	var (
+		created         bool
+		addCalls        int
+		appliedMetadata map[string]string
+	)
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			if !created {
+				return nil, wallet.ErrAccountNotFound
+			}
+			// Simulate a post-create patch: the wallet's live custom metadata has
+			// changed, but the stored create-request fingerprint is immutable.
+			patched := map[string]string{}
+			for k, v := range appliedMetadata {
+				patched[k] = v
+			}
+			patched[wallet.MetadataKeyWalletCustomDataPrefix+"foo"] = "patched-value"
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address:  account,
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(patched),
+				},
+			}, nil
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, l, a, ik string, m map[string]string) error {
+			addCalls++
+			appliedMetadata = m
+			created = true
+			return nil
+		}),
+	)
+
+	create := func() *httptest.ResponseRecorder {
+		req := newRequest(t, http.MethodPost, "/wallets", request)
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		return rec
+	}
+
+	require.Equal(t, http.StatusCreated, create().Result().StatusCode)
+
+	// Retrying the original create after the wallet was patched must still replay,
+	// not 409: the match is against the immutable create fingerprint, not the
+	// now-changed live metadata.
+	second := create()
+	require.Equal(t, http.StatusCreated, second.Result().StatusCode)
+	require.Equal(t, 1, addCalls)
+}
