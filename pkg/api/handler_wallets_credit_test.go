@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
@@ -103,6 +104,85 @@ func TestWalletsCredit(t *testing.T) {
 			},
 		},
 		{
+			name: "with wallet source containing numscript injection in balance",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1", "secondary\n@world"),
+				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
+			name: "with wallet source spanning multiple account segments",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1", "balance:injected"),
+				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
+			// Dashes are allowed in balance names (they still alias under
+			// Address.String(); see chart.go), so a dashed wallet source resolves.
+			name: "with dashed balance in wallet source",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1", "foo-bar"),
+				},
+			},
+			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
+				return wallet.PostTransaction{
+					Script: &shared.V2PostTransactionScript{
+						Plain: pointer.For(wallet.BuildCreditWalletScript(
+							testEnv.Chart().GetBalanceAccount("emitter1", "foo-bar"),
+						)),
+						Vars: map[string]string{
+							"destination": testEnv.Chart().GetMainBalanceAccount(walletID),
+							"amount":      "USD 100",
+						},
+					},
+					Metadata: wallet.TransactionMetadata(nil),
+				}
+			},
+		},
+		{
+			name: "with wallet source containing numscript injection in identifier",
+			request: wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+				Sources: []wallet.Subject{
+					wallet.NewWalletSubject("emitter1 @world", ""),
+				},
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrorCode:  ErrorCodeValidation,
+		},
+		{
+			// Dashes are allowed in balance names (still alias under
+			// Address.String(); see chart.go), so a dashed destination resolves.
+			name: "with dashed destination balance",
+			request: wallet.CreditRequest{
+				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
+				Balance: "foo-bar",
+			},
+			expectedPostTransaction: func(testEnv *testEnv, walletID string) wallet.PostTransaction {
+				return wallet.PostTransaction{
+					Script: &shared.V2PostTransactionScript{
+						Plain: pointer.For(wallet.BuildCreditWalletScript("world")),
+						Vars: map[string]string{
+							"destination": testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"),
+							"amount":      "USD 100",
+						},
+					},
+					Metadata: wallet.TransactionMetadata(nil),
+				}
+			},
+		},
+		{
 			name: "with secondary balance as destination",
 			request: wallet.CreditRequest{
 				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
@@ -125,7 +205,7 @@ func TestWalletsCredit(t *testing.T) {
 			name: "with not existing secondary balance as destination",
 			request: wallet.CreditRequest{
 				Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
-				Balance: "not-existing",
+				Balance: "not_existing",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrorCode:  ErrorCodeValidation,
@@ -158,6 +238,7 @@ func TestWalletsCredit(t *testing.T) {
 			t.Parallel()
 			walletID := uuid.NewString()
 			secondaryBalance := wallet.NewBalance("secondary", nil)
+			dashedBalance := wallet.NewBalance("foo-bar", nil)
 
 			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/credit", testCase.request)
 			rec := httptest.NewRecorder()
@@ -173,13 +254,15 @@ func TestWalletsCredit(t *testing.T) {
 					return &testCase.postTransactionResult, nil
 				}),
 				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
-					if testEnv.Chart().GetBalanceAccount(walletID, secondaryBalance.Name) == account {
-						return &wallet.AccountWithVolumesAndBalances{
-							Account: wallet.Account{
-								Address:  account,
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(secondaryBalance.LedgerMetadata(walletID)),
-							},
-						}, nil
+					for _, b := range []wallet.Balance{secondaryBalance, dashedBalance} {
+						if testEnv.Chart().GetBalanceAccount(walletID, b.Name) == account {
+							return &wallet.AccountWithVolumesAndBalances{
+								Account: wallet.Account{
+									Address:  account,
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(b.LedgerMetadata(walletID)),
+								},
+							}, nil
+						}
 					}
 					return &wallet.AccountWithVolumesAndBalances{
 						Account: wallet.Account{
@@ -205,6 +288,45 @@ func TestWalletsCredit(t *testing.T) {
 				errorResponse := readErrorResponse(t, rec)
 				require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
 			}
+		})
+	}
+}
+
+// TestWalletsCreditRejectsInvalidWalletID guards the WalletID supplied via the
+// URL path: a value spanning multiple account segments or carrying Numscript
+// tokens must be rejected before any ledger transaction is created.
+func TestWalletsCreditRejectsInvalidWalletID(t *testing.T) {
+	t.Parallel()
+
+	for _, walletID := range []string{
+		"wallet:injected",
+		"wallet\n@world",
+	} {
+		walletID := walletID
+		t.Run(walletID, func(t *testing.T) {
+			t.Parallel()
+
+			req := newRequest(t, http.MethodPost, "/wallets/"+url.PathEscape(walletID)+"/credit", wallet.CreditRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+			})
+			rec := httptest.NewRecorder()
+
+			var (
+				testEnv            *testEnv
+				createdTransaction bool
+			)
+			testEnv = newTestEnv(
+				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+					createdTransaction = true
+					return &shared.V2Transaction{}, nil
+				}),
+			)
+			testEnv.Router().ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+			errorResponse := readErrorResponse(t, rec)
+			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+			require.False(t, createdTransaction)
 		})
 	}
 }

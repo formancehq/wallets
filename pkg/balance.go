@@ -12,7 +12,16 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
 )
 
-var balanceNameRegex = regexp.MustCompile("[0-9A-Za-z_-]+")
+// balanceNameRegex constrains user-supplied balance names to a single,
+// anchored ledger segment: it permits [0-9A-Za-z_-] but no ':' separator,
+// whitespace or Numscript metacharacters (the actual injection vectors).
+//
+// Dashes are allowed so legitimate dashed/UUID balance names keep working.
+// This does NOT make names collision-free: per the warning on
+// Address.String(), "foo-bar" still resolves to the same ledger account as
+// "foobar". Allowing dashes only prevents validation from rejecting existing
+// data — the aliasing itself is tracked as a separate ticket.
+var balanceNameRegex = regexp.MustCompile("^[0-9A-Za-z_-]+$")
 
 type CreateBalance struct {
 	WalletID  string     `json:"walletID"`

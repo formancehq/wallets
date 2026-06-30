@@ -28,7 +28,7 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 	{
 		name: "nominal",
 		request: wallet.CreateBalance{
-			Name: uuid.NewString(),
+			Name: "balance1",
 		},
 	},
 	{
@@ -38,6 +38,32 @@ var balanceCreateTestCases = []balanceCreateTestCase{
 		},
 		expectedStatusCode: http.StatusBadRequest,
 		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
+		// The name contains valid characters but also an account separator;
+		// an unanchored regex would have accepted it, allowing address/script injection.
+		name: "with name containing an account separator",
+		request: wallet.CreateBalance{
+			Name: "balance:injected",
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
+		name: "with name containing whitespace and numscript tokens",
+		request: wallet.CreateBalance{
+			Name: "x\n@world",
+		},
+		expectedStatusCode: http.StatusBadRequest,
+		expectedErrorCode:  ErrorCodeValidation,
+	},
+	{
+		// Dashes are allowed: dashed/UUID balance names must keep working.
+		// (They still alias under Address.String(); see chart.go.)
+		name: "with name containing a dash",
+		request: wallet.CreateBalance{
+			Name: "foo-bar",
+		},
 	},
 	{
 		name: "with reserved name",
