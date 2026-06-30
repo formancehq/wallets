@@ -268,63 +268,65 @@ func TestWalletsDebit(t *testing.T) {
 
 			var (
 				testEnv         *testEnv
+				chart           *wallet.Chart
+				ledgerName      string
 				postTransaction wallet.PostTransaction
 			)
 			testEnv = newTestEnv(
 				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
 					switch account {
-					case testEnv.Chart().GetMainBalanceAccount(walletID):
+					case chart.GetMainBalanceAccount(walletID):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetMainBalanceAccount(walletID),
+								Address: chart.GetMainBalanceAccount(walletID),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name: "main",
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "coupon1"):
+					case chart.GetBalanceAccount(walletID, "coupon1"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
+								Address: chart.GetBalanceAccount(walletID, "coupon1"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon1",
 									ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "coupon2"):
+					case chart.GetBalanceAccount(walletID, "coupon2"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon2"),
+								Address: chart.GetBalanceAccount(walletID, "coupon2"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:     "coupon2",
 									Priority: 10,
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "coupon3"):
+					case chart.GetBalanceAccount(walletID, "coupon3"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
+								Address: chart.GetBalanceAccount(walletID, "coupon3"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon3",
 									ExpiresAt: ptr(time.Now().Add(-time.Minute)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "coupon4"):
+					case chart.GetBalanceAccount(walletID, "coupon4"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon4"),
+								Address: chart.GetBalanceAccount(walletID, "coupon4"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name: "coupon4",
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "secondary"):
+					case chart.GetBalanceAccount(walletID, "secondary"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "secondary"),
+								Address: chart.GetBalanceAccount(walletID, "secondary"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name: "secondary",
 								}.LedgerMetadata(walletID)),
@@ -335,14 +337,14 @@ func TestWalletsDebit(t *testing.T) {
 					}
 				}),
 				WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
-					require.Equal(t, testEnv.LedgerName(), ledger)
+					require.Equal(t, ledgerName, ledger)
 					require.Equal(t, query.Metadata, wallet.BalancesMetadataFilter(walletID))
 
 					return &wallet.AccountsCursorResponseCursor{
 						Data: []wallet.AccountWithVolumesAndBalances{
 							{
 								Account: wallet.Account{
-									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon2"),
+									Address: chart.GetBalanceAccount(walletID, "coupon2"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:     "coupon2",
 										Priority: 10,
@@ -351,7 +353,7 @@ func TestWalletsDebit(t *testing.T) {
 							},
 							{
 								Account: wallet.Account{
-									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
+									Address: chart.GetBalanceAccount(walletID, "coupon1"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon1",
 										ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
@@ -360,7 +362,7 @@ func TestWalletsDebit(t *testing.T) {
 							},
 							{
 								Account: wallet.Account{
-									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
+									Address: chart.GetBalanceAccount(walletID, "coupon3"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon3",
 										ExpiresAt: ptr(time.Now().Add(-time.Minute)),
@@ -369,7 +371,7 @@ func TestWalletsDebit(t *testing.T) {
 							},
 							{
 								Account: wallet.Account{
-									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon4"),
+									Address: chart.GetBalanceAccount(walletID, "coupon4"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name: "coupon4",
 									}.LedgerMetadata(walletID)),
@@ -377,7 +379,7 @@ func TestWalletsDebit(t *testing.T) {
 							},
 							{
 								Account: wallet.Account{
-									Address: testEnv.Chart().GetBalanceAccount(walletID, "main"),
+									Address: chart.GetBalanceAccount(walletID, "main"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name: "main",
 									}.LedgerMetadata(walletID)),
@@ -387,7 +389,7 @@ func TestWalletsDebit(t *testing.T) {
 					}, nil
 				}),
 				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
-					require.Equal(t, testEnv.LedgerName(), ledger)
+					require.Equal(t, ledgerName, ledger)
 					postTransaction = p
 					if testCase.postTransactionError != nil {
 						return nil, testCase.postTransactionError
@@ -396,6 +398,8 @@ func TestWalletsDebit(t *testing.T) {
 					return nil, nil
 				}),
 			)
+			chart = testEnv.Chart()
+			ledgerName = testEnv.LedgerName()
 			testEnv.Router().ServeHTTP(rec, req)
 
 			expectedStatusCode := testCase.expectedStatusCode
@@ -425,6 +429,123 @@ func TestWalletsDebit(t *testing.T) {
 				require.Equal(t, walletID, hold.WalletID)
 				require.Equal(t, testCase.request.Amount.Asset, hold.Asset)
 			}
+		})
+	}
+}
+
+func TestWalletsDebitPendingIdempotency(t *testing.T) {
+	t.Parallel()
+
+	const idempotencyKey = "debit-pending-key-1"
+	walletID := uuid.NewString()
+
+	var bodies []wallet.PostTransaction
+	testEnv := newTestEnv(
+		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+			require.Equal(t, idempotencyKey, ik)
+			bodies = append(bodies, p)
+			//nolint:nilnil
+			return nil, nil
+		}),
+	)
+
+	debit := func() *wallet.DebitHold {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+			Amount:  wallet.NewMonetary(big.NewInt(100), "USD"),
+			Pending: true,
+		})
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+		rec := httptest.NewRecorder()
+		testEnv.Router().ServeHTTP(rec, req)
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		hold := &wallet.DebitHold{}
+		readResponse(t, rec, hold)
+		return hold
+	}
+
+	// With a stable (explicit, non-expiring) source set, retrying a pending
+	// debit under the same Idempotency-Key yields the same hold ID *and* a
+	// byte-identical ledger request body — so the ledger sees a genuine replay,
+	// not a conflict, and no duplicate hold is created.
+	require.Equal(t, debit().ID, debit().ID)
+	require.Len(t, bodies, 2)
+	require.Equal(t, bodies[0], bodies[1])
+}
+
+func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T) {
+	t.Parallel()
+
+	// A debit body resolved from live ledger state cannot be replayed
+	// byte-for-byte: an expiring balance can cross its expiry boundary and a
+	// wildcard set can change between attempts, so the ledger (which hashes the
+	// body to enforce idempotency) would reject the retry as a conflict. We
+	// therefore refuse such debits up front when an Idempotency-Key is present
+	// rather than offer a false idempotency guarantee.
+	for _, tc := range []struct {
+		name     string
+		balances []string
+	}{
+		{name: "expiring balance", balances: []string{"promo"}},
+		{name: "wildcard balance", balances: []string{"*"}},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			const idempotencyKey = "debit-non-replayable-key-1"
+			walletID := uuid.NewString()
+
+			var (
+				chart   *wallet.Chart
+				created bool
+			)
+			testEnv := newTestEnv(
+				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+					return &wallet.AccountWithVolumesAndBalances{
+						Account: wallet.Account{
+							Address: account,
+							Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+								Name:      "promo",
+								ExpiresAt: ptr(time.Now().Add(time.Hour)),
+							}.LedgerMetadata(walletID)),
+						},
+					}, nil
+				}),
+				WithListAccounts(func(ctx context.Context, ledger string, query wallet.ListAccountsQuery) (*wallet.AccountsCursorResponseCursor, error) {
+					return &wallet.AccountsCursorResponseCursor{
+						Data: []wallet.AccountWithVolumesAndBalances{
+							{
+								Account: wallet.Account{
+									Address: chart.GetBalanceAccount(walletID, "main"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name: "main",
+									}.LedgerMetadata(walletID)),
+								},
+							},
+						},
+					}, nil
+				}),
+				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+					created = true
+					//nolint:nilnil
+					return nil, nil
+				}),
+			)
+			chart = testEnv.Chart()
+
+			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+				Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+				Pending:  true,
+				Balances: tc.balances,
+			})
+			req.Header.Set("Idempotency-Key", idempotencyKey)
+			rec := httptest.NewRecorder()
+			testEnv.Router().ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+			errorResponse := readErrorResponse(t, rec)
+			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+			require.False(t, created, "no transaction should be submitted to the ledger")
 		})
 	}
 }

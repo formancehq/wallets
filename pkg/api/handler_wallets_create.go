@@ -1,8 +1,10 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/go-chi/render"
 )
@@ -16,11 +18,16 @@ func (m *MainHandler) createWalletHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	wallet, err := m.manager.CreateWallet(r.Context(), data)
+	createdWallet, err := m.manager.CreateWallet(r.Context(), api.IdempotencyKeyFromRequest(r), data)
 	if err != nil {
-		internalError(w, r, err)
+		switch {
+		case errors.Is(err, wallet.ErrIdempotencyConflict):
+			conflict(w, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
+		default:
+			internalError(w, r, err)
+		}
 		return
 	}
 
-	created(w, wallet)
+	created(w, createdWallet)
 }
