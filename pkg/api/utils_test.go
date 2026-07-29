@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,10 +18,10 @@ import (
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 
 	"github.com/formancehq/go-libs/v5/pkg/audit"
-	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
 	"github.com/formancehq/go-libs/v5/pkg/messaging/publish"
 	sharedhealth "github.com/formancehq/go-libs/v5/pkg/service/health"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	wallet "github.com/formancehq/wallets/pkg"
 	"github.com/stretchr/testify/require"
 )
@@ -91,6 +92,27 @@ func TestRequestBodyTooLarge(t *testing.T) {
 
 	require.Equal(t, http.StatusRequestEntityTooLarge, rec.Result().StatusCode)
 	require.Equal(t, "REQUEST_TOO_LARGE", readErrorResponse(t, rec).ErrorCode)
+}
+
+func TestConflictDoesNotPanicWhenResponseWriteFails(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodPost, "/wallets", nil)
+	require.NotPanics(t, func() {
+		conflict(errorResponseWriter{}, req, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
+	})
+}
+
+type errorResponseWriter struct{}
+
+func (errorResponseWriter) Header() http.Header {
+	return http.Header{}
+}
+
+func (errorResponseWriter) WriteHeader(int) {}
+
+func (errorResponseWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
 }
 
 func readErrorResponse(t *testing.T, rec *httptest.ResponseRecorder) *sharedapi.ErrorResponse {

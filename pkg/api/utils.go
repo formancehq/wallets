@@ -38,13 +38,16 @@ func badRequest(w http.ResponseWriter, code string, err error) {
 	}
 }
 
-func conflict(w http.ResponseWriter, code string, err error) {
+func conflict(w http.ResponseWriter, r *http.Request, code string, err error) {
 	w.WriteHeader(http.StatusConflict)
 	if err := json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
 		ErrorCode:    code,
 		ErrorMessage: err.Error(),
 	}); err != nil {
-		panic(err)
+		// The status has already been written, so there is no useful fallback
+		// response to send. Log the transport failure without turning a single
+		// broken client connection into a process-level panic.
+		sharedlogging.FromContext(r.Context()).Error(err)
 	}
 }
 

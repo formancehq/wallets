@@ -22,7 +22,7 @@ func (m *MainHandler) createWalletHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, wallet.ErrIdempotencyConflict):
-			conflict(w, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
+			conflict(w, r, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
 		default:
 			internalError(w, r, err)
 		}
