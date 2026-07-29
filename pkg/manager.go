@@ -169,6 +169,9 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() && balance.ExpiresAt.Before(time.Now()) {
 			continue
 		}
+		if !balanceNameRegex.MatchString(balance.Name) {
+			return nil, newErrInvalidAccountName(balance.Name)
+		}
 		sources = append(sources, m.chart.GetBalanceAccount(debit.WalletID, balance.Name))
 	}
 
