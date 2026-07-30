@@ -32,6 +32,8 @@ func (m *MainHandler) debitWalletHandler(w http.ResponseWriter, r *http.Request)
 			wallet.IsErrInvalidAccountName(err),
 			wallet.IsErrInvalidAsset(err):
 			badRequest(w, ErrorCodeValidation, wallet.ErrInvalidBalanceSpecified)
+		case errors.Is(err, wallet.ErrNonIdempotentDebit):
+			badRequest(w, ErrorCodeValidation, wallet.ErrNonIdempotentDebit)
 		default:
 			internalError(w, r, err)
 		}

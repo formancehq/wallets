@@ -231,12 +231,9 @@ func TestBalancesCreateConcurrentCreatePreservesReplayForAllKeys(t *testing.T) {
 	const balanceName = "savings"
 
 	// Model the documented concurrent first-create race: two creates with
-	// different keys both pass the existence check (GetAccount not-found) before
-	// either writes, then both write. The ledger merges account metadata
-	// additively, so the mock accumulates every write into one map. With per-key
-	// replay markers both keys' markers survive the merge, so either caller can
-	// still replay; a single shared marker field would have been overwritten by
-	// the later write, breaking replay for the earlier caller.
+	// different keys and responses both pass the existence check before either
+	// writes. Shared fields become last-write-wins, but each per-key response
+	// snapshot survives the additive metadata merge.
 	var (
 		getCalls int
 		addCalls int
@@ -265,23 +262,32 @@ func TestBalancesCreateConcurrentCreatePreservesReplayForAllKeys(t *testing.T) {
 		}),
 	)
 
-	create := func(idempotencyKey string) int {
-		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/balances", wallet.CreateBalance{Name: balanceName})
+	create := func(idempotencyKey string, request wallet.CreateBalance) *wallet.Balance {
+		req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/balances", request)
 		req.Header.Set("Idempotency-Key", idempotencyKey)
 		rec := httptest.NewRecorder()
 		testEnv.Router().ServeHTTP(rec, req)
-		return rec.Result().StatusCode
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		balance := &wallet.Balance{}
+		readResponse(t, rec, balance)
+		return balance
 	}
 
+	expiresAtA := time.Now().Add(time.Hour)
+	expiresAtB := time.Now().Add(2 * time.Hour)
+	requestA := wallet.CreateBalance{Name: balanceName, Priority: 1, ExpiresAt: &expiresAtA}
+	requestB := wallet.CreateBalance{Name: balanceName, Priority: 2, ExpiresAt: &expiresAtB}
+
 	// Two racing first-time creates with different keys both succeed and both
-	// write — the race the PR documents.
-	require.Equal(t, http.StatusCreated, create("key-A"))
-	require.Equal(t, http.StatusCreated, create("key-B"))
+	// write different shared priority/expiration values.
+	firstA := create("key-A", requestA)
+	firstB := create("key-B", requestB)
 	require.Equal(t, 2, addCalls)
 
-	// Both keys can now replay: neither marker was clobbered by the other.
-	require.Equal(t, http.StatusCreated, create("key-A"))
-	require.Equal(t, http.StatusCreated, create("key-B"))
+	// Both keys replay their own original result, even though the live account's
+	// shared fields now contain the later key-B values.
+	require.Equal(t, firstA, create("key-A", requestA))
+	require.Equal(t, firstB, create("key-B", requestB))
 	require.Equal(t, 2, addCalls, "replays must not write to the ledger again")
 }
 

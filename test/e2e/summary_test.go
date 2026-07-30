@@ -4,9 +4,9 @@ package suite_test
 
 import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	. "github.com/formancehq/go-libs/v5/pkg/testing/deferred/ginkgo"
 	"github.com/formancehq/go-libs/v5/pkg/testing/testservice"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 	"github.com/formancehq/wallets/pkg/client/models/operations"
 	. "github.com/formancehq/wallets/pkg/testserver"
@@ -34,10 +34,12 @@ var _ = Context("Wallets - summary", func() {
 		var (
 			createWalletResponse  *operations.CreateWalletResponse
 			createBalanceResponse *operations.CreateBalanceResponse
-			now                   = time.Now().Round(time.Second).UTC()
+			now                   time.Time
 			err                   error
 		)
 		BeforeEach(func(specContext SpecContext) {
+			now = time.Now().Round(time.Second).UTC()
+
 			createWalletResponse, err = Client(Wait(specContext, srv)).Wallets.V1.CreateWallet(
 				ctx,
 				operations.CreateWalletRequest{

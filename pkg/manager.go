@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"slices"
@@ -14,8 +15,23 @@ import (
 
 	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
+
+// idempotencyNamespace seeds deterministic resource IDs derived from an
+// Idempotency-Key, so that retrying a creation request resolves to the same
+// wallet/hold rather than creating a duplicate.
+var idempotencyNamespace = uuid.MustParse("0b6f2d6e-4e2a-4f3a-9f0a-2b9c1d8e7a31")
+
+// deterministicID derives a stable UUID from an Idempotency-Key, scoped by a
+// resource kind ("wallet", "hold", ...). The kind discriminator keeps the
+// derived IDs of different resource types disjoint, so reusing the same
+// Idempotency-Key across, say, a wallet creation and a pending debit cannot
+// collide on the same UUID.
+func deterministicID(kind, ik string) string {
+	return uuid.NewSHA1(idempotencyNamespace, []byte(kind+":"+ik)).String()
+}
 
 type ListResponse[T any] struct {
 	Data           []T
@@ -126,6 +142,12 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 		}
 
 		hold = Ptr(debit.newHold())
+		// Derive the hold ID from the Idempotency-Key so a retry produces an
+		// identical ledger request (the ledger hashes the body to enforce
+		// idempotency) and returns the same hold.
+		if ik != "" {
+			hold.ID = deterministicID("hold", ik)
+		}
 		holdAccount := m.chart.GetHoldAccount(hold.ID)
 		metadata = map[string]map[string]string{
 			holdAccount: hold.LedgerMetadata(m.chart),
@@ -144,6 +166,12 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 			Name: MainBalance,
 		}}
 	case len(debit.Balances) == 1 && debit.Balances[0] == "*":
+		// A wildcard source set is resolved from live ledger state, so it can
+		// differ between two attempts. We cannot guarantee an identical ledger
+		// body on retry, so refuse to pretend the call is idempotent.
+		if ik != "" {
+			return nil, ErrNonIdempotentDebit
+		}
 		balances, err = fetchAndMapAllAccounts[Balance](ctx, m, BalancesMetadataFilter(debit.WalletID), false, BalanceFromAccount)
 		if err != nil {
 			return nil, err
@@ -166,8 +194,17 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 	var sources []string
 	// Filter expired and generate sources
 	for _, balance := range balances {
-		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() && balance.ExpiresAt.Before(time.Now()) {
-			continue
+		if balance.ExpiresAt != nil && !balance.ExpiresAt.IsZero() {
+			if balance.ExpiresAt.Before(time.Now()) {
+				continue
+			}
+			// The balance is live now but will expire: crossing that boundary
+			// between two attempts would drop it from the source set and change
+			// the ledger body. We cannot honour idempotency in that case, so
+			// reject rather than offer a false guarantee.
+			if ik != "" {
+				return nil, ErrNonIdempotentDebit
+			}
 		}
 		if !balanceNameRegex.MatchString(balance.Name) {
 			return nil, newErrInvalidAccountName(balance.Name)
@@ -438,20 +475,124 @@ func (m *Manager) ListTransactions(ctx context.Context, query ListQuery[ListTran
 	}), nil
 }
 
-func (m *Manager) CreateWallet(ctx context.Context, data *CreateRequest) (*Wallet, error) {
+func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateRequest) (*Wallet, error) {
 	wallet := NewWallet(data.Name, m.ledgerName, data.Metadata)
 
-	if err := m.client.AddMetadataToAccount(
-		ctx,
-		m.ledgerName,
-		m.chart.GetMainBalanceAccount(wallet.ID),
-		"",
-		wallet.LedgerMetadata(),
-	); err != nil {
-		return nil, errors.Wrap(err, "adding metadata to account")
+	// Without an Idempotency-Key there is no replay contract: create with a
+	// random ID and a fresh CreatedAt.
+	if ik == "" {
+		if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, wallet.LedgerMetadata()); err != nil {
+			return nil, errors.Wrap(err, "adding metadata to account")
+		}
+		return &wallet, nil
+	}
+
+	// Derive the wallet ID from the Idempotency-Key so a retry targets the same
+	// account instead of creating a duplicate wallet.
+	wallet.ID = deterministicID("wallet", ik)
+
+	// NewWallet stamps CreatedAt with time.Now(), which LedgerMetadata()
+	// serialises into the ledger body; the ledger hashes that body to enforce
+	// idempotency, so a retry cannot re-send it verbatim. Resolve idempotency
+	// against the persisted wallet instead, matching the retry against an
+	// immutable fingerprint of the original create request (stored at creation),
+	// never against the wallet's live metadata which UpdateWallet can mutate.
+	fingerprint := walletCreateRequestFingerprint(data.Name, data.Metadata)
+	responseSnapshot, err := json.Marshal(wallet)
+	if err != nil {
+		return nil, errors.Wrap(err, "encoding wallet create response")
+	}
+	body := wallet.LedgerMetadata()
+	body[MetadataKeyWalletCreateRequestHash] = fingerprint
+	body[MetadataKeyWalletCreateResponse] = string(responseSnapshot)
+
+	if existing, err := m.existingWalletAccount(ctx, wallet.ID); err != nil {
+		return nil, err
+	} else if existing != nil {
+		return replayOrConflict(existing, fingerprint)
+	}
+
+	if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, body); err != nil {
+		// A concurrent attempt may have created the wallet between our existence
+		// check and this write. The ledger then rejects our body because its
+		// CreatedAt differs — reported as a validation or a conflict error
+		// depending on timing — so we don't classify the error: re-check
+		// existence and, if a wallet now exists, replay it (or report a conflict
+		// when the persisted request differs); otherwise surface the error.
+		existing, gerr := m.existingWalletAccount(ctx, wallet.ID)
+		if gerr != nil {
+			return nil, gerr
+		}
+		if existing == nil {
+			return nil, errors.Wrap(err, "adding metadata to account")
+		}
+		return replayOrConflict(existing, fingerprint)
 	}
 
 	return &wallet, nil
+}
+
+// existingWalletAccount returns the persisted primary wallet account stored at
+// the main balance account for id, or (nil, nil) when no account exists there
+// yet. An existing non-wallet account is a conflict: treating it as absent would
+// let AddMetadataToAccount merge wallet metadata into and corrupt that account.
+func (m *Manager) existingWalletAccount(ctx context.Context, id string) (*AccountWithVolumesAndBalances, error) {
+	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(id))
+	switch {
+	case errors.Is(err, ErrAccountNotFound):
+		return nil, nil
+	case err != nil:
+		return nil, errors.Wrap(err, "getting account")
+	case !IsPrimary(account):
+		return nil, ErrWalletAddressConflict
+	default:
+		return account, nil
+	}
+}
+
+// replayOrConflict returns the original create response when the incoming
+// request matches the one that created the wallet (an idempotent replay), or
+// ErrIdempotencyConflict when the same key was reused with a different request.
+// The comparison is against the create-request fingerprint stored at creation,
+// which is immutable: UpdateWallet never rewrites it, so the replay/conflict
+// outcome does not depend on later wallet mutations. CreatedAt is not part of
+// the fingerprint, since it legitimately differs between attempts.
+func replayOrConflict(existing *AccountWithVolumesAndBalances, fingerprint string) (*Wallet, error) {
+	if GetMetadata(existing, MetadataKeyWalletCreateRequestHash) != fingerprint {
+		return nil, ErrIdempotencyConflict
+	}
+
+	w := &Wallet{}
+	if err := json.Unmarshal([]byte(GetMetadata(existing, MetadataKeyWalletCreateResponse)), w); err != nil {
+		return nil, errors.Wrap(err, "decoding wallet create response")
+	}
+	return w, nil
+}
+
+// walletCreateRequestFingerprint is a stable hash of the idempotency-relevant
+// fields of a create-wallet request (name and custom metadata). It is stored
+// with the wallet so retries can be distinguished from key reuse with a
+// different body, independently of any later metadata changes.
+//
+// The fields are hashed as canonical JSON (encoding/json sorts map keys) rather
+// than concatenated with a separator: quoting and escaping make the encoding
+// unambiguous, so distinct requests cannot collide via separator bytes embedded
+// in a name or metadata value.
+func walletCreateRequestFingerprint(name string, md metadata.Metadata) string {
+	// NewWallet normalizes omitted metadata to an empty object. Apply the same
+	// normalization to the fingerprint so `metadata: null` and `metadata: {}`
+	// remain equivalent idempotent requests instead of producing a false 409.
+	if md == nil {
+		md = metadata.Metadata{}
+	}
+
+	payload, _ := json.Marshal(struct {
+		Name     string            `json:"name"`
+		Metadata metadata.Metadata `json:"metadata"`
+	}{Name: name, Metadata: md})
+
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:])
 }
 
 func (m *Manager) UpdateWallet(ctx context.Context, id, ik string, data *PatchRequest) error {
@@ -587,21 +728,19 @@ func (m *Manager) GetHold(ctx context.Context, id string) (*ExpandedDebitHold, e
 
 // CreateBalance creates a named balance for a wallet.
 //
-// Idempotency. When an Idempotency-Key is provided, the create stamps a per-key
-// marker into the account metadata (see balanceIdempotencyMarker) and forwards
-// the key to the ledger. A retry under the same key replays the existing
-// balance instead of returning ErrBalanceAlreadyExists.
+// Idempotency. When an Idempotency-Key is provided, the create stores its
+// response under a per-key metadata entry (see balanceIdempotencyMarker) and
+// forwards the key to the ledger. A retry under the same key replays that
+// immutable response instead of returning ErrBalanceAlreadyExists.
 //
 // Concurrency. This is a check-then-act on account metadata: the existence
 // check (GetAccount) and the write (AddMetadataToAccount) are not a single
 // atomic operation, so two genuinely concurrent first-time creates of the same
 // balance can both pass the check and both write. Because the ledger merges
-// metadata additively, each caller's per-key marker survives the other's
-// write, so every caller's retry still replays. Only priority/expiresAt are
-// last-write-wins for that single account; there is no duplicate account and no
-// fund movement. Making priority/expiresAt deterministic too would require a
-// conditional (create-if-absent) metadata write on the ledger, which the API
-// does not currently expose.
+// metadata additively, each caller's per-key response survives the other's
+// write, so every caller's retry returns its original priority and expiration
+// even though those shared account fields remain last-write-wins. There is no
+// duplicate account and no fund movement.
 func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBalance) (*Balance, error) {
 	if err := data.Validate(); err != nil {
 		return nil, err
@@ -612,14 +751,15 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	case err == nil:
 		if ret.Metadata != nil &&
 			ret.Metadata[MetadataKeyWalletBalance] == TrueValue {
-			// Best-effort app-level replay complementing the ledger's own dedup
-			// of AddMetadataToAccount: if this exact Idempotency-Key already
-			// created the balance (its marker is present), return the existing
-			// balance. A key with no recorded marker — a genuinely different
-			// request for an existing balance, or one whose marker was never
-			// persisted — intentionally falls through to ErrBalanceAlreadyExists.
-			if ik != "" && ret.Metadata[balanceIdempotencyMarker(ik)] == TrueValue {
-				return Ptr(BalanceFromAccount(*ret)), nil
+			// If this exact Idempotency-Key already created the balance, replay
+			// its immutable response rather than rebuilding it from shared live
+			// account metadata that another concurrent create may have changed.
+			if encoded := ret.Metadata[balanceIdempotencyMarker(ik)]; ik != "" && encoded != "" {
+				balance := &Balance{}
+				if err := json.Unmarshal([]byte(encoded), balance); err != nil {
+					return nil, errors.Wrap(err, "decoding balance create response")
+				}
+				return balance, nil
 			}
 			return nil, ErrBalanceAlreadyExists
 		}
@@ -631,7 +771,11 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	balance.Priority = data.Priority
 	balanceMetadata := balance.LedgerMetadata(data.WalletID)
 	if ik != "" {
-		balanceMetadata[balanceIdempotencyMarker(ik)] = TrueValue
+		responseSnapshot, err := json.Marshal(balance)
+		if err != nil {
+			return nil, errors.Wrap(err, "encoding balance create response")
+		}
+		balanceMetadata[balanceIdempotencyMarker(ik)] = string(responseSnapshot)
 	}
 
 	if err := m.client.AddMetadataToAccount(
@@ -653,11 +797,11 @@ func hashIdempotencyKey(ik string) string {
 }
 
 // balanceIdempotencyMarker returns the metadata key under which a balance
-// create records that it ran for a given Idempotency-Key. Namespacing by the
-// hash of the key means concurrent creates with different keys write different
-// metadata keys; since the ledger merges metadata additively, each caller's
-// marker survives and a later retry under any of those keys still replays
-// instead of failing with ErrBalanceAlreadyExists.
+// create stores its original response for a given Idempotency-Key. Namespacing
+// by the hash of the key means concurrent creates with different keys write
+// different metadata keys; since the ledger merges metadata additively, each
+// caller's response survives and a later retry under any of those keys replays
+// the exact original result instead of failing with ErrBalanceAlreadyExists.
 func balanceIdempotencyMarker(ik string) string {
 	return MetadataKeyBalanceIdempotencyPrefix + hashIdempotencyKey(ik)
 }

@@ -10,8 +10,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 
-	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	sharedlogging "github.com/formancehq/go-libs/v5/pkg/observe/log"
+	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	wallet "github.com/formancehq/wallets/pkg"
 )
 
@@ -35,6 +35,19 @@ func badRequest(w http.ResponseWriter, code string, err error) {
 		ErrorMessage: err.Error(),
 	}); err != nil {
 		panic(err)
+	}
+}
+
+func conflict(w http.ResponseWriter, r *http.Request, code string, err error) {
+	w.WriteHeader(http.StatusConflict)
+	if err := json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode:    code,
+		ErrorMessage: err.Error(),
+	}); err != nil {
+		// The status has already been written, so there is no useful fallback
+		// response to send. Log the transport failure without turning a single
+		// broken client connection into a process-level panic.
+		sharedlogging.FromContext(r.Context()).Error(err)
 	}
 }
 
