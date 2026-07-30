@@ -23,6 +23,8 @@ func (m *MainHandler) createWalletHandler(w http.ResponseWriter, r *http.Request
 		switch {
 		case errors.Is(err, wallet.ErrIdempotencyConflict):
 			conflict(w, r, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
+		case errors.Is(err, wallet.ErrWalletAddressConflict):
+			conflict(w, r, ErrorCodeConflict, wallet.ErrWalletAddressConflict)
 		default:
 			internalError(w, r, err)
 		}

@@ -528,8 +528,9 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 }
 
 // existingWalletAccount returns the persisted primary wallet account stored at
-// the main balance account for id, or (nil, nil) when no wallet exists there
-// yet.
+// the main balance account for id, or (nil, nil) when no account exists there
+// yet. An existing non-wallet account is a conflict: treating it as absent would
+// let AddMetadataToAccount merge wallet metadata into and corrupt that account.
 func (m *Manager) existingWalletAccount(ctx context.Context, id string) (*AccountWithVolumesAndBalances, error) {
 	account, err := m.client.GetAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(id))
 	switch {
@@ -538,7 +539,7 @@ func (m *Manager) existingWalletAccount(ctx context.Context, id string) (*Accoun
 	case err != nil:
 		return nil, errors.Wrap(err, "getting account")
 	case !IsPrimary(account):
-		return nil, nil
+		return nil, ErrWalletAddressConflict
 	default:
 		return account, nil
 	}

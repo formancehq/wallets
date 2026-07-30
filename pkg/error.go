@@ -30,6 +30,10 @@ var (
 	// surface this as a conflict rather than silently replaying the original
 	// resource and hiding the divergent request.
 	ErrIdempotencyConflict = errors.New("idempotency key reused with a different request")
+	// ErrWalletAddressConflict is returned when deterministic wallet creation
+	// targets an account that already exists but is not a primary wallet. Writing
+	// wallet metadata there would corrupt the existing account.
+	ErrWalletAddressConflict = errors.New("wallet address already belongs to a non-wallet account")
 )
 
 type GenericOpenAPIError interface {

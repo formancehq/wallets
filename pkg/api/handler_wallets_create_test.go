@@ -288,3 +288,32 @@ func TestWalletsCreateIdempotentReplayAfterPatch(t *testing.T) {
 	require.Equal(t, http.StatusCreated, second.Result().StatusCode)
 	require.Equal(t, 1, addCalls)
 }
+
+func TestWalletsCreateRejectsOccupiedNonWalletAddress(t *testing.T) {
+	t.Parallel()
+
+	var writeAttempted bool
+	testEnv := newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address:  account,
+					Metadata: map[string]string{},
+				},
+			}, nil
+		}),
+		WithAddMetadataToAccount(func(ctx context.Context, ledger, account, ik string, metadata map[string]string) error {
+			writeAttempted = true
+			return nil
+		}),
+	)
+
+	req := newRequest(t, http.MethodPost, "/wallets", wallet.CreateRequest{Name: "savings-account"})
+	req.Header.Set("Idempotency-Key", "occupied-wallet-address")
+	rec := httptest.NewRecorder()
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusConflict, rec.Result().StatusCode)
+	require.Equal(t, ErrorCodeConflict, readErrorResponse(t, rec).ErrorCode)
+	require.False(t, writeAttempted, "existing non-wallet account must not be mutated")
+}
