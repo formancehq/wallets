@@ -21,8 +21,14 @@ const (
 	MetadataKeyBalanceName           = "wallets/balances/name"
 	MetadataKeyBalanceExpiresAt      = "wallets/balances/expiresAt"
 	MetadataKeyBalancePriority       = "wallets/balances/priority"
-	MetadataKeyWalletBalance         = "wallets/balances"
-	MetadataKeyCreatedAt             = "wallets/createdAt"
+	// MetadataKeyBalanceIdempotencyPrefix namespaces per-Idempotency-Key replay
+	// markers. Each create stamps a distinct key (prefix + hash of the
+	// Idempotency-Key) rather than a single shared field, so concurrent
+	// first-time creates merge their markers instead of clobbering each other —
+	// preserving idempotent replay for every caller. See Manager.CreateBalance.
+	MetadataKeyBalanceIdempotencyPrefix = "wallets/balances/idempotency/"
+	MetadataKeyWalletBalance            = "wallets/balances"
+	MetadataKeyCreatedAt                = "wallets/createdAt"
 	// MetadataKeyWalletCreateRequestHash stores an immutable fingerprint of the
 	// original create-wallet request (name + custom metadata) when an
 	// Idempotency-Key is used. Retries are matched against this fingerprint

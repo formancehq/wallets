@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
@@ -195,6 +196,27 @@ var walletDebitTestCases = []testCase{
 		},
 	},
 	{
+		// Dashes are allowed in balance names (still alias under
+		// Address.String(); see chart.go), so a dashed balance source resolves.
+		name: "with dashed balance source",
+		request: wallet.DebitRequest{
+			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+			Balances: []string{"foo-bar"},
+		},
+		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
+			return wallet.PostTransaction{
+				Script: &shared.V2PostTransactionScript{
+					Plain: pointer.For(wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"))),
+					Vars: map[string]string{
+						"destination": "world",
+						"amount":      "USD 100",
+					},
+				},
+				Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.TransactionMetadata(nil)),
+			}
+		},
+	},
+	{
 		name: "with wildcard balance as source",
 		request: wallet.DebitRequest{
 			Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
@@ -290,7 +312,7 @@ func TestWalletsDebit(t *testing.T) {
 								Address: chart.GetBalanceAccount(walletID, "coupon1"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon1",
-									ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+									ExpiresAt: pointer.For(time.Now().Add(5 * time.Second)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
@@ -310,7 +332,7 @@ func TestWalletsDebit(t *testing.T) {
 								Address: chart.GetBalanceAccount(walletID, "coupon3"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name:      "coupon3",
-									ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+									ExpiresAt: pointer.For(time.Now().Add(-time.Minute)),
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
@@ -329,6 +351,15 @@ func TestWalletsDebit(t *testing.T) {
 								Address: chart.GetBalanceAccount(walletID, "secondary"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name: "secondary",
+								}.LedgerMetadata(walletID)),
+							},
+						}, nil
+					case testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"):
+						return &wallet.AccountWithVolumesAndBalances{
+							Account: wallet.Account{
+								Address: testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"),
+								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+									Name: "foo-bar",
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
@@ -356,7 +387,7 @@ func TestWalletsDebit(t *testing.T) {
 									Address: chart.GetBalanceAccount(walletID, "coupon1"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon1",
-										ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+										ExpiresAt: pointer.For(time.Now().Add(5 * time.Second)),
 									}.LedgerMetadata(walletID)),
 								},
 							},
@@ -365,7 +396,7 @@ func TestWalletsDebit(t *testing.T) {
 									Address: chart.GetBalanceAccount(walletID, "coupon3"),
 									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 										Name:      "coupon3",
-										ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+										ExpiresAt: pointer.For(time.Now().Add(-time.Minute)),
 									}.LedgerMetadata(walletID)),
 								},
 							},
@@ -506,7 +537,7 @@ func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T)
 							Address: account,
 							Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 								Name:      "promo",
-								ExpiresAt: ptr(time.Now().Add(time.Hour)),
+								ExpiresAt: pointer.For(time.Now().Add(time.Hour)),
 							}.LedgerMetadata(walletID)),
 						},
 					}, nil
@@ -546,6 +577,89 @@ func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T)
 			errorResponse := readErrorResponse(t, rec)
 			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
 			require.False(t, created, "no transaction should be submitted to the ledger")
+		})
+	}
+}
+
+func TestWalletsDebitRejectsInvalidBalanceMetadata(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
+		Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
+		Balances: []string{"legacy"},
+	})
+	rec := httptest.NewRecorder()
+
+	var (
+		createdTransaction bool
+		testEnv            *testEnv
+	)
+	testEnv = newTestEnv(
+		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+			require.Equal(t, testEnv.Chart().GetBalanceAccount(walletID, "legacy"), account)
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address: account,
+					// A stored balance name carrying Numscript tokens (e.g. tampered
+					// ledger metadata) must be rejected on read-back before any
+					// transaction is built. Dashes alone are valid, so use a real
+					// injection vector here.
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+						Name: "injected\n@world",
+					}.LedgerMetadata(walletID)),
+				},
+			}, nil
+		}),
+		WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+			createdTransaction = true
+			return &shared.V2Transaction{}, nil
+		}),
+	)
+
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+	require.False(t, createdTransaction)
+}
+
+// TestWalletsDebitRejectsInvalidWalletID guards the WalletID supplied via the
+// URL path: a value spanning multiple account segments or carrying Numscript
+// tokens must be rejected before any ledger transaction is created.
+func TestWalletsDebitRejectsInvalidWalletID(t *testing.T) {
+	t.Parallel()
+
+	for _, walletID := range []string{
+		"wallet:injected",
+		"wallet\n@world",
+	} {
+		walletID := walletID
+		t.Run(walletID, func(t *testing.T) {
+			t.Parallel()
+
+			req := newRequest(t, http.MethodPost, "/wallets/"+url.PathEscape(walletID)+"/debit", wallet.DebitRequest{
+				Amount: wallet.NewMonetary(big.NewInt(100), "USD"),
+			})
+			rec := httptest.NewRecorder()
+
+			var (
+				testEnv            *testEnv
+				createdTransaction bool
+			)
+			testEnv = newTestEnv(
+				WithCreateTransaction(func(ctx context.Context, ledger, ik string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
+					createdTransaction = true
+					return &shared.V2Transaction{}, nil
+				}),
+			)
+			testEnv.Router().ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+			errorResponse := readErrorResponse(t, rec)
+			require.Equal(t, ErrorCodeValidation, errorResponse.ErrorCode)
+			require.False(t, createdTransaction)
 		})
 	}
 }
