@@ -288,13 +288,10 @@ func TestWalletsDebit(t *testing.T) {
 			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", testCase.request)
 			rec := httptest.NewRecorder()
 
-			var (
-				testEnv         *testEnv
-				chart           *wallet.Chart
-				ledgerName      string
-				postTransaction wallet.PostTransaction
-			)
-			testEnv = newTestEnv(
+			chart := wallet.NewChart("")
+			ledgerName := "default"
+			var postTransaction wallet.PostTransaction
+			testEnv := newTestEnv(
 				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
 					switch account {
 					case chart.GetMainBalanceAccount(walletID):
@@ -354,10 +351,10 @@ func TestWalletsDebit(t *testing.T) {
 								}.LedgerMetadata(walletID)),
 							},
 						}, nil
-					case testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"):
+					case chart.GetBalanceAccount(walletID, "foo-bar"):
 						return &wallet.AccountWithVolumesAndBalances{
 							Account: wallet.Account{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "foo-bar"),
+								Address: chart.GetBalanceAccount(walletID, "foo-bar"),
 								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
 									Name: "foo-bar",
 								}.LedgerMetadata(walletID)),
@@ -429,8 +426,6 @@ func TestWalletsDebit(t *testing.T) {
 					return nil, nil
 				}),
 			)
-			chart = testEnv.Chart()
-			ledgerName = testEnv.LedgerName()
 			testEnv.Router().ServeHTTP(rec, req)
 
 			expectedStatusCode := testCase.expectedStatusCode
@@ -526,19 +521,21 @@ func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T)
 			const idempotencyKey = "debit-non-replayable-key-1"
 			walletID := uuid.NewString()
 
-			var (
-				chart   *wallet.Chart
-				created bool
-			)
+			chart := wallet.NewChart("")
+			var created bool
 			testEnv := newTestEnv(
 				WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
+					balance := wallet.Balance{Name: "main"}
+					if account == chart.GetBalanceAccount(walletID, "promo") {
+						balance = wallet.Balance{
+							Name:      "promo",
+							ExpiresAt: pointer.For(time.Now().Add(time.Hour)),
+						}
+					}
 					return &wallet.AccountWithVolumesAndBalances{
 						Account: wallet.Account{
-							Address: account,
-							Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-								Name:      "promo",
-								ExpiresAt: pointer.For(time.Now().Add(time.Hour)),
-							}.LedgerMetadata(walletID)),
+							Address:  account,
+							Metadata: metadataWithExpectingTypesAfterUnmarshalling(balance.LedgerMetadata(walletID)),
 						},
 					}, nil
 				}),
@@ -562,8 +559,6 @@ func TestWalletsDebitWithIdempotencyKeyRejectsNonReplayableSources(t *testing.T)
 					return nil, nil
 				}),
 			)
-			chart = testEnv.Chart()
-
 			req := newRequest(t, http.MethodPost, "/wallets/"+walletID+"/debit", wallet.DebitRequest{
 				Amount:   wallet.NewMonetary(big.NewInt(100), "USD"),
 				Pending:  true,
@@ -591,13 +586,11 @@ func TestWalletsDebitRejectsInvalidBalanceMetadata(t *testing.T) {
 	})
 	rec := httptest.NewRecorder()
 
-	var (
-		createdTransaction bool
-		testEnv            *testEnv
-	)
-	testEnv = newTestEnv(
+	chart := wallet.NewChart("")
+	var createdTransaction bool
+	testEnv := newTestEnv(
 		WithGetAccount(func(ctx context.Context, ledger, account string) (*wallet.AccountWithVolumesAndBalances, error) {
-			require.Equal(t, testEnv.Chart().GetBalanceAccount(walletID, "legacy"), account)
+			require.Equal(t, chart.GetBalanceAccount(walletID, "legacy"), account)
 			return &wallet.AccountWithVolumesAndBalances{
 				Account: wallet.Account{
 					Address: account,

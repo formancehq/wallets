@@ -728,21 +728,19 @@ func (m *Manager) GetHold(ctx context.Context, id string) (*ExpandedDebitHold, e
 
 // CreateBalance creates a named balance for a wallet.
 //
-// Idempotency. When an Idempotency-Key is provided, the create stamps a per-key
-// marker into the account metadata (see balanceIdempotencyMarker) and forwards
-// the key to the ledger. A retry under the same key replays the existing
-// balance instead of returning ErrBalanceAlreadyExists.
+// Idempotency. When an Idempotency-Key is provided, the create stores its
+// response under a per-key metadata entry (see balanceIdempotencyMarker) and
+// forwards the key to the ledger. A retry under the same key replays that
+// immutable response instead of returning ErrBalanceAlreadyExists.
 //
 // Concurrency. This is a check-then-act on account metadata: the existence
 // check (GetAccount) and the write (AddMetadataToAccount) are not a single
 // atomic operation, so two genuinely concurrent first-time creates of the same
 // balance can both pass the check and both write. Because the ledger merges
-// metadata additively, each caller's per-key marker survives the other's
-// write, so every caller's retry still replays. Only priority/expiresAt are
-// last-write-wins for that single account; there is no duplicate account and no
-// fund movement. Making priority/expiresAt deterministic too would require a
-// conditional (create-if-absent) metadata write on the ledger, which the API
-// does not currently expose.
+// metadata additively, each caller's per-key response survives the other's
+// write, so every caller's retry returns its original priority and expiration
+// even though those shared account fields remain last-write-wins. There is no
+// duplicate account and no fund movement.
 func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBalance) (*Balance, error) {
 	if err := data.Validate(); err != nil {
 		return nil, err
@@ -753,14 +751,15 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	case err == nil:
 		if ret.Metadata != nil &&
 			ret.Metadata[MetadataKeyWalletBalance] == TrueValue {
-			// Best-effort app-level replay complementing the ledger's own dedup
-			// of AddMetadataToAccount: if this exact Idempotency-Key already
-			// created the balance (its marker is present), return the existing
-			// balance. A key with no recorded marker — a genuinely different
-			// request for an existing balance, or one whose marker was never
-			// persisted — intentionally falls through to ErrBalanceAlreadyExists.
-			if ik != "" && ret.Metadata[balanceIdempotencyMarker(ik)] == TrueValue {
-				return Ptr(BalanceFromAccount(*ret)), nil
+			// If this exact Idempotency-Key already created the balance, replay
+			// its immutable response rather than rebuilding it from shared live
+			// account metadata that another concurrent create may have changed.
+			if encoded := ret.Metadata[balanceIdempotencyMarker(ik)]; ik != "" && encoded != "" {
+				balance := &Balance{}
+				if err := json.Unmarshal([]byte(encoded), balance); err != nil {
+					return nil, errors.Wrap(err, "decoding balance create response")
+				}
+				return balance, nil
 			}
 			return nil, ErrBalanceAlreadyExists
 		}
@@ -772,7 +771,11 @@ func (m *Manager) CreateBalance(ctx context.Context, ik string, data *CreateBala
 	balance.Priority = data.Priority
 	balanceMetadata := balance.LedgerMetadata(data.WalletID)
 	if ik != "" {
-		balanceMetadata[balanceIdempotencyMarker(ik)] = TrueValue
+		responseSnapshot, err := json.Marshal(balance)
+		if err != nil {
+			return nil, errors.Wrap(err, "encoding balance create response")
+		}
+		balanceMetadata[balanceIdempotencyMarker(ik)] = string(responseSnapshot)
 	}
 
 	if err := m.client.AddMetadataToAccount(
@@ -794,11 +797,11 @@ func hashIdempotencyKey(ik string) string {
 }
 
 // balanceIdempotencyMarker returns the metadata key under which a balance
-// create records that it ran for a given Idempotency-Key. Namespacing by the
-// hash of the key means concurrent creates with different keys write different
-// metadata keys; since the ledger merges metadata additively, each caller's
-// marker survives and a later retry under any of those keys still replays
-// instead of failing with ErrBalanceAlreadyExists.
+// create stores its original response for a given Idempotency-Key. Namespacing
+// by the hash of the key means concurrent creates with different keys write
+// different metadata keys; since the ledger merges metadata additively, each
+// caller's response survives and a later retry under any of those keys replays
+// the exact original result instead of failing with ErrBalanceAlreadyExists.
 func balanceIdempotencyMarker(ik string) string {
 	return MetadataKeyBalanceIdempotencyPrefix + hashIdempotencyKey(ik)
 }

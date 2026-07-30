@@ -22,9 +22,9 @@ const (
 	MetadataKeyBalanceExpiresAt      = "wallets/balances/expiresAt"
 	MetadataKeyBalancePriority       = "wallets/balances/priority"
 	// MetadataKeyBalanceIdempotencyPrefix namespaces per-Idempotency-Key replay
-	// markers. Each create stamps a distinct key (prefix + hash of the
+	// results. Each create stamps a distinct key (prefix + hash of the
 	// Idempotency-Key) rather than a single shared field, so concurrent
-	// first-time creates merge their markers instead of clobbering each other —
+	// first-time creates merge their snapshots instead of clobbering each other —
 	// preserving idempotent replay for every caller. See Manager.CreateBalance.
 	MetadataKeyBalanceIdempotencyPrefix = "wallets/balances/idempotency/"
 	MetadataKeyWalletBalance            = "wallets/balances"
