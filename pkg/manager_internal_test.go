@@ -24,6 +24,12 @@ func TestWalletCreateRequestFingerprint(t *testing.T) {
 		t.Fatal("fingerprint is not stable for an identical request")
 	}
 
+	// NewWallet normalizes omitted metadata to an empty object, so those two
+	// wire representations must also share the same request fingerprint.
+	if walletCreateRequestFingerprint("w", nil) != walletCreateRequestFingerprint("w", metadata.Metadata{}) {
+		t.Fatal("nil and empty metadata produced different fingerprints")
+	}
+
 	// The name is part of the fingerprint.
 	if walletCreateRequestFingerprint("w", nil) == walletCreateRequestFingerprint("x", nil) {
 		t.Fatal("different names produced the same fingerprint")

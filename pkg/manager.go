@@ -569,6 +569,13 @@ func replayOrConflict(ledger string, existing *AccountWithVolumesAndBalances, fi
 // unambiguous, so distinct requests cannot collide via separator bytes embedded
 // in a name or metadata value.
 func walletCreateRequestFingerprint(name string, md metadata.Metadata) string {
+	// NewWallet normalizes omitted metadata to an empty object. Apply the same
+	// normalization to the fingerprint so `metadata: null` and `metadata: {}`
+	// remain equivalent idempotent requests instead of producing a false 409.
+	if md == nil {
+		md = metadata.Metadata{}
+	}
+
 	payload, _ := json.Marshal(struct {
 		Name     string            `json:"name"`
 		Metadata metadata.Metadata `json:"metadata"`
