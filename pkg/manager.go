@@ -498,13 +498,18 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 	// immutable fingerprint of the original create request (stored at creation),
 	// never against the wallet's live metadata which UpdateWallet can mutate.
 	fingerprint := walletCreateRequestFingerprint(data.Name, data.Metadata)
+	responseSnapshot, err := json.Marshal(wallet)
+	if err != nil {
+		return nil, errors.Wrap(err, "encoding wallet create response")
+	}
 	body := wallet.LedgerMetadata()
 	body[MetadataKeyWalletCreateRequestHash] = fingerprint
+	body[MetadataKeyWalletCreateResponse] = string(responseSnapshot)
 
 	if existing, err := m.existingWalletAccount(ctx, wallet.ID); err != nil {
 		return nil, err
 	} else if existing != nil {
-		return replayOrConflict(m.ledgerName, existing, fingerprint)
+		return replayOrConflict(existing, fingerprint)
 	}
 
 	if err := m.client.AddMetadataToAccount(ctx, m.ledgerName, m.chart.GetMainBalanceAccount(wallet.ID), ik, body); err != nil {
@@ -521,7 +526,7 @@ func (m *Manager) CreateWallet(ctx context.Context, ik string, data *CreateReque
 		if existing == nil {
 			return nil, errors.Wrap(err, "adding metadata to account")
 		}
-		return replayOrConflict(m.ledgerName, existing, fingerprint)
+		return replayOrConflict(existing, fingerprint)
 	}
 
 	return &wallet, nil
@@ -545,19 +550,23 @@ func (m *Manager) existingWalletAccount(ctx context.Context, id string) (*Accoun
 	}
 }
 
-// replayOrConflict returns the persisted wallet when the incoming request
-// matches the one that originally created it (an idempotent replay), or
+// replayOrConflict returns the original create response when the incoming
+// request matches the one that created the wallet (an idempotent replay), or
 // ErrIdempotencyConflict when the same key was reused with a different request.
 // The comparison is against the create-request fingerprint stored at creation,
 // which is immutable: UpdateWallet never rewrites it, so the replay/conflict
 // outcome does not depend on later wallet mutations. CreatedAt is not part of
 // the fingerprint, since it legitimately differs between attempts.
-func replayOrConflict(ledger string, existing *AccountWithVolumesAndBalances, fingerprint string) (*Wallet, error) {
+func replayOrConflict(existing *AccountWithVolumesAndBalances, fingerprint string) (*Wallet, error) {
 	if GetMetadata(existing, MetadataKeyWalletCreateRequestHash) != fingerprint {
 		return nil, ErrIdempotencyConflict
 	}
-	w := WithBalancesFromAccount(ledger, existing)
-	return &w, nil
+
+	w := &Wallet{}
+	if err := json.Unmarshal([]byte(GetMetadata(existing, MetadataKeyWalletCreateResponse)), w); err != nil {
+		return nil, errors.Wrap(err, "decoding wallet create response")
+	}
+	return w, nil
 }
 
 // walletCreateRequestFingerprint is a stable hash of the idempotency-relevant

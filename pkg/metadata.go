@@ -35,6 +35,10 @@ const (
 	// rather than the wallet's live metadata, so UpdateWallet cannot change the
 	// idempotency replay/conflict outcome.
 	MetadataKeyWalletCreateRequestHash = "wallets/createRequestHash"
+	// MetadataKeyWalletCreateResponse stores the immutable response returned by
+	// the original idempotent wallet creation. Retries replay this snapshot
+	// rather than exposing live wallet state changed by later operations.
+	MetadataKeyWalletCreateResponse = "wallets/createResponse"
 
 	PrimaryWallet = "wallets.primary"
 	HoldWallet    = "wallets.hold"

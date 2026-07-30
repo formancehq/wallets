@@ -271,21 +271,24 @@ func TestWalletsCreateIdempotentReplayAfterPatch(t *testing.T) {
 		}),
 	)
 
-	create := func() *httptest.ResponseRecorder {
+	create := func() *wallet.Wallet {
 		req := newRequest(t, http.MethodPost, "/wallets", request)
 		req.Header.Set("Idempotency-Key", idempotencyKey)
 		rec := httptest.NewRecorder()
 		testEnv.Router().ServeHTTP(rec, req)
-		return rec
+		require.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+		createdWallet := &wallet.Wallet{}
+		readResponse(t, rec, createdWallet)
+		return createdWallet
 	}
 
-	require.Equal(t, http.StatusCreated, create().Result().StatusCode)
+	first := create()
 
 	// Retrying the original create after the wallet was patched must still replay,
-	// not 409: the match is against the immutable create fingerprint, not the
-	// now-changed live metadata.
+	// the exact original response, not the wallet's now-changed live state.
 	second := create()
-	require.Equal(t, http.StatusCreated, second.Result().StatusCode)
+	require.Equal(t, first, second)
+	require.Equal(t, metadata.Metadata{"foo": "bar"}, second.Metadata)
 	require.Equal(t, 1, addCalls)
 }
 
