@@ -82,7 +82,7 @@ func newServeCommand() *cobra.Command {
 	cmd.Flags().String(LedgerNameFlag, "wallets-002", "Target ledger")
 	cmd.Flags().String(AccountPrefixFlag, "", "Account prefix flag")
 	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
-	cmd.Flags().Bool(audit.AuditEnabledFlag, true, "Enable HTTP audit")
+	cmd.Flags().Bool(audit.AuditEnabledFlag, false, "Enable HTTP audit")
 
 	service.AddFlags(cmd.Flags())
 	licence.AddFlags(cmd.Flags())
