@@ -14,33 +14,27 @@ concurrency:
 
 jobs:
   PR:
-    if: github.event_name == 'pull_request'
-    name: Check PR Title
-    runs-on: ubuntu-latest
+    uses: formancehq/ci/.github/workflows/go-pr.yml@main
     permissions:
+      pull-requests: read
       statuses: write
-    steps:
-      - uses: amannn/action-semantic-pull-request@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Dirty:
-    runs-on: "namespace-profile-linux-amd64-4vcpu"
+    runs-on: namespace-profile-linux-amd64-4vcpu
     steps:
-      - uses: 'namespacelabs/nscloud-checkout-action@v9'
+      - uses: namespacelabs/nscloud-checkout-action@v9
         with:
           fetch-depth: 0
-      - name: Setup Env
-        uses: ./.github/actions/env
-        with:
-          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
-      - run: >
-          nix develop --impure --command just pre-commit
+          dissociate: true
+
+      - uses: formancehq/ci/actions/setup-nix@main
+
+      - run: nix develop --impure --command just pre-commit
+
       - name: Get changed files
-        id: changed-files
         shell: bash
         run: |
-          hasChanged=$(git status --porcelain) 
+          hasChanged=$(git status --porcelain)
           if (( $(echo ${#hasChanged}) != 0 )); then
             git status
             echo "There are changes in the repository"
@@ -48,71 +42,63 @@ jobs:
           fi
 
   Tests:
-    runs-on: "namespace-profile-linux-amd64-4vcpu"
-    needs:
-      - Dirty
+    needs: [Dirty]
+    runs-on: namespace-profile-linux-amd64-4vcpu
     steps:
-      - uses: 'namespacelabs/nscloud-checkout-action@v9'
+      - uses: namespacelabs/nscloud-checkout-action@v9
         with:
           fetch-depth: 0
-      - name: Setup Env
-        uses: ./.github/actions/env
-        with:
-          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
-      - run: >
-          nix develop --impure --command just tests
+          dissociate: true
+
+      - uses: formancehq/ci/actions/setup-nix@main
+
+      - run: nix develop --impure --command just tests
 
   GoReleaser:
-    runs-on: "namespace-profile-linux-amd64-4vcpu"
-    if: contains(github.event.pull_request.labels.*.name, 'build-images') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
-    needs:
-      - Dirty
-    steps:
-      - uses: 'namespacelabs/nscloud-checkout-action@v9'
-        with:
-          fetch-depth: 0
-      - name: Setup Env
-        uses: ./.github/actions/env
-        with:
-          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
-      - run: >
-          nix develop --impure --command just release-ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
-          SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
-          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+    needs: [Dirty]
+    uses: formancehq/ci/.github/workflows/go-build.yml@main
+    with:
+      build-condition: main-and-label
+      build-label: build-images
+    secrets:
+      NUMARY_GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
+      FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
   Deploy:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment: staging
     needs:
       - GoReleaser
       - Tests
     steps:
-      - uses: 'actions/checkout@v7'
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
       - name: Install Earthly
         uses: earthly/actions-setup@v1
         with:
-          github-token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           version: "latest"
+
       - name: Tailscale
         uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
+
       - name: "Deploy in staging"
         env:
           TAG: ${{ github.sha }}
           COMPONENT: wallets
           ARGOCD_REGION_AUTH_TOKEN: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
         run: >
-          earthly  
-          --no-output 
+          earthly
+          --no-output
           --secret AUTH_TOKEN=$ARGOCD_REGION_AUTH_TOKEN
           +deploy-staging
           --TAG=$TAG
