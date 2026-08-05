@@ -67,39 +67,25 @@ jobs:
       GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
   Deploy:
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-linux-amd64-2vcpu
     if: github.ref == 'refs/heads/main'
     environment: staging
+    permissions:
+      id-token: write
     needs:
       - GoReleaser
       - Tests
     steps:
-      - uses: actions/checkout@v7
+      - uses: formancehq/ci/actions/deploy-staging@main
         with:
-          fetch-depth: 0
-
-      - name: Install Earthly
-        uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: "latest"
-
-      - name: Tailscale
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-
-      - name: "Deploy in staging"
-        env:
-          TAG: ${{ github.sha }}
-          COMPONENT: wallets
-          ARGOCD_REGION_AUTH_TOKEN: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
-        run: >
-          earthly
-          --no-output
-          --secret AUTH_TOKEN=$ARGOCD_REGION_AUTH_TOKEN
-          +deploy-staging
-          --TAG=$TAG
-          --COMPONENT=$COMPONENT
+          component: wallets
+          tag: ${{ github.sha }}
+          auth-token: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
+          ts-oauth-client-id: ${{ secrets.TS_OIDC_OAUTH_CLIENT_ID }}
+          ts-audience: ${{ secrets.TS_OIDC_AUDIENCE }}
+          ts-tags: ${{ vars.TS_TAGS }}
+          ts-version: ${{ vars.TS_VERSION }}
+          ts-args: ${{ vars.TS_ARGS }}
+          ts-retry: ${{ vars.TS_RETRY }}
+          ts-timeout: ${{ vars.TS_TIMEOUT }}
+          ts-ping: ${{ vars.TS_PING }}
