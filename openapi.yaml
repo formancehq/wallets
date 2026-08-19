@@ -618,6 +618,7 @@ components:
   schemas:
     Monetary:
       type: object
+      description: An amount together with the asset it is denominated in
       required:
         - asset
         - amount
@@ -631,6 +632,7 @@ components:
           description: The amount of the monetary value.
     Wallet:
       type: object
+      description: A wallet backed by a set of ledger accounts
       required:
         - name
         - id
@@ -649,13 +651,17 @@ components:
           description: Metadata associated with the wallet.
         name:
           type: string
+          description: Human-readable name of the wallet
         createdAt:
           type: string
           format: date-time
+          description: When the wallet was created
         ledger:
           type: string
+          description: Name of the ledger backing this wallet
         balances:
           type: object
+          description: The wallet's main balance, keyed by asset
           required:
             - main
           properties:
@@ -663,6 +669,7 @@ components:
               $ref: '#/components/schemas/AssetHolder'
     WalletWithBalances:
       type: object
+      description: A wallet together with the funds it currently holds
       required:
         - name
         - id
@@ -682,11 +689,14 @@ components:
             type: string
         name:
           type: string
+          description: Human-readable name of the wallet
         createdAt:
           type: string
           format: date-time
+          description: When the wallet was created
         balances:
           type: object
+          description: Aggregated funds held by the wallet, keyed by asset
           required:
             - main
           properties:
@@ -694,8 +704,10 @@ components:
               $ref: '#/components/schemas/AssetHolder'
         ledger:
           type: string
+          description: Name of the ledger backing this wallet
     Hold:
       type: object
+      description: Funds locked by a pending debit, later either confirmed or voided
       required:
         - id
         - walletID
@@ -717,11 +729,14 @@ components:
             type: string
         asset:
           type: string
+          description: Asset the held funds are denominated in
         description:
           type: string
+          description: Human-readable reason the funds were held
         destination:
           $ref: '#/components/schemas/Subject'
     ExpandedDebitHold:
+      description: A hold together with the amounts it currently locks and has already released
       allOf:
         - $ref: '#/components/schemas/Hold'
         - type: object
@@ -745,6 +760,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of wallets
           allOf:
             - $ref: '#/components/schemas/Cursor'
             - properties:
@@ -785,6 +801,7 @@ components:
           $ref: '#/components/schemas/Hold'
     AggregatedVolumes:
       type: object
+      description: Volumes aggregated per account and per asset
       x-go-type:
         type: AggregatedVolumes
       additionalProperties:
@@ -796,15 +813,19 @@ components:
           type: integer
           format: bigint
           minimum: 0
+          description: Amount to move, as an arbitrary-precision integer expressed in the asset's smallest unit
           example: 100
         asset:
           type: string
+          description: The asset being moved, optionally carrying a scale suffix such as USD/2
           example: COIN
         destination:
           type: string
+          description: Address of the account credited by this posting
           example: users:002
         source:
           type: string
+          description: Address of the account debited by this posting
           example: users:001
       required:
         - amount
@@ -816,15 +837,21 @@ components:
       properties:
         ledger:
           type: string
+          description: Name of the ledger the transaction was recorded in
         timestamp:
           type: string
           format: date-time
+          description: >-
+            The transaction time: when the transaction is considered to have occurred. See [bi-
+            temporality](https://docs.formance.com/modules/ledger/working-with/bi-temporality)
         postings:
           type: array
+          description: The fund movements making up the transaction
           items:
             $ref: '#/components/schemas/Posting'
         reference:
           type: string
+          description: Optional caller-supplied identifier, unique within the ledger, used to deduplicate transactions
           example: ref:001
         metadata:
           type: object
@@ -835,6 +862,7 @@ components:
           type: integer
           format: int64
           minimum: 0
+          description: Unique sequential identifier for this transaction within the ledger
         preCommitVolumes:
           $ref: '#/components/schemas/AggregatedVolumes'
         postCommitVolumes:
@@ -854,15 +882,19 @@ components:
           format: int64
           minimum: 1
           maximum: 1000
+          description: Number of items requested per page
           example: 15
         hasMore:
           type: boolean
+          description: Whether further pages are available
           example: false
         previous:
           type: string
+          description: Cursor for the previous page, absent on the first page
           example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
         next:
           type: string
+          description: Cursor for the next page, absent on the last page
           example: ''
     GetTransactionsResponse:
       type: object
@@ -870,6 +902,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of transactions
           allOf:
             - $ref: '#/components/schemas/Cursor'
             - properties:
@@ -886,6 +919,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of holds
           allOf:
             - $ref: '#/components/schemas/Cursor'
             - properties:
@@ -916,18 +950,22 @@ components:
             type: string
         name:
           type: string
+          description: Human-readable name for the wallet
     Volume:
       type: object
       properties:
         input:
           type: integer
           format: bigint
+          description: Total amount credited for this asset
         output:
           type: integer
           format: bigint
+          description: Total amount debited for this asset
         balance:
           type: integer
           format: bigint
+          description: Net balance, equal to input minus output
       required:
         - input
         - output
@@ -971,8 +1009,10 @@ components:
       properties:
         type:
           type: string
+          description: Discriminator identifying this subject as a ledger account
         identifier:
           type: string
+          description: Address of the ledger account
     WalletSubject:
       type: object
       required:
@@ -981,11 +1021,15 @@ components:
       properties:
         type:
           type: string
+          description: Discriminator identifying this subject as a wallet
         identifier:
           type: string
+          description: Identifier of the wallet
         balance:
           type: string
+          description: Name of the balance within the wallet to use. Defaults to the main balance when omitted
     Subject:
+      description: The counterparty of a wallet movement, either a ledger account or another wallet
       discriminator:
         propertyName: type
         mapping:
@@ -1009,9 +1053,11 @@ components:
           description: Metadata associated with the wallet.
         reference:
           type: string
+          description: Optional caller-supplied identifier used to deduplicate the credit
         sources:
           type: array
           nullable: true
+          description: Where the funds come from. Defaults to the world account when omitted
           items:
             $ref: '#/components/schemas/Subject'
         balance:
@@ -1020,6 +1066,9 @@ components:
         timestamp:
           type: string
           format: date-time
+          description: >-
+            The transaction time to record, letting you backdate or postdate the credit. See [bi-
+            temporality](https://docs.formance.com/modules/ledger/working-with/bi-temporality)
       example:
         amount:
           asset: USD/2
@@ -1047,10 +1096,12 @@ components:
           description: Metadata associated with the wallet.
         description:
           type: string
+          description: Human-readable reason for the debit
         destination:
           $ref: '#/components/schemas/Subject'
         balances:
           type: array
+          description: Names of the balances to debit from, in order. Defaults to the main balance when omitted
           items:
             type: string
             description: A targeted balance (use '*' for all)
@@ -1072,6 +1123,7 @@ components:
       properties:
         version:
           type: string
+          description: Version of the wallets service
     AssetHolder:
       type: object
       required:
@@ -1079,29 +1131,38 @@ components:
       properties:
         assets:
           type: object
+          description: Amounts held, keyed by asset
           additionalProperties:
             type: integer
             format: bigint
     Balance:
       type: object
+      description: A named balance within a wallet, optionally carrying an expiry date
       required:
         - name
       properties:
         name:
           type: string
+          description: Name of the balance within the wallet
         expiresAt:
           type: string
           format: date-time
           nullable: true
+          description: When the funds in this balance expire. Expired funds stop counting towards available funds
         priority:
           type: integer
           format: bigint
+          description: >-
+            Ordering hint when choosing which balances to debit first. Lower values are debited first, and it
+            only breaks ties between balances that carry no expiry date
     BalanceWithAssets:
+      description: A named balance within a wallet together with the amounts it holds per asset
       allOf:
         - $ref: '#/components/schemas/Balance'
         - $ref: '#/components/schemas/AssetHolder'
     WalletSummary:
       type: object
+      description: Aggregated funds held by a wallet, broken down by availability
       required:
         - balances
         - availableFunds
@@ -1111,25 +1172,31 @@ components:
       properties:
         balances:
           type: array
+          description: Each balance of the wallet with its per-asset amounts
           items:
             $ref: '#/components/schemas/BalanceWithAssets'
         availableFunds:
           type: object
+          description: >-
+            Funds available to debit, keyed by asset. Covers balances with no expiry and those not yet expired
           additionalProperties:
             type: integer
             format: bigint
         expiredFunds:
           type: object
+          description: Funds held in balances whose expiry date has passed, keyed by asset
           additionalProperties:
             type: integer
             format: bigint
         expirableFunds:
           type: object
+          description: Funds held in balances carrying an expiry date that has not yet passed, keyed by asset
           additionalProperties:
             type: integer
             format: bigint
         holdFunds:
           type: object
+          description: Funds currently locked by pending holds, keyed by asset
           additionalProperties:
             type: integer
             format: bigint
@@ -1139,6 +1206,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of balances
           allOf:
             - $ref: '#/components/schemas/Cursor'
             - properties:
@@ -1173,6 +1241,7 @@ components:
       properties:
         errorCode:
           type: string
+          description: Machine-readable error code identifying the failure
           enum:
             - VALIDATION
             - INTERNAL_ERROR
@@ -1180,3 +1249,4 @@ components:
             - HOLD_CLOSED
         errorMessage:
           type: string
+          description: Human-readable description of the error
