@@ -7,7 +7,7 @@ on:
       - releases/*
       - release/*
   pull_request:
-    types: [ assigned, opened, synchronize, reopened, labeled ]
+    types: [ assigned, opened, synchronize, reopened, labeled, edited ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -16,49 +16,22 @@ concurrency:
 jobs:
   PR:
     if: github.event_name == 'pull_request'
-    uses: formancehq/ci/.github/workflows/go-pr.yml@main
+    uses: formancehq/ci/.github/workflows/go-pr.yml@v1
     permissions:
       pull-requests: read
       statuses: write
 
   Dirty:
-    runs-on: namespace-profile-linux-amd64-4vcpu
-    steps:
-      - uses: namespacelabs/nscloud-checkout-action@v9
-        with:
-          fetch-depth: 0
-          dissociate: true
-
-      - uses: formancehq/ci/actions/setup-nix@main
-
-      - run: nix develop --impure --command just pre-commit
-
-      - name: Get changed files
-        shell: bash
-        run: |
-          hasChanged=$(git status --porcelain)
-          if (( $(echo ${#hasChanged}) != 0 )); then
-            git status
-            echo "There are changes in the repository"
-            exit 1
-          fi
+    uses: formancehq/ci/.github/workflows/go-dirty.yml@v1
 
   Tests:
-    needs: [Dirty]
-    runs-on: namespace-profile-linux-amd64-4vcpu
-    steps:
-      - uses: namespacelabs/nscloud-checkout-action@v9
-        with:
-          fetch-depth: 0
-          dissociate: true
-
-      - uses: formancehq/ci/actions/setup-nix@main
-
-      - run: nix develop --impure --command just tests
+    uses: formancehq/ci/.github/workflows/go-test.yml@v1
+    with:
+      runner-profile: namespace-profile-linux-amd64-4vcpu
 
   GoReleaser:
     needs: [Dirty]
-    uses: formancehq/ci/.github/workflows/go-build.yml@main
+    uses: formancehq/ci/.github/workflows/go-build.yml@v1
     with:
       build-condition: main-and-label
       build-label: build-images
@@ -79,7 +52,7 @@ jobs:
       - GoReleaser
       - Tests
     steps:
-      - uses: formancehq/ci/actions/deploy-staging@main
+      - uses: formancehq/ci/actions/deploy-staging@v1
         with:
           component: wallets
           tag: ${{ github.sha }}
