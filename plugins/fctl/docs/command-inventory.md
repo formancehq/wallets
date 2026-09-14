@@ -166,7 +166,8 @@ and `maxRequestBodyBytes` in `pkg/api/router.go`. The server returns `413` with
 error code `REQUEST_TOO_LARGE` above that limit. The pinned fctl `producthttp`
 bridge preserves that status as the bounded `product_http_error` failure with an
 `httpStatus` detail, so the portable surface distinguishes an expected product
-rejection from an invalid response.
+rejection from an invalid response. `core` pins the mapping for `413` and `500`
+in `TestExecuteSurfacesProductHTTPStatusAsABoundedFailure`.
 
 ## 7. Blockers and divergences
 

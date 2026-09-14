@@ -1,6 +1,7 @@
 package component
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -36,6 +37,45 @@ func TestAuthoringDevShellPinsTheCompleteComponentToolchain(t *testing.T) {
 	} {
 		if !strings.Contains(contents, required) {
 			t.Errorf("Wallets authoring shell does not pin required component input %q", required)
+		}
+	}
+}
+
+// TestSDKPinIsIdenticalAcrossTheLockToolchainAndContractScript fails a partial
+// repin. The SDK revision is asserted in four independent places — the lock the
+// wrapper enforces, the Nix authoring toolchain, this package's constant, and
+// the contract script's expectations — and a plugin pinned to two revisions at
+// once is not reproducible.
+func TestSDKPinIsIdenticalAcrossTheLockToolchainAndContractScript(t *testing.T) {
+	encoded, err := os.ReadFile("../fctl-sdk.lock.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lock struct {
+		Repository string `json:"repository"`
+		Commit     string `json:"commit"`
+		SDKNarHash string `json:"sdkNarHash"`
+		WITSHA256  string `json:"witSha256"`
+	}
+	if err := json.Unmarshal(encoded, &lock); err != nil {
+		t.Fatalf("decode fctl SDK lock: %v", err)
+	}
+	if lock.Commit != fctlSDKRevision {
+		t.Errorf("lock commit = %q, want the authoring revision %q", lock.Commit, fctlSDKRevision)
+	}
+
+	script, err := os.ReadFile("../scripts/test-fctl-sdk-contract.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, required := range []string{
+		"readonly expected_commit='" + lock.Commit + "'",
+		"readonly expected_repository='" + lock.Repository + "'",
+		"readonly expected_nar_hash='" + lock.SDKNarHash + "'",
+		"readonly expected_wit_hash='" + lock.WITSHA256 + "'",
+	} {
+		if !strings.Contains(string(script), required) {
+			t.Errorf("test-fctl-sdk-contract.sh does not expect the locked value %q", required)
 		}
 	}
 }

@@ -549,3 +549,63 @@ func contentTypeFor(body string) string {
 	}
 	return "application/json"
 }
+
+// TestExecuteSurfacesProductHTTPStatusAsABoundedFailure pins the failure the
+// portable surface reports when Wallets rejects a request. The pinned fctl
+// bridge must preserve the numeric status as product_http_error, so a bounded
+// product rejection such as the server's 413 REQUEST_TOO_LARGE stays
+// distinguishable from an invalid response, and only 5xx is retryable.
+func TestExecuteSurfacesProductHTTPStatusAsABoundedFailure(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		status    int32
+		retryable bool
+	}{
+		{name: "request too large", status: 413},
+		{name: "server error", status: 500, retryable: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			host := sdk.NewMemoryHost(func(_ context.Context, _ sdk.Request) (sdk.Responses, error) {
+				return sdk.NewResponseStream(sdk.Response{
+					Status: test.status, ContentType: "application/json",
+					Body: []byte(`{"errorCode":"REQUEST_TOO_LARGE","errorMessage":"body too large"}`),
+				}), nil
+			})
+
+			err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+				CommandID:       "wallets.v2.create",
+				Arguments:       []string{"primary"},
+				Flags:           []sdk.FlagOccurrence{{Name: "ik", Value: "create-1"}},
+				Target:          sdk.TargetSelection{OrganizationID: "org-1", StackID: "stack-1"},
+				ServiceVersions: []sdk.ServiceVersion{{Service: sdk.ServiceWallets, Version: "2.2.0", Major: 2}},
+				Continuation:    sdk.SinglePageContinuationControl(),
+			}, host)
+
+			var failure sdk.Failure
+			if !errors.As(err, &failure) {
+				t.Fatalf("Execute() error = %v, want an sdk.Failure", err)
+			}
+			if failure.Code != string(sdk.FailureProductHTTPError) {
+				t.Fatalf("failure code = %q, want %q", failure.Code, sdk.FailureProductHTTPError)
+			}
+			if failure.Retryable != test.retryable {
+				t.Errorf("failure retryable = %v, want %v", failure.Retryable, test.retryable)
+			}
+			var details struct {
+				HTTPStatus int32 `json:"httpStatus"`
+			}
+			if err := json.Unmarshal(failure.Details, &details); err != nil {
+				t.Fatalf("failure details are invalid JSON: %v", err)
+			}
+			if details.HTTPStatus != test.status {
+				t.Errorf("failure httpStatus = %d, want %d", details.HTTPStatus, test.status)
+			}
+			if strings.Contains(string(failure.Details), "body too large") {
+				t.Errorf("failure details leaked the product error body: %s", failure.Details)
+			}
+			if len(host.Events()) != 0 {
+				t.Errorf("events = %#v, want none on a rejected request", host.Events())
+			}
+		})
+	}
+}
