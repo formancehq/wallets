@@ -554,21 +554,30 @@ func contentTypeFor(body string) string {
 // portable surface reports when Wallets rejects a request. The pinned fctl
 // bridge must preserve the numeric status as product_http_error, so a bounded
 // product rejection such as the server's 413 REQUEST_TOO_LARGE stays
-// distinguishable from an invalid response, and only 5xx is retryable.
+// distinguishable from an invalid response, and only 5xx is retryable. The
+// details document is pinned exactly rather than probed for one substring, so
+// any future field carrying product bytes across the ABI fails here.
 func TestExecuteSurfacesProductHTTPStatusAsABoundedFailure(t *testing.T) {
+	// The body carries a distinctive marker on every case: none of it may
+	// appear in the portable failure.
+	const productBody = `{"errorCode":"REQUEST_TOO_LARGE","errorMessage":"body too large for wallet w1 owned by alice"}`
 	for _, test := range []struct {
 		name      string
 		status    int32
 		retryable bool
 	}{
+		{name: "redirect", status: 302},
+		{name: "bad request", status: 400},
 		{name: "request too large", status: 413},
-		{name: "server error", status: 500, retryable: true},
+		{name: "last non retryable status", status: 499},
+		{name: "first retryable status", status: 500, retryable: true},
+		{name: "gateway timeout", status: 504, retryable: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			host := sdk.NewMemoryHost(func(_ context.Context, _ sdk.Request) (sdk.Responses, error) {
 				return sdk.NewResponseStream(sdk.Response{
 					Status: test.status, ContentType: "application/json",
-					Body: []byte(`{"errorCode":"REQUEST_TOO_LARGE","errorMessage":"body too large"}`),
+					Body: []byte(productBody),
 				}), nil
 			})
 
@@ -591,17 +600,24 @@ func TestExecuteSurfacesProductHTTPStatusAsABoundedFailure(t *testing.T) {
 			if failure.Retryable != test.retryable {
 				t.Errorf("failure retryable = %v, want %v", failure.Retryable, test.retryable)
 			}
-			var details struct {
-				HTTPStatus int32 `json:"httpStatus"`
-			}
+
+			// The whole details document is the contract: exactly httpStatus
+			// and a null details slot. Nothing else crosses the ABI.
+			var details map[string]any
 			if err := json.Unmarshal(failure.Details, &details); err != nil {
 				t.Fatalf("failure details are invalid JSON: %v", err)
 			}
-			if details.HTTPStatus != test.status {
-				t.Errorf("failure httpStatus = %d, want %d", details.HTTPStatus, test.status)
+			want := map[string]any{"httpStatus": float64(test.status), "details": nil}
+			if !reflect.DeepEqual(details, want) {
+				t.Errorf("failure details = %s, want %v", failure.Details, want)
 			}
-			if strings.Contains(string(failure.Details), "body too large") {
-				t.Errorf("failure details leaked the product error body: %s", failure.Details)
+			for _, secret := range []string{"body too large", "REQUEST_TOO_LARGE", "alice", "w1"} {
+				if strings.Contains(string(failure.Details), secret) {
+					t.Errorf("failure details leaked the product error body %q: %s", secret, failure.Details)
+				}
+				if strings.Contains(failure.Message, secret) {
+					t.Errorf("failure message leaked the product error body %q: %s", secret, failure.Message)
+				}
 			}
 			if len(host.Events()) != 0 {
 				t.Errorf("events = %#v, want none on a rejected request", host.Events())

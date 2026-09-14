@@ -11,8 +11,48 @@ import (
 const schemaDialect = "https://json-schema.org/draft/2020-12/schema"
 
 var (
-	objectSchema     = []byte(`{"$schema":"` + schemaDialect + `","type":"object"}`)
+	objectSchema     = []byte(`{"$schema":"` + schemaDialect + `",` + emptyObjectSchema + `}`)
 	collectionSchema = []byte(`{"$schema":"` + schemaDialect + `","type":"array"}`)
+
+	// Result schemas enumerate the complete exported JSON shape of the generated
+	// Wallets models. Objects remain open for forward-compatible JSON/YAML output,
+	// while map values, optional fields, nullable expiry dates, and mandatory
+	// fields stay typed explicitly.
+	walletSchema                = []byte(`{"$schema":"` + schemaDialect + `",` + walletObjectSchema + `}`)
+	walletCollectionSchema      = []byte(`{"$schema":"` + schemaDialect + `","type":"array","items":{` + walletObjectSchema + `}}`)
+	walletWithBalancesSchema    = []byte(`{"$schema":"` + schemaDialect + `",` + walletWithBalancesObjectSchema + `}`)
+	balanceSchema               = []byte(`{"$schema":"` + schemaDialect + `",` + balanceObjectSchema + `}`)
+	balanceCollectionSchema     = []byte(`{"$schema":"` + schemaDialect + `","type":"array","items":{` + balanceObjectSchema + `}}`)
+	balanceWithAssetsSchema     = []byte(`{"$schema":"` + schemaDialect + `",` + balanceWithAssetsObjectSchema + `}`)
+	holdSchema                  = []byte(`{"$schema":"` + schemaDialect + `",` + expandedHoldObjectSchema + `}`)
+	holdCollectionSchema        = []byte(`{"$schema":"` + schemaDialect + `","type":"array","items":{` + holdObjectSchema + `}}`)
+	debitSchema                 = []byte(`{"$schema":"` + schemaDialect + `","type":"object","oneOf":[{` + holdObjectSchema + `},{` + emptyObjectSchema + `}]}`)
+	transactionCollectionSchema = []byte(`{"$schema":"` + schemaDialect + `","type":"array","items":{` + transactionObjectSchema + `}}`)
+)
+
+const (
+	emptyObjectSchema = `"type":"object","maxProperties":0,"additionalProperties":false`
+	assetHolderSchema = `"type":"object","properties":{"assets":{"type":"object","additionalProperties":{"type":"integer"}}},"required":["assets"]`
+	balancesSchema    = `"type":"object","properties":{"main":{` + assetHolderSchema + `}},"required":["main"]`
+	metadataSchema    = `{"type":"object","additionalProperties":{"type":"string"}}`
+
+	walletProperties               = `"id":{"type":"string"},"metadata":` + metadataSchema + `,"name":{"type":"string"},"createdAt":{"type":"string"},"ledger":{"type":"string"},"balances":{` + balancesSchema + `}`
+	walletObjectSchema             = `"type":"object","properties":{` + walletProperties + `},"required":["id","metadata","name","createdAt","ledger"]`
+	walletWithBalancesObjectSchema = `"type":"object","properties":{` + walletProperties + `},"required":["id","metadata","name","createdAt","balances","ledger"]`
+
+	balanceProperties             = `"name":{"type":"string"},"expiresAt":{"type":["string","null"]},"priority":{"type":"integer"}`
+	balanceObjectSchema           = `"type":"object","properties":{` + balanceProperties + `},"required":["name"]`
+	balanceWithAssetsObjectSchema = `"type":"object","properties":{` + balanceProperties + `,"assets":{"type":"object","additionalProperties":{"type":"integer"}}},"required":["name","assets"]`
+
+	subjectSchema            = `"type":"object","properties":{"type":{"type":"string"},"identifier":{"type":"string"},"balance":{"type":"string"}},"required":["type","identifier"]`
+	holdProperties           = `"id":{"type":"string"},"walletID":{"type":"string"},"metadata":` + metadataSchema + `,"asset":{"type":"string"},"description":{"type":"string"},"destination":{` + subjectSchema + `}`
+	holdObjectSchema         = `"type":"object","properties":{` + holdProperties + `},"required":["id","walletID","metadata","asset","description"]`
+	expandedHoldObjectSchema = `"type":"object","properties":{` + holdProperties + `,"remaining":{"type":"integer"},"originalAmount":{"type":"integer"}},"required":["id","walletID","metadata","asset","description","remaining","originalAmount"]`
+
+	postingSchema           = `"type":"object","properties":{"amount":{"type":"integer"},"asset":{"type":"string"},"destination":{"type":"string"},"source":{"type":"string"}},"required":["amount","asset","destination","source"]`
+	volumeSchema            = `"type":"object","properties":{"input":{"type":"integer"},"output":{"type":"integer"},"balance":{"type":"integer"}},"required":["input","output","balance"]`
+	aggregatedVolumesSchema = `"type":"object","additionalProperties":{"type":"object","additionalProperties":{` + volumeSchema + `}}`
+	transactionObjectSchema = `"type":"object","properties":{"ledger":{"type":"string"},"timestamp":{"type":"string"},"postings":{"type":"array","items":{` + postingSchema + `}},"reference":{"type":"string"},"metadata":` + metadataSchema + `,"id":{"type":"integer"},"preCommitVolumes":{` + aggregatedVolumesSchema + `},"postCommitVolumes":{` + aggregatedVolumesSchema + `}},"required":["timestamp","postings","metadata","id"]`
 )
 
 func buildInputSchema(arguments []sdk.Argument, flags []sdk.Flag) []byte {

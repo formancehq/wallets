@@ -21,18 +21,24 @@ type sdkLock struct {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fatalf("usage: read-fctl-sdk-lock LOCK_FILE")
+	if err := run(os.Args[1:], os.Stdout); err != nil {
+		fatalf("%v", err)
 	}
-	f, err := os.Open(os.Args[1])
+}
+
+func run(args []string, out io.Writer) error {
+	if len(args) != 1 {
+		return fmt.Errorf("usage: read-fctl-sdk-lock LOCK_FILE")
+	}
+	f, err := os.Open(args[0])
 	if err != nil {
-		fatalf("open fctl SDK lock: %v", err)
+		return fmt.Errorf("open fctl SDK lock: %w", err)
 	}
 	defer f.Close()
 
 	lock, err := decodeLock(f)
 	if err != nil {
-		fatalf("decode fctl SDK lock: %v", err)
+		return fmt.Errorf("decode fctl SDK lock: %w", err)
 	}
 	fields := []string{
 		lock.ModulePath,
@@ -44,7 +50,8 @@ func main() {
 		lock.WITSHA256,
 	}
 
-	fmt.Printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6])
+	_, err = fmt.Fprintf(out, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6])
+	return err
 }
 
 func decodeLock(r io.Reader) (sdkLock, error) {

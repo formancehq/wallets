@@ -41,12 +41,15 @@ func TestAuthoringDevShellPinsTheCompleteComponentToolchain(t *testing.T) {
 	}
 }
 
-// TestSDKPinIsIdenticalAcrossTheLockToolchainAndContractScript fails a partial
-// repin. The SDK revision is asserted in four independent places — the lock the
-// wrapper enforces, the Nix authoring toolchain, this package's constant, and
-// the contract script's expectations — and a plugin pinned to two revisions at
-// once is not reproducible.
-func TestSDKPinIsIdenticalAcrossTheLockToolchainAndContractScript(t *testing.T) {
+// TestSDKPinIsIdenticalAcrossTheLockAndContractScript fails a partial repin of
+// the two surfaces it can read exactly: this package's constant against the
+// lock the wrapper enforces, and the contract script's four expectations
+// against the same lock. The Nix authoring toolchain is asserted by
+// TestAuthoringDevShellPinsTheCompleteComponentToolchain, and every other
+// restatement in the repository — README, inventory — by
+// TestEveryFctlSDKRevisionRestatementMatchesTheLock. A plugin pinned to two
+// revisions at once is not reproducible.
+func TestSDKPinIsIdenticalAcrossTheLockAndContractScript(t *testing.T) {
 	encoded, err := os.ReadFile("../fctl-sdk.lock.json")
 	if err != nil {
 		t.Fatal(err)

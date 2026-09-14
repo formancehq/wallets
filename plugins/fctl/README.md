@@ -16,6 +16,19 @@ commands return one cursor page by default. The host-owned `--all` flag follows
 opaque cursors and emits one aggregated JSON array, bounded to 100 pages,
 10,000 items, and 4 MiB.
 
+Nine commands with a single resource success shape declare compact, ordered table
+columns. Those columns select scalar leaves only, including the nested
+`destination.identifier` path for holds; arbitrary metadata, asset maps,
+posting arrays, volume maps, and free-form descriptions remain available in
+JSON and YAML. `update`, `credit`, `holds confirm`, and `holds void` declare no
+table because their successful response is the empty object produced from an
+HTTP 204 response. `debit` also declares no static table because its success is
+a Hold for a pending debit but `{}` for a completed 204 debit; a static Hold
+table would produce a blank row for the latter. The public schemas describe
+every exported field of each generated result model — including nested maps,
+optional fields, and nullability — while remaining open to forward-compatible
+product fields, so table presentation never narrows machine-readable output.
+
 Fund-moving commands (`credit`, `debit`, `holds confirm`, and `holds void`)
 require `--ik` and forward it as `Idempotency-Key`. Balance priorities and
 hold-confirmation amounts are accepted as decimal strings so values larger than
@@ -59,18 +72,30 @@ The plugin imports only fctl public packages. It must not import fctl
 
 ## Verify
 
-Set `FCTL_SDK_ROOT` to an explicit fctl source root, then run the source-level
-gates from the Wallets development shell:
+The source-level gates need no developer-only checkout. When `FCTL_SDK_ROOT` is
+unset, the wrapper materializes the exact commit recorded in
+`fctl-sdk.lock.json` from the locked repository into a cache directory
+(`plugins/fctl/.fctl-sdk-cache`, overridable with `FCTL_SDK_CACHE_DIR`) and
+copies the locked SDK and WIT paths into a clean ephemeral projection. Set
+`FCTL_SDK_ROOT` to verify a checkout you already have instead:
 
 ```sh
+# ordinary CI and a clean workstation
+nix develop --impure --no-write-lock-file --command just fctl-component-test
+
+# against an existing fctl checkout
 export FCTL_SDK_ROOT=/path/to/fctl-v2-poc
 nix develop --impure --no-write-lock-file --command just fctl-component-test
 ```
 
+Materialization never resolves a branch or a tag. The locked commit is fetched
+by its exact object name, the cache's origin must be the locked repository, and
+the fetched tree is rejected unless its digests match the lock.
+
 The wrapper validates the SDK module's NAR content hash and canonical WIT hash
 against `fctl-sdk.lock.json`. When the source includes Git metadata, it also
 requires the locked commit and origin, then projects those exact committed SDK
-and WIT paths before validation. Ignored or modified working-tree files
+and WIT paths into a clean ephemeral projection before validation. Ignored or modified working-tree files
 therefore cannot affect the command. It creates an ephemeral Go workspace for
 the Wallets and validated SDK modules, runs the requested command with that
 workspace, and removes the whole projection afterward. No workstation path or
@@ -109,6 +134,14 @@ boundary, not a published module release. `fctl-sdk.lock.json` is sealed at
 `formancehq/fctl-v2-poc` repository, and the canonical WIT hash is unchanged
 from the previous pin, so the portable lifecycle interface is untouched by the
 repin. A checkout carrying Git metadata must present that commit and that
-origin before the wrapper runs. End-to-end product scenarios
-additionally require a live Wallets v2 service and the fctl real-host
-compatibility gates.
+origin before the wrapper runs.
+
+That commit is reachable on the canonical remote today, but only from
+`refs/heads/codex/mvp5-integration`. It is not an ancestor of
+`refs/heads/main` and carries no tag, and nothing in this repository can make
+it durable. Until it lands on `main`, deleting or force-moving that branch
+leaves the pin unresolvable and reopens the typed `product_http_error` mapping
+this plugin depends on. Landing it is release gate 1 in the command inventory.
+
+End-to-end product scenarios additionally require a live Wallets v2 service and
+the fctl real-host compatibility gates.

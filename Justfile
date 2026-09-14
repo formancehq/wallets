@@ -18,11 +18,11 @@ generate:
   @go generate ./...
 
 tests:
-  @go test -race -covermode=atomic \
+  @go test -race -covermode=atomic -count=1 \
     -coverprofile coverage.txt \
     -tags it \
     ./...
-  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-fctl.txt" ./...
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh go test -race -covermode=atomic -count=1 -coverprofile "{{justfile_directory()}}/coverage-fctl.txt" ./...
   @tail -n +2 coverage-fctl.txt >> coverage.txt && rm coverage-fctl.txt
 
 # Regenerates the committed fctl Wallets plugin operation inventory from

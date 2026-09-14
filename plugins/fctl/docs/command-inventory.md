@@ -26,7 +26,7 @@ It contains:
 | Wallets base revision (`origin/main`, `v2.2.0-6-ga48a7d0`) | `a48a7d0590b8b1cfdbfbd22cba0e475713550a75` |
 | exact OpenAPI bytes used by the audit and `pkg/client` | SHA-256 `715d87d7ea85344183afd1a4e16bdb67b161c1fff5665aaba74200521682a8fd` |
 | legacy fctl baseline (`cmd/wallets/`) | `693c58e27865f83332e6c3199d61fed81b742f41` |
-| fctl public SDK development snapshot | `e9b1395f46f3100b381dbe00f5213de28e6df0e1` |
+| fctl public SDK development snapshot (`fctl-sdk.lock.json`) | `e9b1395f46f3100b381dbe00f5213de28e6df0e1` |
 
 **`openapi.yaml` is the authoritative contract for this inventory.** The
 generated `pkg/client` is now a buildable projection of that pinned document
@@ -70,6 +70,19 @@ from the mapping.
 **All 14 executable leaves map onto 14 distinct operations. There are no
 exclusions and no deprecations to justify.** This surface is unusually clean:
 each leaf calls exactly one `Wallets.V1` method, and no two leaves share one.
+
+Rendering is also decided command by command. Nine leaves with a single
+resource success shape expose compact table hints over scalar fields proven by
+their typed adapter results and complete public schemas. Those schemas enumerate
+every exported nested, optional, and nullable property while remaining open to
+forward-compatible fields. The four HTTP 204 leaves
+(`update`, `credit`, `holds confirm`, and `holds void`) intentionally expose no
+table hint: the adapter emits `{}` and inventing a status or identifier column
+would misstate the product response. `debit` also omits a static table because
+its success is a Hold for a pending debit but `{}` for a completed 204 debit;
+the latter would otherwise render as one blank Hold row. JSON and YAML retain
+every response field; the table excludes metadata maps, asset maps, posting and
+volume structures, and free-form descriptions.
 
 The full historical table, including the aliases every legacy leaf carried, is
 in [`operations.generated.md`](./operations.generated.md) §3. It is provenance,
@@ -166,8 +179,8 @@ and `maxRequestBodyBytes` in `pkg/api/router.go`. The server returns `413` with
 error code `REQUEST_TOO_LARGE` above that limit. The pinned fctl `producthttp`
 bridge preserves that status as the bounded `product_http_error` failure with an
 `httpStatus` detail, so the portable surface distinguishes an expected product
-rejection from an invalid response. `core` pins the mapping for `413` and `500`
-in `TestExecuteSurfacesProductHTTPStatusAsABoundedFailure`.
+rejection from an invalid response. `core` pins representative 3xx, 4xx, and
+5xx mappings in `TestExecuteSurfacesProductHTTPStatusAsABoundedFailure`.
 
 ## 7. Blockers and divergences
 
@@ -222,13 +235,22 @@ against this inventory.
 After B1 and B2 are resolved, the remaining release gates are external to the
 command implementation:
 
-1. replace the local fctl SDK development path with a published immutable SDK
+1. land the pinned fctl SDK commit `e9b1395f` on the canonical repository's
+   `main`. It is reachable today only from `refs/heads/codex/mvp5-integration`,
+   is not an ancestor of `refs/heads/main`, and carries no tag. The bootstrap
+   in `scripts/with-fctl-sdk.sh` consumes only that exact object name. Its
+   fallback may fetch published branch refs solely to obtain the object, but it
+   never selects a branch tip. Deleting or force-moving the integration branch
+   makes the pin unresolvable and reopens the `product_http_error` mapping
+   recorded in §6 and §7. This repository cannot close this gate; the fctl
+   repository must;
+2. replace the local fctl SDK development path with a published immutable SDK
    version;
-2. validate `/_info` against a running Stack 3.2 Wallets service and record the
+3. validate `/_info` against a running Stack 3.2 Wallets service and record the
    observed product-major mapping (see **D3**);
-3. run real read and mutation scenarios against that service through both
+4. run real read and mutation scenarios against that service through both
    admitted fctl hosts, including browser coverage;
-4. retain the resulting component hashes, WIT imports, size, and host receipts
+5. retain the resulting component hashes, WIT imports, size, and host receipts
    as release evidence.
 
 ## 9. Determinism
