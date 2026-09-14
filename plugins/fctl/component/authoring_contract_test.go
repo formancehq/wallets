@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const fctlSDKRevision = "545521bfa222250af6b4419b194c7967cded0379"
+const fctlSDKRevision = "e9b1395f46f3100b381dbe00f5213de28e6df0e1"
 
 func TestAuthoringDevShellPinsTheCompleteComponentToolchain(t *testing.T) {
 	flake, err := os.ReadFile("../../../flake.nix")

@@ -34,8 +34,10 @@ The four fund-moving commands require an idempotency key, but the current
 Wallets server cannot replay completed hold resolution and rejects keyed debit
 requests that use wildcard or expiring balance sources. These release blockers
 and their resolution paths are recorded as B1 and B2 in the command inventory.
-The pinned fctl HTTP bridge also collapses non-2xx product responses, including
-Wallets' bounded 413 response, into `product_response_failed`; see B3.
+The pinned fctl HTTP bridge preserves a non-2xx product response, including
+Wallets' bounded 413 response, as the `product_http_error` failure carrying its
+numeric status, so the plugin does not collapse expected product rejections into
+an invalid-response failure.
 
 The exact command, flag, operation, scope, and compatibility mapping is in
 [`docs/command-inventory.md`](./docs/command-inventory.md). Generated operation
@@ -102,6 +104,11 @@ and rejects a Wasm artefact larger than 16 MiB. Successful local output is writt
 
 The explicit SDK source contract is portable across checkout locations and
 fails closed on source or WIT drift. It remains a local source-development
-boundary, not a published module release. End-to-end product scenarios
+boundary, not a published module release. `fctl-sdk.lock.json` is sealed at
+`e9b1395f46f3100b381dbe00f5213de28e6df0e1` on the canonical
+`formancehq/fctl-v2-poc` repository, and the canonical WIT hash is unchanged
+from the previous pin, so the portable lifecycle interface is untouched by the
+repin. A checkout carrying Git metadata must present that commit and that
+origin before the wrapper runs. End-to-end product scenarios
 additionally require a live Wallets v2 service and the fctl real-host
 compatibility gates.

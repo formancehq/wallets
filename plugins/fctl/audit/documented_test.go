@@ -38,7 +38,7 @@ func TestDocumentedTotals(t *testing.T) {
 		WithoutBaseline: 2,
 		Blocked:         3,
 		Admissible:      13,
-		ModuleBlockers:  1,
+		ModuleBlockers:  0,
 		Divergences:     8,
 
 		Mutating:     7,
@@ -102,7 +102,6 @@ func TestDocumentedBlockerIdentity(t *testing.T) {
 	want := map[string][]string{
 		"B1": {"confirmHold", "voidHold"},
 		"B2": {"debitWallet"},
-		"B3": {},
 	}
 
 	if len(Blockers) != len(want) {

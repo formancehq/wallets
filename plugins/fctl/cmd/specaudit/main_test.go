@@ -126,7 +126,7 @@ func TestExecuteWriteModeReportsWrittenArtefactsAndTotals(t *testing.T) {
 	for _, want := range []string{
 		"wrote " + filepath.Join(dir, "audit", "testdata", "report.json"),
 		"wrote " + filepath.Join(dir, "docs", "operations.generated.md"),
-		"operations=16 leaves=14 mapped=14 excluded=0 targets=14 blocked=3 moduleBlockers=1 divergences=8",
+		"operations=16 leaves=14 mapped=14 excluded=0 targets=14 blocked=3 moduleBlockers=0 divergences=8",
 	} {
 		if !strings.Contains(stderr.String(), want) {
 			t.Errorf("execute write stderr = %q, want substring %q", stderr.String(), want)

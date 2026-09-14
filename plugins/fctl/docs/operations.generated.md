@@ -119,13 +119,6 @@ No operation on this surface returns secret or display-once material, destroys c
 - Consequence: Wildcard debits and debits from expiring balances are valid API requests without a key but cannot be expressed by the portable command.
 - Fix in: Product contract decision: provide a deterministic source snapshot or explicitly remove these source forms from portable debit before changing --ik policy.
 
-### B3 — the pinned generated HTTP bridge collapses product HTTP errors
-
-- Applies to: whole surface
-- Evidence: fctl SDK 545521b producthttp.Client.readResponse maps every non-2xx response to product_response_failed before the generated Wallets client can decode status or the product error body.
-- Consequence: The portable surface cannot distinguish expected product failures, including the server's 413 REQUEST_TOO_LARGE response, from an invalid response.
-- Fix in: fctl public producthttp SDK: preserve a bounded, redacted non-2xx status as product_http_error and define which safe error details cross the ABI.
-
 ## 6. Spec-versus-server divergences
 
 ### D1 — /_info is served unauthenticated
@@ -196,7 +189,7 @@ No operation on this surface returns secret or display-once material, destroys c
 | operations without a legacy precedent | 2 |
 | operations carrying an operation-scoped blocker | 3 |
 | operations with no operation-scoped blocker | 13 |
-| module-level blockers | 1 |
+| module-level blockers | 0 |
 | recorded divergences | 8 |
 | mutating operations | 7 |
 | operations accepting an idempotency key | 7 |

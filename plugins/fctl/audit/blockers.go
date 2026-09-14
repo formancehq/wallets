@@ -57,17 +57,6 @@ var Blockers = []Blocker{
 		FixIn: "Product contract decision: provide a deterministic source snapshot or " +
 			"explicitly remove these source forms from portable debit before changing --ik policy.",
 	},
-	{
-		ID:    "B3",
-		Title: "the pinned generated HTTP bridge collapses product HTTP errors",
-		Evidence: "fctl SDK 545521b producthttp.Client.readResponse maps every non-2xx " +
-			"response to product_response_failed before the generated Wallets client can " +
-			"decode status or the product error body.",
-		Consequence: "The portable surface cannot distinguish expected product failures, " +
-			"including the server's 413 REQUEST_TOO_LARGE response, from an invalid response.",
-		FixIn: "fctl public producthttp SDK: preserve a bounded, redacted non-2xx status " +
-			"as product_http_error and define which safe error details cross the ABI.",
-	},
 }
 
 // Divergence is one place the document and the server disagree, or the document

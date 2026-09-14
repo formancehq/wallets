@@ -26,7 +26,7 @@ It contains:
 | Wallets base revision (`origin/main`, `v2.2.0-6-ga48a7d0`) | `a48a7d0590b8b1cfdbfbd22cba0e475713550a75` |
 | exact OpenAPI bytes used by the audit and `pkg/client` | SHA-256 `715d87d7ea85344183afd1a4e16bdb67b161c1fff5665aaba74200521682a8fd` |
 | legacy fctl baseline (`cmd/wallets/`) | `693c58e27865f83332e6c3199d61fed81b742f41` |
-| fctl public SDK development snapshot | `545521bfa222250af6b4419b194c7967cded0379` |
+| fctl public SDK development snapshot | `e9b1395f46f3100b381dbe00f5213de28e6df0e1` |
 
 **`openapi.yaml` is the authoritative contract for this inventory.** The
 generated `pkg/client` is now a buildable projection of that pinned document
@@ -164,16 +164,16 @@ union with JSON Schema `oneOf`, while the HTTP bridge preserves the status code.
 **Request body size: capped at 1 MiB** by both the portable operation policies
 and `maxRequestBodyBytes` in `pkg/api/router.go`. The server returns `413` with
 error code `REQUEST_TOO_LARGE` above that limit. The pinned fctl `producthttp`
-bridge currently converts every non-2xx response to `product_response_failed`,
-so the plugin cannot yet preserve that distinct condition; B3 records the SDK
-work required instead of claiming this error mapping is implemented.
+bridge preserves that status as the bounded `product_http_error` failure with an
+`httpStatus` detail, so the portable surface distinguishes an expected product
+rejection from an invalid response.
 
 ## 7. Blockers and divergences
 
 Both are recorded in `audit/blockers.go` with their evidence, and rendered in
 [`operations.generated.md`](./operations.generated.md) §5 and §6.
 
-**3 blockers remain.** B1 applies to `confirmHold` and `voidHold`: both inspect
+**2 blockers remain.** B1 applies to `confirmHold` and `voidHold`: both inspect
 mutable hold state before Ledger can recognize a completed retry under the same
 idempotency key. The recommended product fix is an exact completed-replay lookup
 before the closed-hold precondition, backed by retry-after-success tests.
@@ -184,14 +184,14 @@ resolved Ledger request can change between attempts. Resolve the contract by
 making the source set deterministic, or explicitly remove those source forms
 from portable debit; do not weaken the key requirement implicitly.
 
-B3 is module-level: pinned fctl SDK `producthttp` rejects every non-2xx response
-as `product_response_failed`. The SDK must preserve a bounded, redacted status
-as `product_http_error` and define safe error details before the plugin can
-distinguish product conditions such as `REQUEST_TOO_LARGE`.
+The previously recorded module-level blocker B3 is closed by the SDK pin above.
+fctl `e9b1395f` maps a non-2xx product response to `product_http_error`, carrying
+the numeric status and marking `5xx` retryable, instead of collapsing it into
+`product_response_failed`. No module-level blocker remains.
 
 The generated client still builds standalone, models `Hold.asset` as required,
 exposes pagination for `listBalances`, and represents the `debitWallet` success
-union. Those facts do not close B1-B3.
+union. Those facts do not close B1 or B2.
 
 **8 divergences.** `D1` `/_info` is served unauthenticated though declared under
 `wallets:read`. `D2` declared scopes are neither defined in the security scheme
@@ -218,7 +218,7 @@ deterministic component build are implemented under `plugins/fctl`. All 14
 commands declare exactly one OpenAPI operation and the catalogue is checked
 against this inventory.
 
-After B1-B3 are resolved, the remaining release gates are external to the
+After B1 and B2 are resolved, the remaining release gates are external to the
 command implementation:
 
 1. replace the local fctl SDK development path with a published immutable SDK
