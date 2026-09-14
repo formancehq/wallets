@@ -2,12 +2,17 @@
 
 package components
 
+// Cursor - Paginated cursor wrapping the list of transactions
 type Cursor struct {
-	PageSize int64         `json:"pageSize"`
-	HasMore  *bool         `json:"hasMore,omitempty"`
-	Previous *string       `json:"previous,omitempty"`
-	Next     *string       `json:"next,omitempty"`
-	Data     []Transaction `json:"data"`
+	// Number of items requested per page
+	PageSize int64 `json:"pageSize"`
+	// Whether further pages are available
+	HasMore *bool `json:"hasMore,omitempty"`
+	// Cursor for the previous page, absent on the first page
+	Previous *string `json:"previous,omitempty"`
+	// Cursor for the next page, absent on the last page
+	Next *string       `json:"next,omitempty"`
+	Data []Transaction `json:"data"`
 }
 
 func (o *Cursor) GetPageSize() int64 {
@@ -46,6 +51,7 @@ func (o *Cursor) GetData() []Transaction {
 }
 
 type GetTransactionsResponse struct {
+	// Paginated cursor wrapping the list of transactions
 	Cursor Cursor `json:"cursor"`
 }
 

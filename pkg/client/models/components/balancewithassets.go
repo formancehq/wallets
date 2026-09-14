@@ -8,11 +8,16 @@ import (
 	"time"
 )
 
+// BalanceWithAssets - A named balance within a wallet together with the amounts it holds per asset
 type BalanceWithAssets struct {
-	Name      string              `json:"name"`
-	ExpiresAt *time.Time          `json:"expiresAt,omitempty"`
-	Priority  *big.Int            `json:"priority,omitempty"`
-	Assets    map[string]*big.Int `json:"assets"`
+	// Name of the balance within the wallet
+	Name string `json:"name"`
+	// When the funds in this balance expire. Expired funds stop counting towards available funds
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	// Ordering hint when choosing which balances to debit first. Lower values are debited first, and it only breaks ties between balances that carry no expiry date
+	Priority *big.Int `json:"priority,omitempty"`
+	// Amounts held, keyed by asset
+	Assets map[string]*big.Int `json:"assets"`
 }
 
 func (b BalanceWithAssets) MarshalJSON() ([]byte, error) {

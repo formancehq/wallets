@@ -7,6 +7,7 @@ import (
 	"math/big"
 )
 
+// Monetary - An amount together with the asset it is denominated in
 type Monetary struct {
 	// The asset of the monetary value.
 	Asset string `json:"asset"`

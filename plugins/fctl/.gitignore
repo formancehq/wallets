@@ -1,0 +1,10 @@
+/bindings/wit_exports/
+/build/
+/dist/
+/main.go
+
+# The repository root ignores paths named "wallets". Keep the portable
+# lifecycle sources visible to Git despite that broad product-level rule.
+!/entrypoints/
+!/entrypoints/wallets/
+!/entrypoints/wallets/*.go

@@ -5,7 +5,8 @@ package components
 type CreateWalletRequest struct {
 	// Custom metadata to attach to this wallet.
 	Metadata map[string]string `json:"metadata"`
-	Name     string            `json:"name"`
+	// Human-readable name for the wallet
+	Name string `json:"name"`
 }
 
 func (o *CreateWalletRequest) GetMetadata() map[string]string {

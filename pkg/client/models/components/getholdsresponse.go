@@ -2,12 +2,17 @@
 
 package components
 
+// GetHoldsResponseCursor - Paginated cursor wrapping the list of holds
 type GetHoldsResponseCursor struct {
-	PageSize int64   `json:"pageSize"`
-	HasMore  *bool   `json:"hasMore,omitempty"`
+	// Number of items requested per page
+	PageSize int64 `json:"pageSize"`
+	// Whether further pages are available
+	HasMore *bool `json:"hasMore,omitempty"`
+	// Cursor for the previous page, absent on the first page
 	Previous *string `json:"previous,omitempty"`
-	Next     *string `json:"next,omitempty"`
-	Data     []Hold  `json:"data"`
+	// Cursor for the next page, absent on the last page
+	Next *string `json:"next,omitempty"`
+	Data []Hold  `json:"data"`
 }
 
 func (o *GetHoldsResponseCursor) GetPageSize() int64 {
@@ -46,6 +51,7 @@ func (o *GetHoldsResponseCursor) GetData() []Hold {
 }
 
 type GetHoldsResponse struct {
+	// Paginated cursor wrapping the list of holds
 	Cursor GetHoldsResponseCursor `json:"cursor"`
 }
 

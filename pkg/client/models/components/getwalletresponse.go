@@ -3,6 +3,7 @@
 package components
 
 type GetWalletResponse struct {
+	// A wallet together with the funds it currently holds
 	Data WalletWithBalances `json:"data"`
 }
 

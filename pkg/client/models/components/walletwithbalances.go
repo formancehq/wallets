@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// WalletWithBalancesBalances - Aggregated funds held by the wallet, keyed by asset
 type WalletWithBalancesBalances struct {
 	Main AssetHolder `json:"main"`
 }
@@ -18,15 +19,20 @@ func (o *WalletWithBalancesBalances) GetMain() AssetHolder {
 	return o.Main
 }
 
+// WalletWithBalances - A wallet together with the funds it currently holds
 type WalletWithBalances struct {
 	// The unique ID of the wallet.
 	ID string `json:"id"`
 	// Metadata associated with the wallet.
-	Metadata  map[string]string          `json:"metadata"`
-	Name      string                     `json:"name"`
-	CreatedAt time.Time                  `json:"createdAt"`
-	Balances  WalletWithBalancesBalances `json:"balances"`
-	Ledger    string                     `json:"ledger"`
+	Metadata map[string]string `json:"metadata"`
+	// Human-readable name of the wallet
+	Name string `json:"name"`
+	// When the wallet was created
+	CreatedAt time.Time `json:"createdAt"`
+	// Aggregated funds held by the wallet, keyed by asset
+	Balances WalletWithBalancesBalances `json:"balances"`
+	// Name of the ledger backing this wallet
+	Ledger string `json:"ledger"`
 }
 
 func (w WalletWithBalances) MarshalJSON() ([]byte, error) {

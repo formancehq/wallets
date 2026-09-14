@@ -3,6 +3,7 @@
 package components
 
 type GetHoldResponse struct {
+	// A hold together with the amounts it currently locks and has already released
 	Data ExpandedDebitHold `json:"data"`
 }
 

@@ -3,6 +3,7 @@
 package components
 
 type GetBalanceResponse struct {
+	// A named balance within a wallet together with the amounts it holds per asset
 	Data BalanceWithAssets `json:"data"`
 }
 

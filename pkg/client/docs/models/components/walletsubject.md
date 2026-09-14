@@ -3,8 +3,8 @@
 
 ## Fields
 
-| Field              | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `Type`             | *string*           | :heavy_check_mark: | N/A                |
-| `Identifier`       | *string*           | :heavy_check_mark: | N/A                |
-| `Balance`          | **string*          | :heavy_minus_sign: | N/A                |
+| Field                                                                                   | Type                                                                                    | Required                                                                                | Description                                                                             |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Type`                                                                                  | *string*                                                                                | :heavy_check_mark:                                                                      | Discriminator identifying this subject as a wallet                                      |
+| `Identifier`                                                                            | *string*                                                                                | :heavy_check_mark:                                                                      | Identifier of the wallet                                                                |
+| `Balance`                                                                               | **string*                                                                               | :heavy_minus_sign:                                                                      | Name of the balance within the wallet to use. Defaults to the main balance when omitted |

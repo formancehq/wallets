@@ -1,5 +1,7 @@
 # Balances
 
+The wallet's main balance, keyed by asset
+
 
 ## Fields
 

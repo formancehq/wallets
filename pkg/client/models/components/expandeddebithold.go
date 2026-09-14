@@ -7,16 +7,20 @@ import (
 	"math/big"
 )
 
+// ExpandedDebitHold - A hold together with the amounts it currently locks and has already released
 type ExpandedDebitHold struct {
 	// The unique ID of the hold.
 	ID string `json:"id"`
 	// The ID of the wallet the hold is associated with.
 	WalletID string `json:"walletID"`
 	// Metadata associated with the hold.
-	Metadata    map[string]string `json:"metadata"`
-	Asset       *string           `json:"asset,omitempty"`
-	Description string            `json:"description"`
-	Destination *Subject          `json:"destination,omitempty"`
+	Metadata map[string]string `json:"metadata"`
+	// Asset the held funds are denominated in
+	Asset string `json:"asset"`
+	// Human-readable reason the funds were held
+	Description string `json:"description"`
+	// The counterparty of a wallet movement, either a ledger account or another wallet
+	Destination *Subject `json:"destination,omitempty"`
 	// Remaining amount on hold
 	Remaining *big.Int `json:"remaining"`
 	// Original amount on hold
@@ -55,9 +59,9 @@ func (o *ExpandedDebitHold) GetMetadata() map[string]string {
 	return o.Metadata
 }
 
-func (o *ExpandedDebitHold) GetAsset() *string {
+func (o *ExpandedDebitHold) GetAsset() string {
 	if o == nil {
-		return nil
+		return ""
 	}
 	return o.Asset
 }
