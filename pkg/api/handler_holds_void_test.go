@@ -98,3 +98,36 @@ func TestHoldsVoid(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
 }
+
+// This characterizes blocker B1: a retry carrying the original idempotency key
+// is rejected from current hold state before Ledger can recognize the replay.
+func TestHoldsVoidWithIdempotencyKeyStillRejectsClosedHold(t *testing.T) {
+	t.Parallel()
+
+	walletID := uuid.NewString()
+	hold := wallet.NewDebitHold(walletID, wallet.NewLedgerAccountSubject("bank"), "USD", "", metadata.Metadata{})
+	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/void", nil)
+	req.Header.Set("Idempotency-Key", "void-replay-key")
+	rec := httptest.NewRecorder()
+
+	var testEnv *testEnv
+	testEnv = newTestEnv(
+		WithListTransactions(func(context.Context, string, wallet.ListTransactionsQuery) (*shared.V2TransactionsCursorResponseCursor, error) {
+			return &shared.V2TransactionsCursorResponseCursor{Data: []shared.V2Transaction{{}}}, nil
+		}),
+		WithGetAccount(func(context.Context, string, string) (*wallet.AccountWithVolumesAndBalances, error) {
+			return &wallet.AccountWithVolumesAndBalances{
+				Account: wallet.Account{
+					Address:  testEnv.Chart().GetHoldAccount(hold.ID),
+					Metadata: metadataWithExpectingTypesAfterUnmarshalling(hold.LedgerMetadata(testEnv.Chart())),
+				},
+				Balances: map[string]*big.Int{"USD": big.NewInt(0)},
+			}, nil
+		}),
+	)
+	testEnv.Router().ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Result().StatusCode)
+	errorResponse := readErrorResponse(t, rec)
+	require.Equal(t, ErrorCodeClosedHold, errorResponse.ErrorCode)
+}

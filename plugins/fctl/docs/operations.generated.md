@@ -13,7 +13,7 @@ Legacy fctl baseline: `693c58e27865f83332e6c3199d61fed81b742f41`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `createWallet` | POST | `/wallets` | `wallets:write` | 201 `CreateWalletResponse` | `CreateWalletRequest` | `wallets create` | — |
 | `creditWallet` | POST | `/wallets/{id}/credit` | `wallets:write` | 204 (no body) | `CreditWalletRequest` | `wallets credit` | — |
-| `debitWallet` | POST | `/wallets/{id}/debit` | `wallets:write` | 201 `DebitWalletResponse` / 204 (no body) | `DebitWalletRequest` | `wallets debit` | — |
+| `debitWallet` | POST | `/wallets/{id}/debit` | `wallets:write` | 201 `DebitWalletResponse` / 204 (no body) | `DebitWalletRequest` | `wallets debit` | `B2` |
 | `getWallet` | GET | `/wallets/{id}` | `wallets:read` | 200 `GetWalletResponse` | — | `wallets show` | — |
 | `getWalletSummary` | GET | `/wallets/{id}/summary` | `wallets:read` | 200 `GetWalletSummaryResponse` | — | — | — |
 | `listWallets` | GET | `/wallets` | `wallets:read` | 200 `ListWalletsResponse` | — | `wallets list` | — |
@@ -31,10 +31,10 @@ Legacy fctl baseline: `693c58e27865f83332e6c3199d61fed81b742f41`.
 
 | operationId | method | path | scopes | success | request body | legacy fctl command | blockers |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `confirmHold` | POST | `/holds/{hold_id}/confirm` | `wallets:write` | 204 (no body) | `ConfirmHoldRequest` | `wallets holds confirm` | — |
+| `confirmHold` | POST | `/holds/{hold_id}/confirm` | `wallets:write` | 204 (no body) | `ConfirmHoldRequest` | `wallets holds confirm` | `B1` |
 | `getHold` | GET | `/holds/{holdID}` | `wallets:read` | 200 `GetHoldResponse` | — | `wallets holds show` | — |
 | `getHolds` | GET | `/holds` | `wallets:read` | 200 `GetHoldsResponse` | — | `wallets holds list` | — |
-| `voidHold` | POST | `/holds/{hold_id}/void` | `wallets:write` | 204 (no body) | — | `wallets holds void` | — |
+| `voidHold` | POST | `/holds/{hold_id}/void` | `wallets:write` | 204 (no body) | — | `wallets holds void` | `B1` |
 
 ### transactions (1)
 
@@ -105,6 +105,27 @@ No operation on this surface returns secret or display-once material, destroys c
 
 ## 5. Blockers
 
+### B1 — hold resolution cannot replay a completed idempotent request
+
+- Applies to: `confirmHold`, `voidHold`
+- Evidence: pkg/manager.go checks the hold's current remaining balance before submitting the idempotency key to Ledger. After a successful confirmation or void whose response is lost, the same request reaches ErrClosedHold before Ledger can recognize the replay.
+- Consequence: A caller cannot safely retry these fund-moving operations after an ambiguous response even though the portable commands require --ik.
+- Fix in: Wallets hold-resolution idempotency state: recognize an exact completed replay before the mutable closed-hold precondition, then add retry-after-success tests.
+
+### B2 — required debit idempotency excludes valid dynamic balance sources
+
+- Applies to: `debitWallet`
+- Evidence: pkg/manager.go returns ErrNonIdempotentDebit when an Idempotency-Key is combined with a wildcard source or a balance carrying an expiry, while the portable debit command requires --ik and accepts both source forms.
+- Consequence: Wildcard debits and debits from expiring balances are valid API requests without a key but cannot be expressed by the portable command.
+- Fix in: Product contract decision: provide a deterministic source snapshot or explicitly remove these source forms from portable debit before changing --ik policy.
+
+### B3 — the pinned generated HTTP bridge collapses product HTTP errors
+
+- Applies to: whole surface
+- Evidence: fctl SDK 545521b producthttp.Client.readResponse maps every non-2xx response to product_response_failed before the generated Wallets client can decode status or the product error body.
+- Consequence: The portable surface cannot distinguish expected product failures, including the server's 413 REQUEST_TOO_LARGE response, from an invalid response.
+- Fix in: fctl public producthttp SDK: preserve a bounded, redacted non-2xx status as product_http_error and define which safe error details cross the ABI.
+
 ## 6. Spec-versus-server divergences
 
 ### D1 — /_info is served unauthenticated
@@ -149,6 +170,12 @@ No operation on this surface returns secret or display-once material, destroys c
 - Spec says: servers declares exactly one entry, http://localhost:8080/.
 - Server does: In a stack, Wallets is reached through the gateway route /api/wallets. The plugin must take its endpoint from fctl target resolution and never from the document's server list.
 
+### D8 — balance priority bigint exceeds the server's signed 64-bit storage boundary
+
+- Applies to: `createBalance`
+- Spec says: CreateBalanceRequest.priority is declared as bigint and the generated client therefore represents it as an arbitrary-precision integer.
+- Server does: pkg.CreateBalance binds priority to Go int and BalanceFromAccount later parses the stored metadata with strconv.ParseInt(..., 64). The portable command follows the current cross-platform server boundary and rejects values outside signed 64-bit before host access.
+
 ## 7. Derived totals
 
 | quantity | value |
@@ -167,10 +194,10 @@ No operation on this surface returns secret or display-once material, destroys c
 | distinct operations the baseline reaches | 14 |
 | operations with a legacy precedent | 14 |
 | operations without a legacy precedent | 2 |
-| operations carrying an operation-scoped blocker | 0 |
-| operations with no operation-scoped blocker | 16 |
-| module-level blockers | 0 |
-| recorded divergences | 7 |
+| operations carrying an operation-scoped blocker | 3 |
+| operations with no operation-scoped blocker | 13 |
+| module-level blockers | 1 |
+| recorded divergences | 8 |
 | mutating operations | 7 |
 | operations accepting an idempotency key | 7 |
 | operations declaring cursor pagination | 4 |

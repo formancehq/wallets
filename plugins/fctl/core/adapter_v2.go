@@ -269,7 +269,7 @@ func executeV2(ctx context.Context, request sdk.ExecuteRequest, host sdk.Host) e
 		if len(request.Arguments) != 1 {
 			return invalidArgument("holds confirm requires one hold id")
 		}
-		amount, err := optionalNonNegativeAmount(first(flags["amount"]))
+		amount, err := optionalConfirmAmount(first(flags["amount"]))
 		if err != nil {
 			return err
 		}
@@ -493,7 +493,14 @@ func optionalSignedBigInt(value string) (*big.Int, error) {
 	if value == "" {
 		return nil, nil
 	}
-	return parseSignedBigInt(value)
+	integer, err := parseSignedBigInt(value)
+	if err != nil {
+		return nil, err
+	}
+	if !integer.IsInt64() {
+		return nil, invalidArgument("integer %q exceeds the Wallets server signed 64-bit limit", value)
+	}
+	return integer, nil
 }
 
 func parseNonNegativeAmount(value string) (*big.Int, error) {
@@ -509,6 +516,17 @@ func optionalNonNegativeAmount(value string) (*big.Int, error) {
 		return nil, nil
 	}
 	return parseNonNegativeAmount(value)
+}
+
+func optionalConfirmAmount(value string) (*big.Int, error) {
+	amount, err := optionalNonNegativeAmount(value)
+	if err != nil || amount == nil {
+		return amount, err
+	}
+	if !amount.IsInt64() {
+		return nil, invalidArgument("amount %q exceeds the Wallets server signed 64-bit limit", value)
+	}
+	return amount, nil
 }
 
 func optionalBool(value string) (*bool, error) {

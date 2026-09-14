@@ -181,6 +181,18 @@ func TestFundMovingCommandsRequireIdempotencyKey(t *testing.T) {
 	}
 }
 
+func TestWriteCommandsAdmitTheServerRequestBodyLimit(t *testing.T) {
+	for _, command := range Catalogue() {
+		operation := command.Operations[0]
+		if operation.HTTP == nil || operation.HTTP.GeneratedClient == nil || len(operation.HTTP.GeneratedClient.RequestContentTypes) == 0 {
+			continue
+		}
+		if got := operation.HTTP.GeneratedClient.MaxRequestBytes; got != 1<<20 {
+			t.Errorf("%s MaxRequestBytes = %d, want 1 MiB", command.ID, got)
+		}
+	}
+}
+
 func fieldNames(fields []sdk.Argument) []string {
 	if len(fields) == 0 {
 		return nil

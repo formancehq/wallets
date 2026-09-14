@@ -153,13 +153,14 @@ func TestHoldsConfirmWithTooHighAmount(t *testing.T) {
 	require.Equal(t, ErrorCodeInsufficientFund, errorResponse.ErrorCode)
 }
 
-func TestHoldsConfirmWithClosedHold(t *testing.T) {
+func TestHoldsConfirmWithIdempotencyKeyStillRejectsClosedHold(t *testing.T) {
 	t.Parallel()
 
 	walletID := uuid.NewString()
 	hold := wallet.NewDebitHold(walletID, wallet.NewLedgerAccountSubject("bank"), "USD", "", metadata.Metadata{})
 
 	req := newRequest(t, http.MethodPost, "/holds/"+hold.ID+"/confirm", ConfirmHoldRequest{})
+	req.Header.Set("Idempotency-Key", "confirm-replay-key")
 	rec := httptest.NewRecorder()
 
 	var testEnv *testEnv

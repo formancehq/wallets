@@ -31,7 +31,44 @@ type Blocker struct {
 }
 
 // Blockers are the recorded blockers at the pinned revisions.
-var Blockers = []Blocker{}
+var Blockers = []Blocker{
+	{
+		ID:           "B1",
+		Title:        "hold resolution cannot replay a completed idempotent request",
+		OperationIDs: []string{"confirmHold", "voidHold"},
+		Evidence: "pkg/manager.go checks the hold's current remaining balance before " +
+			"submitting the idempotency key to Ledger. After a successful confirmation " +
+			"or void whose response is lost, the same request reaches ErrClosedHold before " +
+			"Ledger can recognize the replay.",
+		Consequence: "A caller cannot safely retry these fund-moving operations after an " +
+			"ambiguous response even though the portable commands require --ik.",
+		FixIn: "Wallets hold-resolution idempotency state: recognize an exact completed " +
+			"replay before the mutable closed-hold precondition, then add retry-after-success tests.",
+	},
+	{
+		ID:           "B2",
+		Title:        "required debit idempotency excludes valid dynamic balance sources",
+		OperationIDs: []string{"debitWallet"},
+		Evidence: "pkg/manager.go returns ErrNonIdempotentDebit when an Idempotency-Key is " +
+			"combined with a wildcard source or a balance carrying an expiry, while the " +
+			"portable debit command requires --ik and accepts both source forms.",
+		Consequence: "Wildcard debits and debits from expiring balances are valid API " +
+			"requests without a key but cannot be expressed by the portable command.",
+		FixIn: "Product contract decision: provide a deterministic source snapshot or " +
+			"explicitly remove these source forms from portable debit before changing --ik policy.",
+	},
+	{
+		ID:    "B3",
+		Title: "the pinned generated HTTP bridge collapses product HTTP errors",
+		Evidence: "fctl SDK 545521b producthttp.Client.readResponse maps every non-2xx " +
+			"response to product_response_failed before the generated Wallets client can " +
+			"decode status or the product error body.",
+		Consequence: "The portable surface cannot distinguish expected product failures, " +
+			"including the server's 413 REQUEST_TOO_LARGE response, from an invalid response.",
+		FixIn: "fctl public producthttp SDK: preserve a bounded, redacted non-2xx status " +
+			"as product_http_error and define which safe error details cross the ABI.",
+	},
+}
 
 // Divergence is one place the document and the server disagree, or the document
 // contradicts itself.
@@ -125,6 +162,16 @@ var Divergences = []Divergence{
 		Server: "In a stack, Wallets is reached through the gateway route " +
 			"/api/wallets. The plugin must take its endpoint from fctl target " +
 			"resolution and never from the document's server list.",
+	},
+	{
+		ID:           "D8",
+		Title:        "balance priority bigint exceeds the server's signed 64-bit storage boundary",
+		OperationIDs: []string{"createBalance"},
+		Spec: "CreateBalanceRequest.priority is declared as bigint and the generated client " +
+			"therefore represents it as an arbitrary-precision integer.",
+		Server: "pkg.CreateBalance binds priority to Go int and BalanceFromAccount later parses " +
+			"the stored metadata with strconv.ParseInt(..., 64). The portable command follows the " +
+			"current cross-platform server boundary and rejects values outside signed 64-bit before host access.",
 	},
 }
 

@@ -131,19 +131,24 @@ there is no unlisted state to lose.
 `voidHold`. These are the operations a host must never replay speculatively.
 `createBalance` and `updateWallet` write state but move no funds.
 
-**Idempotence: complete, and this is the mitigation for the above.** All 7
-mutating operations declare `Idempotency-Key`, and all 7 handlers pass it
-through to the manager via `api.IdempotencyKeyFromRequest(r)` — verified
-handler by handler. No read operation declares it. The portable command
-contract requires `--ik` on the 4 fund-moving operations and forwards it
-unchanged; the other 3 mutations continue to accept an optional key.
+**Idempotency-key propagation: complete; end-to-end replay semantics: not yet
+complete.** All 7 mutating operations declare `Idempotency-Key`, and all 7
+handlers pass it through to the manager via `api.IdempotencyKeyFromRequest(r)` —
+verified handler by handler. No read operation declares it. The portable
+command contract requires `--ik` on the 4 fund-moving operations and forwards
+it unchanged; the other 3 mutations continue to accept an optional key. B1
+records that completed hold resolutions fail before Ledger can recognize a
+retry, and B2 records that keyed debit cannot use wildcard or expiring sources.
 
 **Integer boundary.** `priority` is a signed ordering hint and the OpenAPI
 schema declares it as `bigint`; `holds confirm --amount` is a non-negative
 fund amount. Both cross the portable ABI as decimal strings and are converted
-to `big.Int` only inside the generated-client adapter. The current server model
-uses Go `int` for balance priority and signed 64-bit parsing when rebuilding it
-from metadata, so the portable beyond-64-bit test is transport evidence only.
+to `big.Int` only inside the generated-client adapter. The current confirmation
+handler binds `amount` to Go `int64`, so the command rejects values above
+`MaxInt64` before transport. The current balance model uses Go `int` and signed
+64-bit parsing when rebuilding priority from metadata, so the command accepts
+the complete signed 64-bit priority range but rejects `MaxInt64+1` and
+`MinInt64-1` before host access. D8 records the OpenAPI/server mismatch.
 
 **Pagination: all 4 listings.** `listWallets`, `listBalances`, `getHolds` and
 `getTransactions` declare `cursor` and `pageSize`, matching the server cursor
@@ -156,24 +161,39 @@ returns an unbounded stream. No streaming transport is required.
 with a Hold or an empty `204`. The portable result contract can represent that
 union with JSON Schema `oneOf`, while the HTTP bridge preserves the status code.
 
-**Request body size: capped server-side at 1 MiB** (`maxRequestBodyBytes` in
-`pkg/api/router.go`), returning `413` with error code `REQUEST_TOO_LARGE`. A
-plugin sending large metadata maps must surface that as a distinct condition,
-not as a generic transport failure.
+**Request body size: capped at 1 MiB** by both the portable operation policies
+and `maxRequestBodyBytes` in `pkg/api/router.go`. The server returns `413` with
+error code `REQUEST_TOO_LARGE` above that limit. The pinned fctl `producthttp`
+bridge currently converts every non-2xx response to `product_response_failed`,
+so the plugin cannot yet preserve that distinct condition; B3 records the SDK
+work required instead of claiming this error mapping is implemented.
 
 ## 7. Blockers and divergences
 
 Both are recorded in `audit/blockers.go` with their evidence, and rendered in
 [`operations.generated.md`](./operations.generated.md) §5 and §6.
 
-**No blockers remain. All 16 operations are admissible.**
+**3 blockers remain.** B1 applies to `confirmHold` and `voidHold`: both inspect
+mutable hold state before Ledger can recognize a completed retry under the same
+idempotency key. The recommended product fix is an exact completed-replay lookup
+before the closed-hold precondition, backed by retry-after-success tests.
 
-The generated client builds standalone, models `Hold.asset` as required and
-exposes pagination for `listBalances`. The `debitWallet` status union is
-representable by the current portable result contract. Remaining integration
-gates are tracked independently in §8.
+B2 applies to `debitWallet`: the portable command requires `--ik`, while the
+server rejects keyed wildcard and expiring balance sources because their
+resolved Ledger request can change between attempts. Resolve the contract by
+making the source set deterministic, or explicitly remove those source forms
+from portable debit; do not weaken the key requirement implicitly.
 
-**7 divergences.** `D1` `/_info` is served unauthenticated though declared under
+B3 is module-level: pinned fctl SDK `producthttp` rejects every non-2xx response
+as `product_response_failed`. The SDK must preserve a bounded, redacted status
+as `product_http_error` and define safe error details before the plugin can
+distinguish product conditions such as `REQUEST_TOO_LARGE`.
+
+The generated client still builds standalone, models `Hold.asset` as required,
+exposes pagination for `listBalances`, and represents the `debitWallet` success
+union. Those facts do not close B1-B3.
+
+**8 divergences.** `D1` `/_info` is served unauthenticated though declared under
 `wallets:read`. `D2` declared scopes are neither defined in the security scheme
 (`scopes: {}`) nor asserted by the server (`jwt.Middleware` only). `D3`
 `info.version` is `0.1.0` while the released product is `v2.2.0`, so the product
@@ -182,10 +202,13 @@ twice on three operations. `D5` the hold path parameter is spelled `{holdID}` on
 one operation and `{hold_id}` on two others. `D6` `updateWallet` declares an
 anonymous request body. `D7` the only declared server is
 `http://localhost:8080/`, so the endpoint must come from fctl target resolution.
+`D8` records that OpenAPI declares balance priority as arbitrary-precision
+`bigint` while the server's portable cross-platform storage boundary is signed
+64-bit.
 
-`D1`, `D2` and `D4` are fixable in this repository's `openapi.yaml`. `D3`, `D5`
-and `D6` are contract-hygiene items. `D7` is expected and is recorded so nobody
-wires the document's server list into a plugin.
+`D1`, `D2`, `D4` and `D8` are fixable in this repository's `openapi.yaml` or
+server contract. `D3`, `D5` and `D6` are contract-hygiene items. `D7` is expected
+and is recorded so nobody wires the document's server list into a plugin.
 
 ## 8. Integration status
 
@@ -195,7 +218,8 @@ deterministic component build are implemented under `plugins/fctl`. All 14
 commands declare exactly one OpenAPI operation and the catalogue is checked
 against this inventory.
 
-The remaining release gates are external to the command implementation:
+After B1-B3 are resolved, the remaining release gates are external to the
+command implementation:
 
 1. replace the local fctl SDK development path with a published immutable SDK
    version;

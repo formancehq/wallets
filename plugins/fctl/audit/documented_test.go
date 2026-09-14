@@ -36,10 +36,10 @@ func TestDocumentedTotals(t *testing.T) {
 
 		WithBaseline:    14,
 		WithoutBaseline: 2,
-		Blocked:         0,
-		Admissible:      16,
-		ModuleBlockers:  0,
-		Divergences:     7,
+		Blocked:         3,
+		Admissible:      13,
+		ModuleBlockers:  1,
+		Divergences:     8,
 
 		Mutating:     7,
 		Idempotent:   7,
@@ -99,7 +99,11 @@ func TestDocumentedFamilySizes(t *testing.T) {
 // TestDocumentedBlockerIdentity pins §5: the blocker set and which operations
 // each one applies to.
 func TestDocumentedBlockerIdentity(t *testing.T) {
-	want := map[string][]string{}
+	want := map[string][]string{
+		"B1": {"confirmHold", "voidHold"},
+		"B2": {"debitWallet"},
+		"B3": {},
+	}
 
 	if len(Blockers) != len(want) {
 		t.Fatalf("%d blockers recorded, want %d", len(Blockers), len(want))
@@ -118,7 +122,7 @@ func TestDocumentedBlockerIdentity(t *testing.T) {
 
 // TestDocumentedDivergenceIdentity pins §6.
 func TestDocumentedDivergenceIdentity(t *testing.T) {
-	want := []string{"D1", "D2", "D3", "D4", "D5", "D6", "D7"}
+	want := []string{"D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"}
 
 	if len(Divergences) != len(want) {
 		t.Fatalf("%d divergences recorded, want %d", len(Divergences), len(want))

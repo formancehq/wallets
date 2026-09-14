@@ -20,12 +20,22 @@ Fund-moving commands (`credit`, `debit`, `holds confirm`, and `holds void`)
 require `--ik` and forward it as `Idempotency-Key`. Balance priorities and
 hold-confirmation amounts are accepted as decimal strings so values larger than
 32-bit integers remain exact across the portable ABI. Priorities are signed;
-movement amounts must be non-negative.
+movement amounts must be non-negative, and both priority and hold-confirmation
+amounts are capped at the current server's signed 64-bit boundary before any
+host request.
 
 The OpenAPI contract labels priority as `bigint`, while the current Wallets
 server binds it to Go `int` and re-reads its ledger metadata with signed 64-bit
-parsing. Values beyond signed 64-bit range are therefore covered only as a
-lossless portable-transport property, not claimed as live-server compatibility.
+parsing. The command therefore accepts the complete signed 64-bit range,
+including values beyond 32-bit, but does not claim arbitrary-precision live
+server compatibility; see divergence D8.
+
+The four fund-moving commands require an idempotency key, but the current
+Wallets server cannot replay completed hold resolution and rejects keyed debit
+requests that use wildcard or expiring balance sources. These release blockers
+and their resolution paths are recorded as B1 and B2 in the command inventory.
+The pinned fctl HTTP bridge also collapses non-2xx product responses, including
+Wallets' bounded 413 response, into `product_response_failed`; see B3.
 
 The exact command, flag, operation, scope, and compatibility mapping is in
 [`docs/command-inventory.md`](./docs/command-inventory.md). Generated operation

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -206,9 +207,19 @@ func TestExecutePreservesServerSizedBigIntegerFlagsExactly(t *testing.T) {
 			field: "priority", value: "-2147483649", status: 201, body: `{}`,
 		},
 		{
+			name: "maximum balance priority", commandID: "wallets.v2.balances.create", operation: "createBalance",
+			arguments: []string{"savings"}, flags: []sdk.FlagOccurrence{{Name: "id", Value: "w1"}, {Name: "priority", Value: "9223372036854775807"}, {Name: "ik", Value: "balance-max"}},
+			field: "priority", value: "9223372036854775807", status: 201, body: `{}`,
+		},
+		{
+			name: "minimum balance priority", commandID: "wallets.v2.balances.create", operation: "createBalance",
+			arguments: []string{"savings"}, flags: []sdk.FlagOccurrence{{Name: "id", Value: "w1"}, {Name: "priority", Value: "-9223372036854775808"}, {Name: "ik", Value: "balance-min"}},
+			field: "priority", value: "-9223372036854775808", status: 201, body: `{}`,
+		},
+		{
 			name: "hold confirmation amount", commandID: "wallets.v2.holds.confirm", operation: "confirmHold",
-			arguments: []string{"h1"}, flags: []sdk.FlagOccurrence{{Name: "amount", Value: "2147483648"}, {Name: "ik", Value: "confirm-1"}},
-			field: "amount", value: "2147483648", status: 204,
+			arguments: []string{"h1"}, flags: []sdk.FlagOccurrence{{Name: "amount", Value: "9223372036854775807"}, {Name: "ik", Value: "confirm-1"}},
+			field: "amount", value: "9223372036854775807", status: 204,
 		},
 	}
 
@@ -243,33 +254,52 @@ func TestExecutePreservesServerSizedBigIntegerFlagsExactly(t *testing.T) {
 	}
 }
 
-func TestExecuteCarriesBeyondInt64PriorityAcrossPortableTransport(t *testing.T) {
-	const priority = "922337203685477580812345678901234567890"
+func TestExecuteRejectsBalancePriorityOutsideServerInt64BeforeHostAccess(t *testing.T) {
+	for _, priority := range []string{"9223372036854775808", "-9223372036854775809"} {
+		t.Run(priority, func(t *testing.T) {
+			host := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
+				t.Fatalf("oversized priority reached host: %#v", request)
+				return nil, nil
+			})
+			err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+				CommandID: "wallets.v2.balances.create", Arguments: []string{"savings"},
+				Flags:           []sdk.FlagOccurrence{{Name: "id", Value: "w1"}, {Name: "priority", Value: priority}, {Name: "ik", Value: "balance-1"}},
+				Target:          sdk.TargetSelection{OrganizationID: "org-1", StackID: "stack-1"},
+				ServiceVersions: []sdk.ServiceVersion{{Service: sdk.ServiceWallets, Version: "2.2.0", Major: 2}},
+				Continuation:    sdk.SinglePageContinuationControl(),
+			}, host)
+			var failure sdk.Failure
+			if !errors.As(err, &failure) || failure.Code != string(sdk.FailureInvalidArgument) || !strings.Contains(failure.Message, "signed 64-bit") {
+				t.Fatalf("Execute() error = %#v, want signed 64-bit invalid_argument", err)
+			}
+			if len(host.Requests()) != 0 {
+				t.Fatalf("host requests = %d, want 0", len(host.Requests()))
+			}
+		})
+	}
+}
+
+func TestExecuteRejectsHoldConfirmationAmountBeyondServerInt64(t *testing.T) {
 	host := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
-		if request.Operation != "createBalance" || request.HTTP == nil {
-			t.Fatalf("host request = %#v", request)
-		}
-		decoder := json.NewDecoder(strings.NewReader(string(request.HTTP.Body)))
-		decoder.UseNumber()
-		var body map[string]any
-		if err := decoder.Decode(&body); err != nil {
-			t.Fatalf("request body is invalid JSON: %v", err)
-		}
-		value, ok := body["priority"].(json.Number)
-		if !ok || value.String() != priority {
-			t.Fatalf("priority = %#v, want exact portable value %s", body["priority"], priority)
-		}
-		return sdk.NewResponseStream(sdk.Response{Status: 201, ContentType: "application/json", Body: []byte(`{}`)}), nil
+		t.Fatalf("oversized confirmation reached host: %#v", request)
+		return nil, nil
 	})
 	err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
-		CommandID: "wallets.v2.balances.create", Arguments: []string{"savings"},
-		Flags:           []sdk.FlagOccurrence{{Name: "id", Value: "w1"}, {Name: "priority", Value: priority}, {Name: "ik", Value: "balance-1"}},
+		CommandID: "wallets.v2.holds.confirm", Arguments: []string{"h1"},
+		Flags: []sdk.FlagOccurrence{
+			{Name: "amount", Value: "9223372036854775808"},
+			{Name: "ik", Value: "confirm-1"},
+		},
 		Target:          sdk.TargetSelection{OrganizationID: "org-1", StackID: "stack-1"},
 		ServiceVersions: []sdk.ServiceVersion{{Service: sdk.ServiceWallets, Version: "2.2.0", Major: 2}},
 		Continuation:    sdk.SinglePageContinuationControl(),
 	}, host)
-	if err != nil {
-		t.Fatalf("Execute() error = %v", err)
+	var failure sdk.Failure
+	if !errors.As(err, &failure) || failure.Code != string(sdk.FailureInvalidArgument) {
+		t.Fatalf("Execute() error = %#v, want invalid_argument", err)
+	}
+	if len(host.Requests()) != 0 {
+		t.Fatalf("host requests = %d, want 0", len(host.Requests()))
 	}
 }
 

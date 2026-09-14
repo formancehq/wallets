@@ -11,7 +11,7 @@ const productMajor uint32 = 2
 
 const (
 	readRequestBytes  int64 = 64 << 10
-	writeRequestBytes int64 = 256 << 10
+	writeRequestBytes int64 = 1 << 20
 	responseBytes     int64 = 512 << 10
 )
 
