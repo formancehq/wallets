@@ -103,22 +103,25 @@ Nix store path is tracked. Run the provenance and temporary-module contracts
 alone with `just validate-sdk`; use `just tidy-check` to prove module metadata
 is already canonical without modifying it.
 
-For a component build, combine the fctl author-tool shell with this repository's
-shell, which supplies the pinned Binaryen build:
+For a component build, run the repository-root recipe. It enters the pinned
+authoring toolchain itself, so no second author-tool shell is needed:
 
 ```sh
-nix develop --impure --no-write-lock-file "$FCTL_SDK_ROOT#" --command \
-  nix develop --impure --no-write-lock-file .# --command \
-  just fctl-component-build
+nix develop --impure --no-write-lock-file --command just fctl-component-build
 ```
 
 Run the complete repository gate separately with
 `nix develop --impure --no-write-lock-file --command just pre-commit`.
 
-The Wallets development shell pins the same Rust 1.91.1 authoring stack as the
-fctl SDK snapshot: `componentize-go` 0.4.1, the patched `wasi-virt` revision,
-`wasm-tools` 1.239.0, and Binaryen's `wasm-opt`. The component contract tests
-guard those Nix definitions and their source hashes against accidental drift.
+The flake pins the same Rust 1.91.1 authoring stack as the fctl SDK snapshot —
+`componentize-go` 0.4.1, the patched `wasi-virt` revision, `wasm-tools` 1.239.0,
+and Binaryen's `wasm-opt` — and exposes it as the `componentize-go`,
+`wasi-virt`, `wasm-tools` and `wasm-opt` package outputs instead of putting it
+in the default development shell. Those are Rust builds from source: carrying
+them in the shell every Go job enters turns an unrelated crates.io rate limit
+into a failing lint, tidy or test run. The component contract tests guard those
+Nix definitions, their source hashes, and that isolation against accidental
+drift.
 
 `build-component` builds the component twice, compares the artefacts, validates
 the component, enforces the five admitted WASI imports, captures SHA-256 hashes,

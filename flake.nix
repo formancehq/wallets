@@ -57,8 +57,20 @@
 
     in
     {
+      # The Wallets fctl plugin builds a portable WebAssembly component. Its
+      # authoring toolchain is not published in nixpkgs, so the pinned
+      # definitions are carried in-tree. Keep it out of the default shell:
+      # these are Rust builds, and making every Go CI job fetch crates turns a
+      # crates.io rate limit into an unrelated red build. `just
+      # fctl-component-build` enters these packages explicitly instead.
       packages = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
+        let
+          componentTools = pkgs.callPackage ./nix/fctl-component-tools.nix { };
+        in
         {
+          inherit (componentTools) componentize-go wasi-virt wasm-tools;
+          wasm-opt = pkgs.binaryen;
+
           speakeasy = pkgs.stdenv.mkDerivation {
             pname = "speakeasy";
             version = speakeasyVersion;
@@ -90,16 +102,11 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          componentTools = pkgs.callPackage ./nix/fctl-component-tools.nix { };
           stablePackages = with pkgs; [
-            binaryen
-            componentTools.componentize-go
             ginkgo
             go_1_26
             gotools
             just
-            componentTools.wasi-virt
-            componentTools.wasm-tools
           ];
           unstablePackages = with pkgs-unstable; [
             golangci-lint
