@@ -34,7 +34,7 @@ func run(args []string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("open fctl SDK lock: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	lock, err := decodeLock(f)
 	if err != nil {

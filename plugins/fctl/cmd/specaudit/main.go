@@ -37,7 +37,7 @@ func execute(args []string, stderr io.Writer) int {
 	}
 
 	if err := runWithWriter(*spec, *out, *check, stderr); err != nil {
-		fmt.Fprintln(stderr, "specaudit:", err)
+		_, _ = fmt.Fprintln(stderr, "specaudit:", err)
 		return 1
 	}
 	return 0
@@ -78,12 +78,12 @@ func runWithWriter(spec, out string, check bool, stderr io.Writer) error {
 		if err := os.WriteFile(path, want, 0o644); err != nil {
 			return fmt.Errorf("write %s: %w", path, err)
 		}
-		fmt.Fprintln(stderr, "wrote", path)
+		_, _ = fmt.Fprintln(stderr, "wrote", path)
 	}
 
 	if !check {
 		t := report.Totals
-		fmt.Fprintf(stderr,
+		_, _ = fmt.Fprintf(stderr,
 			"operations=%d leaves=%d mapped=%d excluded=%d targets=%d blocked=%d moduleBlockers=%d divergences=%d\n",
 			t.Operations, t.BaselineLeaves, t.BaselineMapped, t.BaselineExcluded,
 			t.BaselineTargets, t.Blocked, t.ModuleBlockers, t.Divergences)
