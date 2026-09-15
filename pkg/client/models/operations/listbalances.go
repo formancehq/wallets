@@ -3,11 +3,31 @@
 package operations
 
 import (
+	"github.com/formancehq/wallets/pkg/client/internal/utils"
 	"github.com/formancehq/wallets/pkg/client/models/components"
 )
 
 type ListBalancesRequest struct {
 	ID string `pathParam:"style=simple,explode=false,name=id"`
+	// The maximum number of results to return per page
+	PageSize *int64 `default:"15" queryParam:"style=form,explode=true,name=pageSize"`
+	// Parameter used in pagination requests.
+	// Set to the value of next for the next page of results.
+	// Set to the value of previous for the previous page of results.
+	// No other parameters can be set when the cursor is set.
+	//
+	Cursor *string `queryParam:"style=form,explode=true,name=cursor"`
+}
+
+func (l ListBalancesRequest) MarshalJSON() ([]byte, error) {
+	return utils.MarshalJSON(l, "", false)
+}
+
+func (l *ListBalancesRequest) UnmarshalJSON(data []byte) error {
+	if err := utils.UnmarshalJSON(data, &l, "", false, false); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (o *ListBalancesRequest) GetID() string {
@@ -15,6 +35,20 @@ func (o *ListBalancesRequest) GetID() string {
 		return ""
 	}
 	return o.ID
+}
+
+func (o *ListBalancesRequest) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
+}
+
+func (o *ListBalancesRequest) GetCursor() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Cursor
 }
 
 type ListBalancesResponse struct {

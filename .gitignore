@@ -2,3 +2,8 @@ vendor
 .idea
 coverage.*
 wallets
+
+# Local cache of the exact fctl SDK commit pinned by
+# plugins/fctl/fctl-sdk.lock.json, materialized by
+# plugins/fctl/scripts/materialize-fctl-sdk.sh.
+plugins/fctl/.fctl-sdk-cache/

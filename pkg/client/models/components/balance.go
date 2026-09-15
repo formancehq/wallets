@@ -8,10 +8,14 @@ import (
 	"time"
 )
 
+// Balance - A named balance within a wallet, optionally carrying an expiry date
 type Balance struct {
-	Name      string     `json:"name"`
+	// Name of the balance within the wallet
+	Name string `json:"name"`
+	// When the funds in this balance expire. Expired funds stop counting towards available funds
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-	Priority  *big.Int   `json:"priority,omitempty"`
+	// Ordering hint when choosing which balances to debit first. Lower values are debited first, and it only breaks ties between balances that carry no expiry date
+	Priority *big.Int `json:"priority,omitempty"`
 }
 
 func (b Balance) MarshalJSON() ([]byte, error) {

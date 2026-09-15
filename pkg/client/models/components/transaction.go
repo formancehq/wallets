@@ -8,14 +8,21 @@ import (
 )
 
 type Transaction struct {
-	Ledger    *string   `json:"ledger,omitempty"`
+	// Name of the ledger the transaction was recorded in
+	Ledger *string `json:"ledger,omitempty"`
+	// The transaction time: when the transaction is considered to have occurred. See [bi- temporality](https://docs.formance.com/modules/ledger/working-with/bi-temporality)
 	Timestamp time.Time `json:"timestamp"`
-	Postings  []Posting `json:"postings"`
-	Reference *string   `json:"reference,omitempty"`
+	// The fund movements making up the transaction
+	Postings []Posting `json:"postings"`
+	// Optional caller-supplied identifier, unique within the ledger, used to deduplicate transactions
+	Reference *string `json:"reference,omitempty"`
 	// Metadata associated with the wallet.
-	Metadata          map[string]string            `json:"metadata"`
-	ID                int64                        `json:"id"`
-	PreCommitVolumes  map[string]map[string]Volume `json:"preCommitVolumes,omitempty"`
+	Metadata map[string]string `json:"metadata"`
+	// Unique sequential identifier for this transaction within the ledger
+	ID int64 `json:"id"`
+	// Volumes aggregated per account and per asset
+	PreCommitVolumes map[string]map[string]Volume `json:"preCommitVolumes,omitempty"`
+	// Volumes aggregated per account and per asset
 	PostCommitVolumes map[string]map[string]Volume `json:"postCommitVolumes,omitempty"`
 }
 

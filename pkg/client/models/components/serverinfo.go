@@ -3,6 +3,7 @@
 package components
 
 type ServerInfo struct {
+	// Version of the wallets service
 	Version string `json:"version"`
 }
 

@@ -3,7 +3,9 @@
 package components
 
 type LedgerAccountSubject struct {
-	Type       string `json:"type"`
+	// Discriminator identifying this subject as a ledger account
+	Type string `json:"type"`
+	// Address of the ledger account
 	Identifier string `json:"identifier"`
 }
 

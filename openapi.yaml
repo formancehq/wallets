@@ -286,6 +286,26 @@ paths:
       operationId: listBalances
       tags:
         - wallets.v1
+      parameters:
+        - name: pageSize
+          in: query
+          description: The maximum number of results to return per page
+          example: 100
+          schema:
+            type: integer
+            maximum: 1000
+            minimum: 1
+            default: 15
+        - name: cursor
+          in: query
+          description: |
+            Parameter used in pagination requests.
+            Set to the value of next for the next page of results.
+            Set to the value of previous for the previous page of results.
+            No other parameters can be set when the cursor is set.
+          schema:
+            type: string
+            example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
       responses:
         '200':
           description: Balances list

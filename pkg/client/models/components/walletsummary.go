@@ -7,12 +7,18 @@ import (
 	"math/big"
 )
 
+// WalletSummary - Aggregated funds held by a wallet, broken down by availability
 type WalletSummary struct {
-	Balances       []BalanceWithAssets `json:"balances"`
+	// Each balance of the wallet with its per-asset amounts
+	Balances []BalanceWithAssets `json:"balances"`
+	// Funds available to debit, keyed by asset. Covers balances with no expiry and those not yet expired
 	AvailableFunds map[string]*big.Int `json:"availableFunds"`
-	ExpiredFunds   map[string]*big.Int `json:"expiredFunds"`
+	// Funds held in balances whose expiry date has passed, keyed by asset
+	ExpiredFunds map[string]*big.Int `json:"expiredFunds"`
+	// Funds held in balances carrying an expiry date that has not yet passed, keyed by asset
 	ExpirableFunds map[string]*big.Int `json:"expirableFunds"`
-	HoldFunds      map[string]*big.Int `json:"holdFunds"`
+	// Funds currently locked by pending holds, keyed by asset
+	HoldFunds map[string]*big.Int `json:"holdFunds"`
 }
 
 func (w WalletSummary) MarshalJSON() ([]byte, error) {

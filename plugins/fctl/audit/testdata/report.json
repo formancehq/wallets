@@ -1,0 +1,1131 @@
+{
+  "specDocument": "openapi.yaml",
+  "baseRevision": "a48a7d0590b8b1cfdbfbd22cba0e475713550a75",
+  "specSHA256": "715d87d7ea85344183afd1a4e16bdb67b161c1fff5665aaba74200521682a8fd",
+  "clientSpecSHA256": "715d87d7ea85344183afd1a4e16bdb67b161c1fff5665aaba74200521682a8fd",
+  "baselineRevision": "693c58e27865f83332e6c3199d61fed81b742f41",
+  "specVersion": "0.1.0",
+  "servers": [
+    "http://localhost:8080/"
+  ],
+  "schemeScopes": [],
+  "scopeKinds": [
+    "wallets:read",
+    "wallets:write"
+  ],
+  "totals": {
+    "operations": 16,
+    "uniqueOperationIds": 16,
+    "deprecatedOperations": 0,
+    "operationsWithSecurity": 16,
+    "readScoped": 9,
+    "writeScoped": 7,
+    "baselineCommands": 18,
+    "baselineGroupings": 4,
+    "baselineLeaves": 14,
+    "baselineMapped": 14,
+    "baselineExcluded": 0,
+    "baselineTargets": 14,
+    "withBaseline": 14,
+    "withoutBaseline": 2,
+    "blocked": 3,
+    "admissible": 13,
+    "moduleBlockers": 0,
+    "divergences": 8,
+    "mutating": 7,
+    "idempotent": 7,
+    "paginated": 4,
+    "fundMoving": 4,
+    "multiSuccess": 1,
+    "secretBearing": 0,
+    "displayOnce": 0,
+    "destructive": 0,
+    "streaming": 0
+  },
+  "operations": [
+    {
+      "operationId": "confirmHold",
+      "method": "POST",
+      "path": "/holds/{hold_id}/confirm",
+      "tag": "wallets.v1",
+      "sdkMethod": "confirmHold",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "hold_id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "ConfirmHoldRequest",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "204",
+          "body": ""
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "holds",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": true,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets holds confirm"
+      ],
+      "blockers": [
+        "B1"
+      ]
+    },
+    {
+      "operationId": "createBalance",
+      "method": "POST",
+      "path": "/wallets/{id}/balances",
+      "tag": "wallets.v1",
+      "sdkMethod": "createBalance",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "CreateBalanceRequest",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "201",
+          "body": "CreateBalanceResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "balances",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets balances create"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "createWallet",
+      "method": "POST",
+      "path": "/wallets",
+      "tag": "wallets.v1",
+      "sdkMethod": "createWallet",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        }
+      ],
+      "requestBody": "CreateWalletRequest",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "201",
+          "body": "CreateWalletResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets create"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "creditWallet",
+      "method": "POST",
+      "path": "/wallets/{id}/credit",
+      "tag": "wallets.v1",
+      "sdkMethod": "creditWallet",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "CreditWalletRequest",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "204",
+          "body": ""
+        }
+      ],
+      "duplicateParameters": [
+        "Idempotency-Key/header"
+      ],
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": true,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets credit"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "debitWallet",
+      "method": "POST",
+      "path": "/wallets/{id}/debit",
+      "tag": "wallets.v1",
+      "sdkMethod": "debitWallet",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "DebitWalletRequest",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "201",
+          "body": "DebitWalletResponse"
+        },
+        {
+          "code": "204",
+          "body": ""
+        }
+      ],
+      "duplicateParameters": [
+        "Idempotency-Key/header"
+      ],
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": true,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": true
+      },
+      "baselineCommands": [
+        "wallets debit"
+      ],
+      "blockers": [
+        "B2"
+      ]
+    },
+    {
+      "operationId": "getBalance",
+      "method": "GET",
+      "path": "/wallets/{id}/balances/{balanceName}",
+      "tag": "wallets.v1",
+      "sdkMethod": "getBalance",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "balanceName",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetBalanceResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "balances",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets balances show"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "getHold",
+      "method": "GET",
+      "path": "/holds/{holdID}",
+      "tag": "wallets.v1",
+      "sdkMethod": "getHold",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "holdID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetHoldResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "holds",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets holds show"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "getHolds",
+      "method": "GET",
+      "path": "/holds",
+      "tag": "wallets.v1",
+      "sdkMethod": "getHolds",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "metadata",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "walletID",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetHoldsResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "holds",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": true,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets holds list"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "getServerInfo",
+      "method": "GET",
+      "path": "/_info",
+      "tag": "wallets.v1",
+      "sdkMethod": "getServerInfo",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": null,
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "ServerInfo"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "service",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "getTransactions",
+      "method": "GET",
+      "path": "/transactions",
+      "tag": "wallets.v1",
+      "sdkMethod": "getTransactions",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "walletID",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetTransactionsResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "transactions",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": true,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets transactions list"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "getWallet",
+      "method": "GET",
+      "path": "/wallets/{id}",
+      "tag": "wallets.v1",
+      "sdkMethod": "getWallet",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetWalletResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets show"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "getWalletSummary",
+      "method": "GET",
+      "path": "/wallets/{id}/summary",
+      "tag": "wallets.v1",
+      "sdkMethod": "getWalletSummary",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "GetWalletSummaryResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "listBalances",
+      "method": "GET",
+      "path": "/wallets/{id}/balances",
+      "tag": "wallets.v1",
+      "sdkMethod": "listBalances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "ListBalancesResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "balances",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": true,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets balances list"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "listWallets",
+      "method": "GET",
+      "path": "/wallets",
+      "tag": "wallets.v1",
+      "sdkMethod": "listWallets",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "expand",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "metadata",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "200",
+          "body": "ListWalletsResponse"
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": false,
+        "paginated": true,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets list"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "updateWallet",
+      "method": "PATCH",
+      "path": "/wallets/{id}",
+      "tag": "wallets.v1",
+      "sdkMethod": "updateWallet",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": true,
+      "successes": [
+        {
+          "code": "204",
+          "body": ""
+        }
+      ],
+      "duplicateParameters": null,
+      "family": "wallets",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": false,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets update"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "voidHold",
+      "method": "POST",
+      "path": "/holds/{hold_id}/void",
+      "tag": "wallets.v1",
+      "sdkMethod": "voidHold",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "wallets:write"
+      ],
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": false
+        },
+        {
+          "name": "hold_id",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "requestBodyInline": false,
+      "successes": [
+        {
+          "code": "204",
+          "body": ""
+        }
+      ],
+      "duplicateParameters": [
+        "Idempotency-Key/header"
+      ],
+      "family": "holds",
+      "risk": {
+        "secret": false,
+        "displayOnce": false,
+        "moves": true,
+        "destructive": false,
+        "idempotent": true,
+        "paginated": false,
+        "streaming": false,
+        "multiSuccess": false
+      },
+      "baselineCommands": [
+        "wallets holds void"
+      ],
+      "blockers": [
+        "B1"
+      ]
+    }
+  ],
+  "baseline": [
+    {
+      "path": "wallets",
+      "aliases": [
+        "wal",
+        "wa",
+        "wallet"
+      ],
+      "grouping": true,
+      "ops": null,
+      "source": "cmd/wallets/root.go"
+    },
+    {
+      "path": "wallets create",
+      "aliases": [
+        "cr"
+      ],
+      "grouping": false,
+      "ops": [
+        "createWallet"
+      ],
+      "source": "cmd/wallets/create.go"
+    },
+    {
+      "path": "wallets list",
+      "aliases": [
+        "ls",
+        "l"
+      ],
+      "grouping": false,
+      "ops": [
+        "listWallets"
+      ],
+      "source": "cmd/wallets/list.go"
+    },
+    {
+      "path": "wallets show",
+      "aliases": [
+        "sh"
+      ],
+      "grouping": false,
+      "ops": [
+        "getWallet"
+      ],
+      "source": "cmd/wallets/show.go"
+    },
+    {
+      "path": "wallets update",
+      "aliases": [
+        "up"
+      ],
+      "grouping": false,
+      "ops": [
+        "updateWallet"
+      ],
+      "source": "cmd/wallets/update.go"
+    },
+    {
+      "path": "wallets credit",
+      "aliases": [
+        "cr"
+      ],
+      "grouping": false,
+      "ops": [
+        "creditWallet"
+      ],
+      "source": "cmd/wallets/credit.go"
+    },
+    {
+      "path": "wallets debit",
+      "aliases": [
+        "deb"
+      ],
+      "grouping": false,
+      "ops": [
+        "debitWallet"
+      ],
+      "source": "cmd/wallets/debit.go"
+    },
+    {
+      "path": "wallets balances",
+      "aliases": [
+        "balance",
+        "bls",
+        "bal"
+      ],
+      "grouping": true,
+      "ops": null,
+      "source": "cmd/wallets/balances/root.go"
+    },
+    {
+      "path": "wallets balances create",
+      "aliases": [
+        "c",
+        "cr"
+      ],
+      "grouping": false,
+      "ops": [
+        "createBalance"
+      ],
+      "source": "cmd/wallets/balances/create.go"
+    },
+    {
+      "path": "wallets balances list",
+      "aliases": [
+        "ls",
+        "l"
+      ],
+      "grouping": false,
+      "ops": [
+        "listBalances"
+      ],
+      "source": "cmd/wallets/balances/list.go"
+    },
+    {
+      "path": "wallets balances show",
+      "aliases": [
+        "sh"
+      ],
+      "grouping": false,
+      "ops": [
+        "getBalance"
+      ],
+      "source": "cmd/wallets/balances/show.go"
+    },
+    {
+      "path": "wallets holds",
+      "aliases": [
+        "h",
+        "hold"
+      ],
+      "grouping": true,
+      "ops": null,
+      "source": "cmd/wallets/holds/root.go"
+    },
+    {
+      "path": "wallets holds list",
+      "aliases": [
+        "ls",
+        "l"
+      ],
+      "grouping": false,
+      "ops": [
+        "getHolds"
+      ],
+      "source": "cmd/wallets/holds/list.go"
+    },
+    {
+      "path": "wallets holds show",
+      "aliases": [
+        "sh"
+      ],
+      "grouping": false,
+      "ops": [
+        "getHold"
+      ],
+      "source": "cmd/wallets/holds/show.go"
+    },
+    {
+      "path": "wallets holds confirm",
+      "aliases": [
+        "c",
+        "conf"
+      ],
+      "grouping": false,
+      "ops": [
+        "confirmHold"
+      ],
+      "source": "cmd/wallets/holds/confirm.go"
+    },
+    {
+      "path": "wallets holds void",
+      "aliases": [
+        "v"
+      ],
+      "grouping": false,
+      "ops": [
+        "voidHold"
+      ],
+      "source": "cmd/wallets/holds/void.go"
+    },
+    {
+      "path": "wallets transactions",
+      "aliases": [
+        "transaction",
+        "tx",
+        "txs"
+      ],
+      "grouping": true,
+      "ops": null,
+      "source": "cmd/wallets/transactions/root.go"
+    },
+    {
+      "path": "wallets transactions list",
+      "aliases": [
+        "ls",
+        "l"
+      ],
+      "grouping": false,
+      "ops": [
+        "getTransactions"
+      ],
+      "source": "cmd/wallets/transactions/list.go"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B1",
+      "title": "hold resolution cannot replay a completed idempotent request",
+      "operationIds": [
+        "confirmHold",
+        "voidHold"
+      ],
+      "evidence": "pkg/manager.go checks the hold's current remaining balance before submitting the idempotency key to Ledger. After a successful confirmation or void whose response is lost, the same request reaches ErrClosedHold before Ledger can recognize the replay.",
+      "consequence": "A caller cannot safely retry these fund-moving operations after an ambiguous response even though the portable commands require --ik.",
+      "fixIn": "Wallets hold-resolution idempotency state: recognize an exact completed replay before the mutable closed-hold precondition, then add retry-after-success tests."
+    },
+    {
+      "id": "B2",
+      "title": "required debit idempotency excludes valid dynamic balance sources",
+      "operationIds": [
+        "debitWallet"
+      ],
+      "evidence": "pkg/manager.go returns ErrNonIdempotentDebit when an Idempotency-Key is combined with a wildcard source or a balance carrying an expiry, while the portable debit command requires --ik and accepts both source forms.",
+      "consequence": "Wildcard debits and debits from expiring balances are valid API requests without a key but cannot be expressed by the portable command.",
+      "fixIn": "Product contract decision: provide a deterministic source snapshot or explicitly remove these source forms from portable debit before changing --ik policy."
+    }
+  ],
+  "divergences": [
+    {
+      "id": "D1",
+      "title": "/_info is served unauthenticated",
+      "operationIds": [
+        "getServerInfo"
+      ],
+      "spec": "openapi.yaml declares GET /_info under Authorization with scope wallets:read.",
+      "server": "pkg/api/router.go registers r.Get(\"/_info\", ...) before the r.Group that installs jwt.Middleware, so the handler is reached with no token. This is the operation the fctl target resolver uses for the product-major preflight, so the weaker real requirement matters."
+    },
+    {
+      "id": "D2",
+      "title": "declared scopes are neither defined in the scheme nor enforced by the server",
+      "operationIds": null,
+      "spec": "Every one of the 16 operations declares a security block naming wallets:read or wallets:write, but components.securitySchemes.Authorization.flows.clientCredentials.scopes is the empty map, so the referenced scope names are undeclared in the scheme they are referenced through.",
+      "server": "pkg/api/router.go applies jwt.Middleware(authenticator) and nothing else: the token is authenticated, no scope is asserted. The per-operation scope arrays are readable and are recorded as declared, but they are a documentation-level contract this service does not check."
+    },
+    {
+      "id": "D3",
+      "title": "info.version does not track the released product major",
+      "operationIds": null,
+      "spec": "openapi.yaml declares info.version 0.1.0.",
+      "server": "The latest release tag on the pinned origin/main is v2.2.0, and /_info returns cmd.Version, injected at build time (cmd/serve.go passes Version into sharedapi.ServiceInfo). The product major must be read from the /_info response at runtime; the document cannot supply it."
+    },
+    {
+      "id": "D4",
+      "title": "Idempotency-Key is declared twice on three operations",
+      "operationIds": [
+        "creditWallet",
+        "debitWallet",
+        "voidHold"
+      ],
+      "spec": "The header is declared at both the path-item level and the operation level, so it appears twice in the effective parameter list. OpenAPI 3.0.3 requires parameters to be unique by name and location.",
+      "server": "Harmless on the wire, and pkg/client happens to collapse it to a single IdempotencyKey field, but the resolution is generator behaviour rather than contract. Recorded so a future generator change is not read as a product change."
+    },
+    {
+      "id": "D5",
+      "title": "the hold path parameter is spelled two different ways",
+      "operationIds": [
+        "confirmHold",
+        "getHold",
+        "voidHold"
+      ],
+      "spec": "getHold declares /holds/{holdID} while confirmHold and voidHold declare /holds/{hold_id}. Wallet paths declare {id} throughout.",
+      "server": "pkg/api/router.go routes on {holdID} and {walletID}. Path parameter names are local to each document and never appear on the wire, so nothing breaks, but the generated request DTOs inherit the inconsistency: GetHoldRequest.HoldID binds name=holdID and VoidHoldRequest.HoldID binds name=hold_id."
+    },
+    {
+      "id": "D6",
+      "title": "updateWallet declares an anonymous request body",
+      "operationIds": [
+        "updateWallet"
+      ],
+      "spec": "PATCH /wallets/{id} declares an inline application/json schema with no $ref, so the contract exposes no reusable DTO name for the body.",
+      "server": "pkg/api/handler_wallets_patch.go binds wallet.PatchRequest. The generated client synthesises its own operation-scoped type instead of a shared component, so any hand-written binding has no stable name to target."
+    },
+    {
+      "id": "D7",
+      "title": "the only declared server is a local development address",
+      "operationIds": null,
+      "spec": "servers declares exactly one entry, http://localhost:8080/.",
+      "server": "In a stack, Wallets is reached through the gateway route /api/wallets. The plugin must take its endpoint from fctl target resolution and never from the document's server list."
+    },
+    {
+      "id": "D8",
+      "title": "balance priority bigint exceeds the server's signed 64-bit storage boundary",
+      "operationIds": [
+        "createBalance"
+      ],
+      "spec": "CreateBalanceRequest.priority is declared as bigint and the generated client therefore represents it as an arbitrary-precision integer.",
+      "server": "pkg.CreateBalance binds priority to Go int and BalanceFromAccount later parses the stored metadata with strconv.ParseInt(..., 64). The portable command follows the current cross-platform server boundary and rejects values outside signed 64-bit before host access."
+    }
+  ]
+}
