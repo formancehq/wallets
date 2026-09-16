@@ -16,14 +16,14 @@ Numscript references into Wallets behavior.
 The plan covers:
 
 - the Wallets code migration;
-- data migration through a Ledger v3 mirror;
 - compatibility verification;
-- production cutover and rollback boundaries;
+- deployment on a newly provisioned Ledger v3 ledger;
 - follow-up improvements enabled by Ledger v3.
 
-It does not define a release date, infrastructure sizing, or a final
-idempotency-retention policy. Those decisions require deployment-specific
-inputs collected during the rehearsal.
+Migrating existing Ledger v2 data is explicitly outside this plan. The target
+deployment starts with a newly provisioned Ledger v3 ledger. This document does
+not define a release date, infrastructure sizing, or a final
+idempotency-retention policy.
 
 ## Compatibility goals
 
@@ -217,9 +217,8 @@ passing through `uint64`. Reject negative or malformed values before sending a
 request. Add boundary tests above 64 bits and at the 256-bit limit.
 
 Ledger v3 timestamps use microsecond storage and reject dates before the Unix
-epoch on its public representation. Inventory existing data for pre-1970
-timestamps before migration and reject newly supplied incompatible timestamps
-with a Wallets validation error.
+epoch on its public representation. Reject newly supplied incompatible
+timestamps with a Wallets validation error.
 
 ### Metadata
 
@@ -299,10 +298,6 @@ For a newly provisioned environment:
 5. Wait for their ready state within a configured startup timeout.
 6. Expose Wallets readiness only after the contract is satisfied.
 
-For a migrated environment, infrastructure creates the mirror ledger and its
-indexes. Wallets validates the final normal ledger and does not promote a
-mirror itself.
-
 Initialization must fail with a precise diagnostic if the ledger exists in an
 incompatible mode or if required indexes cannot become ready. It must not
 silently recreate or delete existing configuration.
@@ -311,7 +306,8 @@ silently recreate or delete existing configuration.
 
 - Fresh-environment initialization is idempotent.
 - Missing, building, ready, and incompatible index states are tested.
-- Wallets never becomes ready against a mirror ledger or incomplete indexes.
+- Wallets never becomes ready against an incompatible ledger or incomplete
+  indexes.
 
 ## Phase 4: preserve list filtering and pagination
 
@@ -469,9 +465,9 @@ The parity matrix includes:
 - partial and complete hold consumption;
 - restitution to multiple original sources.
 
-Hold cancellation requires the original transaction postings. Migrating only
-current balances is therefore insufficient: the full transaction history must
-remain queryable after cutover.
+Hold cancellation requires the original transaction postings. The Ledger v3
+transaction history created by Wallets must therefore remain queryable for as
+long as its holds can remain open.
 
 ### Exit criteria
 
@@ -526,131 +522,43 @@ and metadata selectivity. Measure list latency, number of scanned candidates,
 Ledger requests per Wallets request, and summary latency. Set production safety
 limits from these results rather than arbitrary defaults.
 
-## Phase 8: migrate Ledger v2 data into v3
+## Phase 8: deploy on Ledger v3
 
-Ledger v3 mirror mode is the migration mechanism. It reads Ledger v2 logs,
-translates them into v3 state, follows new writes, and can be promoted to a
-normal ledger at cutover.
-
-### Pre-migration inventory
-
-For every Wallets ledger, collect:
-
-- bucket and ledger identity;
-- log and transaction counts;
-- highest log and transaction IDs;
-- account count;
-- wallet, balance, and hold counts;
-- open and closed hold counts;
-- assets and aggregate volumes;
-- metadata keys and value types;
-- metadata entry, key, value, entity, and command sizes;
-- transaction references and duplicates;
-- timestamps before 1970;
-- amounts near or above 64-bit boundaries;
-- any non-Wallets account or transaction stored in the ledger.
-
-Resolve incompatible data before cutover or define an explicit, reviewed mirror
-rewrite. Do not use rewrite rules for undocumented cleanup.
+This rollout provisions a new, empty Ledger v3 ledger. It does not import or
+translate data from Ledger v2.
 
 ### Provisioning
 
-1. Deploy the Ledger v3 cluster.
-2. Create a v3 ledger in mirror mode pointing to the v2 ledger.
-3. Configure credentials with read-only access to the source.
-4. Create the required transaction indexes on the mirror.
-5. Monitor mirror progress, errors, and index backfill.
-6. Keep Wallets connected to Ledger v2 while the mirror catches up.
+1. Deploy the approved Ledger v3 release.
+2. Create the Wallets ledger in normal mode.
+3. Configure the required transaction indexes.
+4. Wait until every required index is ready.
+5. Configure Wallets with the Ledger v3 endpoint and credentials.
+6. Deploy the Ledger-v3-only Wallets version with traffic disabled.
 
-### Validation tool
+### Smoke tests
 
-Build a read-only validator that compares v2 and v3 and emits a machine-readable
-report. Compare:
+Run the following against the empty environment:
 
-- transaction count and ordered transaction identity;
-- postings, references, timestamps, and metadata;
-- accounts and metadata;
-- input, output, and balance per account and asset;
-- detected wallets and balances;
-- open and closed holds;
-- original and remaining amount for every hold;
-- original transaction postings for open holds;
-- summaries for every wallet when feasible, otherwise a deterministic sample
-  plus aggregate coverage.
+1. Verify readiness and server information.
+2. Create a wallet and a secondary balance.
+3. Credit and debit the wallet.
+4. Create, retrieve, partially confirm, and cancel a hold.
+5. List wallets, balances, holds, and transactions in both directions.
+6. Exercise custom metadata filtering and wallet summaries.
+7. Retry an idempotent request and verify the original response.
+8. Reuse the same key with a different request and verify the conflict.
 
-Treat every mismatch as blocking until it is explained and encoded as an
-approved compatibility exception.
-
-### Rehearsal
-
-Run the complete procedure on a representative copy before production. Measure:
-
-- mirror ingest rate and catch-up time;
-- index backfill time;
-- validation duration;
-- final catch-up time after writes are stopped;
-- expected write freeze duration;
-- storage and memory growth;
-- list and summary performance after promotion.
-
-Repeat the rehearsal after any material change to mirror translation, Wallets
-conversion, or the Ledger v3 release candidate.
+Enable traffic only after the smoke tests and observability checks pass. If the
+deployment fails before traffic is enabled, remove it from service, correct the
+configuration or implementation, and redeploy against a clean test ledger.
 
 ### Exit criteria
 
-- The mirror reaches the source head without unresolved errors.
-- Required indexes are ready.
-- The validator reports no unexplained mismatch.
-- The measured cutover fits the agreed maintenance window.
-
-## Phase 9: production cutover
-
-Use the following runbook for each production ledger:
-
-1. Confirm the approved Wallets and Ledger image digests.
-2. Confirm a recent source backup and a tested restore path.
-3. Confirm the mirror is healthy and close to the source head.
-4. Disable Wallets writes and drain in-flight requests.
-5. Record the final v2 source head.
-6. Wait until the v3 mirror cursor reaches that head.
-7. Wait until required indexes are ready.
-8. Run the final validator and archive its report.
-9. Promote the mirror to a normal Ledger v3 ledger.
-10. Deploy the Ledger-v3-only Wallets version with writes still disabled.
-11. Run read-only smoke tests for a wallet, balance, hold, transaction list,
-    pagination, and summary.
-12. Enable reads and watch correctness and latency metrics.
-13. Run an isolated write smoke test where the environment permits it.
-14. Enable normal writes.
-15. Monitor at elevated sensitivity through the agreed validation window.
-
-The go/no-go checkpoint is immediately before mirror promotion. The second
-point of no return is the first accepted Wallets write on Ledger v3.
-
-## Rollback and recovery
-
-Before mirror promotion, rollback consists of keeping or restoring Wallets v2
-against the unchanged Ledger v2 source.
-
-After promotion but before any v3 write, Wallets can still be returned to v2
-because the v2 source remains authoritative and unchanged.
-
-After the first v3 write, Ledger v2 and Ledger v3 diverge. There is no automatic
-reverse mirror in this plan. A blind rollback to v2 would lose accepted writes.
-From that point onward, the default recovery strategy is roll-forward:
-
-- keep Ledger v3 available;
-- disable affected Wallets operations if necessary;
-- fix or roll forward Wallets;
-- verify the v3 audit and transaction state before reopening traffic.
-
-A rollback to v2 after divergence requires a separately reviewed procedure to
-extract and replay every accepted v3 mutation. The production runbook must make
-this boundary explicit.
-
-Retain the v2 ledger, backups, validation reports, and migration metadata for
-the agreed audit period. Do not present the retained v2 ledger as a current
-replica after v3 writes begin.
+- The empty Ledger v3 ledger and required indexes are ready.
+- The complete smoke-test sequence passes.
+- Dashboards and alerts receive Wallets and Ledger signals.
+- No Ledger v2 endpoint or credential is required by the deployment.
 
 ## Observability
 
@@ -673,7 +581,7 @@ Ledger reason, correlation ID, and scan counters. They must not include OAuth
 credentials, complete idempotency keys, or unredacted customer metadata.
 
 Define alerts for sustained Ledger unavailability, index regressions, unusual
-scan amplification, rising error mappings, and mirror progress stalls.
+scan amplification, and rising error mappings.
 
 ## Pull request sequence
 
@@ -687,14 +595,13 @@ Implement the migration as reviewable, ordered pull requests:
 6. Wallets cursors and bounded application-side filtering.
 7. Ledger initialization, indexes, and readiness.
 8. Ledger v3 E2E suite and performance fixtures.
-9. Read-only v2/v3 migration validator.
-10. Deployment configuration and production runbook.
-11. Removal of Ledger v2 code and dependencies.
-12. Separate, measured Ledger v3 improvements.
+9. Deployment configuration and empty-environment smoke-test runbook.
+10. Removal of Ledger v2 code and dependencies.
+11. Separate, measured Ledger v3 improvements.
 
 Each pull request must document its validation and remain narrowly scoped. The
-Ledger-v3-only version is releasable only after items 1 through 11 are complete
-and the migration rehearsal has passed.
+Ledger-v3-only version is releasable only after items 1 through 10 are complete
+and the empty-environment smoke tests have passed.
 
 ## Follow-up opportunities
 
@@ -704,11 +611,11 @@ After parity and production stability, evaluate these features independently:
 |---|---|---|
 | Metadata indexes | Accelerate known high-value filters | Query distribution and bounded key set |
 | Prepared queries | Prevalidate stable list or aggregation shapes | Repeated stable query patterns |
-| Typed metadata | Query expiration and priority as native types | Migration and API compatibility design |
+| Typed metadata | Query expiration and priority as native types | API compatibility design |
 | Aggregate volumes | Reduce summary data transfer | Benchmark against required detailed response |
-| Numscript library | Version fixed Wallets scripts | Deployment and rollback lifecycle |
+| Numscript library | Version fixed Wallets scripts | Deployment and version lifecycle |
 | Query checkpoints | Consistent multi-read summaries | gRPC client and checkpoint lifecycle design |
-| Account types | Enforce the Wallets chart of accounts | Existing-account compatibility analysis |
+| Account types | Enforce the Wallets chart of accounts | Chart compatibility analysis |
 | Colored funds | Segregate balances by origin or purpose | Explicit Wallets product semantics |
 | Ephemeral accounts | Reduce retained state for closed holds | History and audit requirements |
 
@@ -727,10 +634,8 @@ The migration is complete when:
 - arbitrary custom metadata filters remain correct within documented safety
   limits;
 - the idempotency retention policy is explicit and tested;
-- the migration validator reports no unexplained difference;
-- a full rehearsal and a pre-write rollback rehearsal have succeeded;
+- the empty-environment deployment and smoke tests have succeeded;
 - production dashboards and alerts are ready;
-- the final runbook names the post-write rollback boundary;
 - module maintainers have reviewed and approved this document.
 
 ## Open decisions
@@ -742,7 +647,5 @@ considered ready:
 2. Maximum acceptable scan amplification and latency for custom metadata
    filters.
 3. Deployment ownership for ledger and index provisioning.
-4. Maintenance-window and write-freeze budget.
-5. Retention period for the v2 ledger and migration evidence.
-6. Production behavior when incompatible colored funds or typed Wallets
+4. Production behavior when incompatible colored funds or typed Wallets
    metadata are detected.
