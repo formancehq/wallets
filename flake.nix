@@ -5,13 +5,18 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
 
+    go-tooling = {
+      url = "github:NixOS/nixpkgs/8cec5ef1131078ea76689e84c362b0ed6a1fb6a1";
+      flake = false;
+    };
+
     goreleaser = {
       url = "github:goreleaser/nur/52282e9a2d7c6882e9e0e8675d593b928c89e323";
       flake = false;
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, goreleaser }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, go-tooling, goreleaser }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -86,13 +91,24 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
+          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
+            buildGo126Module = buildGoModule;
+          };
+          buildGoModule = pkgs.buildGoModule.override { inherit go; };
+          lintGo = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
+            buildGo127Module = lintBuildGoModule;
+          };
+          lintBuildGoModule = pkgs.buildGoModule.override { go = lintGo; };
+          golangci-lint = pkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
+            buildGo127Module = lintBuildGoModule;
+          };
           stablePackages = with pkgs; [
             ginkgo
-            go_1_26
             gotools
             just
           ];
-          unstablePackages = with pkgs-unstable; [
+          toolingPackages = [
+            go
             golangci-lint
           ];
           otherPackages = [
@@ -102,7 +118,9 @@
         in
         {
           default = pkgs.mkShell {
-            packages = stablePackages ++ unstablePackages ++ otherPackages;
+            GOTOOLCHAIN = "local";
+            GOROOT = "${go}/share/go";
+            packages = stablePackages ++ toolingPackages ++ otherPackages;
           };
         }
       );
