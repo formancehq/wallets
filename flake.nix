@@ -91,10 +91,7 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
-            buildGo126Module = buildGoModule;
-          };
-          buildGoModule = pkgs.buildGoModule.override { inherit go; };
+          go = lintGo;
           lintGo = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
             buildGo127Module = lintBuildGoModule;
           };
