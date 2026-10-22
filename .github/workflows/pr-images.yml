@@ -1,0 +1,29 @@
+name: PR Images
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  checks: read
+  contents: read
+
+jobs:
+  WaitForChecks:
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'build-images') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'build-images'))
+    uses: formancehq/ci/.github/workflows/wait-for-checks.yml@v1
+
+  GoReleaser:
+    needs: WaitForChecks
+    concurrency:
+      group: build-on-label-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    uses: formancehq/ci/.github/workflows/go-build.yml@v1
+    with:
+      build-condition: always
+    secrets:
+      NUMARY_GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
+      FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
