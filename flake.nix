@@ -5,6 +5,9 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
 
+    # Only the compiler and its matching module builder use the newer stable pin.
+    go-compiler.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605";
+
     go-tooling = {
       url = "github:NixOS/nixpkgs/8cec5ef1131078ea76689e84c362b0ed6a1fb6a1";
       flake = false;
@@ -16,7 +19,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, go-tooling, goreleaser }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, go-compiler, go-tooling, goreleaser }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -91,14 +94,18 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = lintGo;
-          lintGo = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
-            buildGo127Module = lintBuildGoModule;
-          };
-          lintBuildGoModule = pkgs.buildGoModule.override { go = lintGo; };
-          golangci-lint = pkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
-            buildGo127Module = lintBuildGoModule;
-          };
+          compilerPkgs = import go-compiler { inherit system; };
+          go = compilerPkgs.go_1_27;
+          buildGoModule = compilerPkgs.buildGo127Module;
+          # Keep golangci-lint 2.15.0 and its upstream cache identity where supported.
+          # The tooling package set no longer supports Intel macOS.
+          golangci-lint =
+            if system == "x86_64-darwin" then
+              pkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
+                buildGo127Module = buildGoModule;
+              }
+            else
+              (import go-tooling { inherit system; }).golangci-lint;
           stablePackages = with pkgs; [
             ginkgo
             gotools
