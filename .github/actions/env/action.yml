@@ -13,15 +13,15 @@ runs:
         version: "latest"
         use-cache: true
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: "NumaryBot"
         password: ${{ inputs.token }}
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
     - name: "Put back the git branch into git (Earthly uses it for tagging)"
       shell: bash
       run: |
