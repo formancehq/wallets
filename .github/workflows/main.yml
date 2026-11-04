@@ -27,7 +27,7 @@ jobs:
   Dirty:
     runs-on: "formance-runner"
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'actions/checkout@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -53,7 +53,7 @@ jobs:
     needs:
       - Dirty
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'actions/checkout@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -70,7 +70,7 @@ jobs:
     needs:
       - Dirty
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'actions/checkout@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -94,7 +94,7 @@ jobs:
       - GoReleaser
       - Tests
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'actions/checkout@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
