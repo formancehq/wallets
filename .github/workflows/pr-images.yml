@@ -22,6 +22,8 @@ jobs:
     uses: formancehq/ci/.github/workflows/go-build.yml@v1
     with:
       build-condition: always
+      # RFC-0013: publish dev builds as vX.Y.Z-dev.N.gSHA instead of the bare SHA.
+      dev-version: true
     secrets:
       NUMARY_GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
       SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
