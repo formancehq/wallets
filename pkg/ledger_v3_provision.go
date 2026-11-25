@@ -139,7 +139,7 @@ func (l *ledgerV3) EnsureLedgerExists(ctx context.Context, name string) error {
 	if err != nil {
 		return fmt.Errorf("check Wallets account index on Ledger v3: %w", err)
 	}
-	return nil
+	return l.ensureScriptLibrary(ctx, name)
 }
 
 func (l *ledgerV3) reconcileDefinitions(ctx context.Context, name string, info v3LedgerInfo) error {

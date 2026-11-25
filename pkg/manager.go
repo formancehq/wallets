@@ -302,6 +302,9 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 		Metadata: TransactionMetadata(metadata.Metadata{}),
 	}
 
+	if !debit.Final {
+		postTransaction.libraryScript = scriptConfirmHold
+	}
 	if err := m.CreateTransaction(ctx, ik, postTransaction); err != nil {
 		return err
 	}
@@ -373,9 +376,10 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 		}
 	}
 
+	sources := credit.Sources.ResolveAccounts(m.chart)
 	postTransaction := PostTransaction{
 		Script: &shared.V2PostTransactionScript{
-			Plain: pointer.For(BuildCreditWalletScript(credit.Sources.ResolveAccounts(m.chart)...)),
+			Plain: pointer.For(BuildCreditWalletScript(sources...)),
 			Vars: map[string]string{
 				"destination": credit.destinationAccount(m.chart),
 				"amount":      fmt.Sprintf("%s %s", credit.Amount.Asset, credit.Amount.Amount),
@@ -383,6 +387,9 @@ func (m *Manager) Credit(ctx context.Context, ik string, credit Credit) error {
 		},
 		Timestamp: credit.Timestamp,
 		Metadata:  TransactionMetadata(credit.Metadata),
+	}
+	if len(credit.Sources) == 0 && len(sources) == 1 && sources[0] == "world" {
+		postTransaction.libraryScript = scriptDefaultCredit
 	}
 	if credit.Reference != "" {
 		postTransaction.Reference = &credit.Reference

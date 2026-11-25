@@ -43,6 +43,7 @@ type PostTransaction struct {
 	accountMetadata       map[string]map[string]string
 	holdReplayFingerprint string
 	debitSources          []string
+	libraryScript         walletScript
 
 	Metadata  map[string]string               `json:"metadata,omitempty"`
 	Postings  []shared.V2Posting              `json:"postings,omitempty"`

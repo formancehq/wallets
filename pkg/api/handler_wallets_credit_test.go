@@ -282,7 +282,7 @@ func TestWalletsCredit(t *testing.T) {
 			if expectedStatusCode == http.StatusNoContent {
 				if testCase.expectedPostTransaction != nil {
 					expectedScript := testCase.expectedPostTransaction(testEnv, walletID)
-					require.Equal(t, expectedScript, postTransaction)
+					compareJSON(t, expectedScript, postTransaction)
 				}
 			} else {
 				errorResponse := readErrorResponse(t, rec)

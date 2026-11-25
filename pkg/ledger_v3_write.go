@@ -98,6 +98,7 @@ type v3TransactionRequest struct {
 	Postings        []shared.V2Posting              `json:"postings,omitempty"`
 	Reference       *string                         `json:"reference,omitempty"`
 	Script          *shared.V2PostTransactionScript `json:"script,omitempty"`
+	ScriptReference *v3ScriptReference              `json:"scriptReference,omitempty"`
 	Timestamp       *time.Time                      `json:"timestamp,omitempty"`
 }
 
@@ -122,13 +123,27 @@ func (l *ledgerV3) CreateTransaction(ctx context.Context, ledger, key string, tx
 			Plain: pointer.For(BuildDebitWalletScript(nil, tx.debitSources...)), Vars: tx.Script.Vars,
 		}
 	}
+	inline := input.Script
+	if tx.libraryScript != "" {
+		input.ScriptReference = &v3ScriptReference{Name: tx.libraryScript, Version: walletScriptVersion, Vars: input.Script.Vars}
+		input.Script = nil
+	}
+
 	var result struct {
 		Data struct {
 			Transaction v3Transaction `json:"transaction"`
 		} `json:"data"`
 	}
-	if err := l.request(ctx, http.MethodPost, ledger, []string{"transactions"}, nil,
-		input, v3IdempotencyKey(ledger, key), http.StatusCreated, &result); err != nil {
+	path := []string{"transactions"}
+	idempotencyKey := v3IdempotencyKey(ledger, key)
+	err := l.request(ctx, http.MethodPost, ledger, path, nil, input, idempotencyKey, http.StatusCreated, &result)
+	if idempotencyKey != "" && input.ScriptReference != nil && v3HasError(err, http.StatusConflict, "IDEMPOTENCY_KEY_CONFLICT") {
+		// An earlier Wallets release may have bound this key to the exact inline
+		// request. Ledger rejected the saved-script request before execution.
+		input.Script, input.ScriptReference = inline, nil
+		err = l.request(ctx, http.MethodPost, ledger, path, nil, input, idempotencyKey, http.StatusCreated, &result)
+	}
+	if err != nil {
 		return nil, v3WriteError(err)
 	}
 	transaction, err := result.Data.Transaction.walletTransaction()
