@@ -37,7 +37,12 @@ func (m *MainHandler) confirmHoldHandler(w http.ResponseWriter, r *http.Request)
 		Final:  data.Final,
 	})
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
+		case errors.Is(err, wallet.ErrNegativeAmount):
+			badRequest(w, ErrorCodeValidation, wallet.ErrNegativeAmount)
 		case errors.Is(err, wallet.ErrHoldNotFound):
 			notFound(w)
 		case errors.Is(err, wallet.ErrInsufficientFundError):

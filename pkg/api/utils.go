@@ -3,6 +3,7 @@ package api
 import (
 	"cmp"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,6 +51,21 @@ func conflict(w http.ResponseWriter, r *http.Request, code string, err error) {
 		// broken client connection into a process-level panic.
 		sharedlogging.FromContext(r.Context()).Error(err)
 	}
+}
+
+// ledgerWriteError maps the common domain errors without disclosing Ledger response details.
+func ledgerWriteError(w http.ResponseWriter, r *http.Request, err error) bool {
+	switch {
+	case errors.Is(err, wallet.ErrIdempotencyConflict):
+		conflict(w, r, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
+	case errors.Is(err, wallet.ErrTransactionReferenceConflict):
+		conflict(w, r, ErrorCodeConflict, wallet.ErrTransactionReferenceConflict)
+	case errors.Is(err, wallet.ErrValidation):
+		badRequest(w, ErrorCodeValidation, wallet.ErrValidation)
+	default:
+		return false
+	}
+	return true
 }
 
 func internalError(w http.ResponseWriter, r *http.Request, err error) {

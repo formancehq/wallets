@@ -16,6 +16,9 @@ func (m *MainHandler) voidHoldHandler(w http.ResponseWriter, r *http.Request) {
 		HoldID: chi.URLParam(r, "holdID"),
 	})
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, wallet.ErrHoldNotFound):
 			notFound(w)

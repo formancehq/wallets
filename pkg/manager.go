@@ -228,6 +228,8 @@ func (m *Manager) Debit(ctx context.Context, ik string, debit Debit) (*DebitHold
 	}
 
 	postTransaction := PostTransaction{
+		accountMetadata: metadata,
+		debitSources:    sources,
 		Script: &shared.V2PostTransactionScript{
 			Plain: pointer.For(BuildDebitWalletScript(metadata, sources...)),
 			Vars: map[string]string{
@@ -264,8 +266,16 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 		return ErrHoldNotFound
 	}
 
+	requestedAmount := "0"
+	if debit.Amount != nil {
+		requestedAmount = debit.Amount.String()
+	}
+	fingerprint, replayed, err := m.holdReplay(ctx, ik, fmt.Sprintf("confirm:%s:%s:%t", debit.HoldID, requestedAmount, debit.Final))
+	if err != nil || replayed {
+		return err
+	}
 	hold := ExpandedDebitHoldFromLedgerAccount(*account)
-	if hold.Remaining.Uint64() == 0 {
+	if hold.IsClosed() {
 		return ErrClosedHold
 	}
 
@@ -276,7 +286,7 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 
 	vars := map[string]string{
 		"hold":   m.chart.GetHoldAccount(debit.HoldID),
-		"amount": fmt.Sprintf("%s %d", hold.Asset, amount),
+		"amount": fmt.Sprintf("%s %s", hold.Asset, amount),
 		"dest":   hold.Destination.getAccount(m.chart),
 	}
 	if debit.Final {
@@ -284,6 +294,7 @@ func (m *Manager) ConfirmHold(ctx context.Context, ik string, debit ConfirmHold)
 	}
 
 	postTransaction := PostTransaction{
+		holdReplayFingerprint: fingerprint,
 		Script: &shared.V2PostTransactionScript{
 			Plain: pointer.For(BuildConfirmHoldScript(debit.Final, hold.Asset)),
 			Vars:  vars,
@@ -324,12 +335,17 @@ func (m *Manager) VoidHold(ctx context.Context, ik string, void VoidHold) error 
 		return ErrHoldNotFound
 	}
 
+	fingerprint, replayed, err := m.holdReplay(ctx, ik, "void:"+void.HoldID)
+	if err != nil || replayed {
+		return err
+	}
 	hold := ExpandedDebitHoldFromLedgerAccount(*account)
 	if hold.IsClosed() {
 		return ErrClosedHold
 	}
 
 	postTransaction := PostTransaction{
+		holdReplayFingerprint: fingerprint,
 		Script: &shared.V2PostTransactionScript{
 			Plain: pointer.For(BuildCancelHoldScript(hold.Asset, txs.Data[0].Postings...)),
 			Vars: map[string]string{

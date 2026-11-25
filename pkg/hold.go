@@ -76,7 +76,7 @@ type ExpandedDebitHold struct {
 }
 
 func (h ExpandedDebitHold) IsClosed() bool {
-	return h.Remaining.Uint64() == 0
+	return h.Remaining.Sign() == 0
 }
 
 func ExpandedDebitHoldFromLedgerAccount(account AccountWithVolumesAndBalances) ExpandedDebitHold {
@@ -95,15 +95,17 @@ type ConfirmHold struct {
 	Final     bool
 }
 
-func (c ConfirmHold) resolveAmount(hold ExpandedDebitHold) (uint64, error) {
-	amount := hold.Remaining.Uint64()
-	if c.Amount.Uint64() != 0 {
-		if c.Amount.Uint64() > amount {
-			return 0, ErrInsufficientFundError
-		}
-		amount = c.Amount.Uint64()
+func (c ConfirmHold) resolveAmount(hold ExpandedDebitHold) (*big.Int, error) {
+	if c.Amount == nil || c.Amount.Sign() == 0 {
+		return hold.Remaining, nil
 	}
-	return amount, nil
+	if c.Amount.Sign() < 0 {
+		return nil, ErrNegativeAmount
+	}
+	if c.Amount.Cmp(hold.Remaining) > 0 {
+		return nil, ErrInsufficientFundError
+	}
+	return c.Amount, nil
 }
 
 type VoidHold struct {

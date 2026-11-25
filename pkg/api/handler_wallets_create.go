@@ -20,9 +20,10 @@ func (m *MainHandler) createWalletHandler(w http.ResponseWriter, r *http.Request
 
 	createdWallet, err := m.manager.CreateWallet(r.Context(), api.IdempotencyKeyFromRequest(r), data)
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
-		case errors.Is(err, wallet.ErrIdempotencyConflict):
-			conflict(w, r, ErrorCodeConflict, wallet.ErrIdempotencyConflict)
 		case errors.Is(err, wallet.ErrWalletAddressConflict):
 			conflict(w, r, ErrorCodeConflict, wallet.ErrWalletAddressConflict)
 		default:

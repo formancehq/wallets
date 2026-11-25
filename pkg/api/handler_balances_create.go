@@ -20,6 +20,9 @@ func (m *MainHandler) createBalanceHandler(w http.ResponseWriter, r *http.Reques
 
 	balance, err := m.manager.CreateBalance(r.Context(), api.IdempotencyKeyFromRequest(r), data)
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, wallet.ErrInvalidBalanceName):
 			fallthrough

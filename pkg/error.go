@@ -6,18 +6,19 @@ import (
 )
 
 var (
-	ErrAccountNotFound         = errors.New("account not found")
-	ErrWalletNotFound          = errors.New("wallet not found")
-	ErrHoldNotFound            = errors.New("hold not found")
-	ErrInsufficientFundError   = errors.New("insufficient fund")
-	ErrClosedHold              = errors.New("closed hold")
-	ErrBalanceAlreadyExists    = errors.New("balance already exists")
-	ErrInvalidBalanceName      = errors.New("invalid balance name")
-	ErrReservedBalanceName     = errors.New("reserved balance name")
-	ErrBalanceNotExists        = errors.New("balance not exists")
-	ErrInvalidBalanceSpecified = errors.New("invalid balance specified")
-	ErrNegativeAmount          = errors.New("negative amount provided")
-	ErrValidation              = errors.New("validation error")
+	ErrAccountNotFound              = errors.New("account not found")
+	ErrWalletNotFound               = errors.New("wallet not found")
+	ErrHoldNotFound                 = errors.New("hold not found")
+	ErrInsufficientFundError        = errors.New("insufficient fund")
+	ErrClosedHold                   = errors.New("closed hold")
+	ErrTransactionReferenceConflict = errors.New("transaction reference already exists")
+	ErrBalanceAlreadyExists         = errors.New("balance already exists")
+	ErrInvalidBalanceName           = errors.New("invalid balance name")
+	ErrReservedBalanceName          = errors.New("reserved balance name")
+	ErrBalanceNotExists             = errors.New("balance not exists")
+	ErrInvalidBalanceSpecified      = errors.New("invalid balance specified")
+	ErrNegativeAmount               = errors.New("negative amount provided")
+	ErrValidation                   = errors.New("validation error")
 	// ErrNonIdempotentDebit is returned when a debit carries an Idempotency-Key
 	// but its source set cannot be resolved deterministically (wildcard sources
 	// or sources with an expiry). The ledger enforces idempotency by hashing the

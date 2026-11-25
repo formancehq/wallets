@@ -35,7 +35,12 @@ func (m *MainHandler) creditWalletHandler(w http.ResponseWriter, r *http.Request
 
 	err := m.manager.Credit(r.Context(), api.IdempotencyKeyFromRequest(r), credit)
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
+		case errors.Is(err, wallet.ErrInsufficientFundError):
+			badRequest(w, ErrorCodeInsufficientFund, wallet.ErrInsufficientFundError)
 		case errors.Is(err, wallet.ErrBalanceNotExists),
 			errors.Is(err, wallet.ErrNegativeAmount),
 			wallet.IsErrInvalidAccountName(err),

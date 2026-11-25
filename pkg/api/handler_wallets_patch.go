@@ -21,6 +21,9 @@ func (m *MainHandler) patchWalletHandler(w http.ResponseWriter, r *http.Request)
 
 	err := m.manager.UpdateWallet(r.Context(), chi.URLParam(r, "walletID"), api.IdempotencyKeyFromRequest(r), data)
 	if err != nil {
+		if ledgerWriteError(w, r, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, wallet.ErrWalletNotFound):
 			notFound(w)

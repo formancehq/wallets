@@ -101,6 +101,8 @@ func (t v3Transaction) walletTransaction() (shared.V2Transaction, error) {
 		Metadata: t.Metadata.strings(),
 		Postings: make([]shared.V2Posting, 0, len(t.Postings)),
 	}
+	delete(result.Metadata, v3HoldReplayKey)
+	delete(result.Metadata, v3HoldReplayFingerprint)
 	if t.ID == nil || t.Timestamp.IsZero() {
 		return result, fmt.Errorf("Ledger v3 transaction is missing its ID or timestamp")
 	}
