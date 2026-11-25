@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
@@ -37,6 +38,7 @@ type ListResponse[T any] struct {
 	Data           []T
 	Next, Previous string
 	HasMore        bool
+	PageSize       int
 }
 
 type Pagination struct {
@@ -56,7 +58,8 @@ func newListResponse[SRC any, DST any](cursor interface {
 	GetNext() *string
 	GetPrevious() *string
 	GetHasMore() bool
-}, mapper mapper[SRC, DST],
+	GetPageSize() int64
+}, token string, mapper mapper[SRC, DST],
 ) *ListResponse[DST] {
 	ret := make([]DST, 0)
 	for _, item := range cursor.GetData() {
@@ -73,7 +76,12 @@ func newListResponse[SRC any, DST any](cursor interface {
 		previous = *n
 	}
 
+	var pageSize int
+	if strings.HasPrefix(token, v3CursorPrefix) {
+		pageSize = int(cursor.GetPageSize())
+	}
 	return &ListResponse[DST]{
+		PageSize: pageSize,
 		Data:     ret,
 		Next:     next,
 		Previous: previous,
@@ -386,6 +394,7 @@ func (m *Manager) CreateTransaction(ctx context.Context, ik string, postTransact
 
 func (m *Manager) ListWallets(ctx context.Context, query ListQuery[ListWallets]) (*ListResponse[Wallet], error) {
 	return mapAccountList(ctx, m, mapAccountListQuery{
+		scope:      "wallets",
 		Pagination: query.Pagination,
 		Metadata: func() metadata.Metadata {
 			metadata := metadata.Metadata{
@@ -409,6 +418,7 @@ func (m *Manager) ListWallets(ctx context.Context, query ListQuery[ListWallets])
 
 func (m *Manager) ListHolds(ctx context.Context, query ListQuery[ListHolds]) (*ListResponse[DebitHold], error) {
 	return mapAccountList(ctx, m, mapAccountListQuery{
+		scope:      "holds",
 		Pagination: query.Pagination,
 		Metadata: func() metadata.Metadata {
 			metadata := metadata.Metadata{
@@ -429,6 +439,7 @@ func (m *Manager) ListHolds(ctx context.Context, query ListQuery[ListHolds]) (*L
 
 func (m *Manager) ListBalances(ctx context.Context, query ListQuery[ListBalances]) (*ListResponse[Balance], error) {
 	return mapAccountList(ctx, m, mapAccountListQuery{
+		scope: "balances",
 		Metadata: func() metadata.Metadata {
 			metadata := BalancesMetadataFilter(query.Payload.WalletID)
 			if len(query.Payload.Metadata) > 0 {
@@ -443,31 +454,18 @@ func (m *Manager) ListBalances(ctx context.Context, query ListQuery[ListBalances
 }
 
 func (m *Manager) ListTransactions(ctx context.Context, query ListQuery[ListTransactions]) (*ListResponse[Transaction], error) {
-	var (
-		response *shared.V2TransactionsCursorResponseCursor
-		err      error
-	)
-	if query.PaginationToken == "" {
-		response, err = m.client.ListTransactions(ctx, m.ledgerName, ListTransactionsQuery{
-			Limit: query.Limit,
-			Account: func() string {
-				if query.Payload.WalletID != "" {
-					return m.chart.GetMainBalanceAccount(query.Payload.WalletID)
-				}
-				return ""
-			}(),
-			Metadata: TransactionBaseMetadataFilter(),
-		})
-	} else {
-		response, err = m.client.ListTransactions(ctx, m.ledgerName, ListTransactionsQuery{
-			Cursor: query.PaginationToken,
-		})
+	var address string
+	if query.Payload.WalletID != "" {
+		address = m.chart.GetMainBalanceAccount(query.Payload.WalletID)
 	}
+	response, err := m.client.ListTransactions(ctx, m.ledgerName, ListTransactionsQuery{
+		Cursor: query.PaginationToken, Limit: query.Limit, Account: address, Metadata: TransactionBaseMetadataFilter(),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing transactions")
 	}
 
-	return newListResponse[shared.V2Transaction, Transaction](response, func(tx shared.V2Transaction) Transaction {
+	return newListResponse[shared.V2Transaction, Transaction](response, query.PaginationToken, func(tx shared.V2Transaction) Transaction {
 		return Transaction{
 			V2Transaction: tx,
 			Ledger:        m.ledgerName,
@@ -823,32 +821,22 @@ func (m *Manager) GetBalance(ctx context.Context, walletID string, balanceName s
 }
 
 type mapAccountListQuery struct {
+	scope string
 	Pagination
 	Metadata      func() metadata.Metadata
 	ExpandVolumes bool
 }
 
 func mapAccountList[TO any](ctx context.Context, r *Manager, query mapAccountListQuery, mapper mapper[AccountWithVolumesAndBalances, TO]) (*ListResponse[TO], error) {
-	var (
-		cursor *AccountsCursorResponseCursor
-		err    error
-	)
-	if query.PaginationToken == "" {
-		cursor, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
-			Limit:         query.Limit,
-			Metadata:      query.Metadata(),
-			ExpandVolumes: query.ExpandVolumes,
-		})
-	} else {
-		cursor, err = r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
-			Cursor: query.PaginationToken,
-		})
-	}
+	cursor, err := r.client.ListAccounts(ctx, r.ledgerName, ListAccountsQuery{
+		Cursor: query.PaginationToken, Limit: query.Limit, Metadata: query.Metadata(),
+		ExpandVolumes: query.ExpandVolumes, scope: query.scope,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return newListResponse[AccountWithVolumesAndBalances, TO](cursor, func(item AccountWithVolumesAndBalances) TO {
+	return newListResponse[AccountWithVolumesAndBalances, TO](cursor, query.PaginationToken, func(item AccountWithVolumesAndBalances) TO {
 		return mapper(item)
 	}), nil
 }
@@ -859,6 +847,7 @@ func fetchAndMapAllAccounts[TO any](ctx context.Context, r *Manager, md metadata
 
 	ret := make([]TO, 0)
 	query := mapAccountListQuery{
+		scope: "internal",
 		Metadata: func() metadata.Metadata {
 			return md
 		},
@@ -876,10 +865,6 @@ func fetchAndMapAllAccounts[TO any](ctx context.Context, r *Manager, md metadata
 		if listResponse.Next == "" {
 			return ret, nil
 		}
-		query = mapAccountListQuery{
-			Pagination: Pagination{
-				PaginationToken: listResponse.Next,
-			},
-		}
+		query.PaginationToken = listResponse.Next
 	}
 }

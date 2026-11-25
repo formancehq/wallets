@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -88,7 +89,7 @@ func cursor[T any](w io.Writer, v paginate.Cursor[T]) {
 
 func cursorFromListResponse[T any, V any](w io.Writer, query wallet.ListQuery[V], response *wallet.ListResponse[T]) {
 	cursor(w, paginate.Cursor[T]{
-		PageSize: query.Limit,
+		PageSize: cmp.Or(response.PageSize, query.Limit),
 		HasMore:  response.HasMore,
 		Previous: response.Previous,
 		Next:     response.Next,

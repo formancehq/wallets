@@ -16,10 +16,14 @@ func (t Transaction) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	asMap := make(map[string]any)
+	asMap := make(map[string]json.RawMessage)
 	if err := json.Unmarshal(asJSON, &asMap); err != nil {
 		return nil, err
 	}
-	asMap["ledger"] = t.Ledger
+	ledger, err := json.Marshal(t.Ledger)
+	if err != nil {
+		return nil, err
+	}
+	asMap["ledger"] = ledger
 	return json.Marshal(asMap)
 }

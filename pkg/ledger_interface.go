@@ -23,6 +23,7 @@ import (
 )
 
 type ListAccountsQuery struct {
+	scope         string
 	Cursor        string
 	Limit         int
 	Metadata      metadata.Metadata
@@ -91,6 +92,10 @@ func (c AccountsCursorResponseCursor) GetPrevious() *string {
 
 func (c AccountsCursorResponseCursor) GetData() []AccountWithVolumesAndBalances {
 	return c.Data
+}
+
+func (c AccountsCursorResponseCursor) GetPageSize() int64 {
+	return c.PageSize
 }
 
 func (c AccountsCursorResponseCursor) GetHasMore() bool {
