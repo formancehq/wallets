@@ -14,9 +14,27 @@ import (
 
 var _ Ledger = (*ledgerV3)(nil)
 
+type v3FieldInfo struct {
+	Type string `json:"type"`
+}
+
 type v3LedgerInfo struct {
-	Name string `json:"name"`
-	Mode string `json:"mode"`
+	Name           string                   `json:"name"`
+	Mode           string                   `json:"mode"`
+	AccountTypes   map[string]v3AccountType `json:"accountTypes"`
+	MetadataSchema struct {
+		Accounts     map[string]v3FieldInfo `json:"accountFields"`
+		Transactions map[string]v3FieldInfo `json:"transactionFields"`
+	} `json:"metadataSchema"`
+}
+
+func (info v3LedgerInfo) metadataField(field v3MetadataField) (v3FieldInfo, bool) {
+	if field.Target == "account" {
+		value, ok := info.MetadataSchema.Accounts[field.Key]
+		return value, ok
+	}
+	value, ok := info.MetadataSchema.Transactions[field.Key]
+	return value, ok
 }
 
 func (l *ledgerV3) getLedger(ctx context.Context, name string) (v3LedgerInfo, error) {
@@ -28,21 +46,6 @@ func (l *ledgerV3) getLedger(ctx context.Context, name string) (v3LedgerInfo, er
 		err = fmt.Errorf("Ledger v3 returned no matching ledger")
 	}
 	return result.Data, err
-}
-
-func (l *ledgerV3) EnsureLedgerExists(ctx context.Context, name string) error {
-	_, err := l.getLedger(ctx, name)
-	if !v3HasError(err, http.StatusNotFound, "NOT_FOUND", "LEDGER_NOT_FOUND") {
-		return err
-	}
-
-	err = l.request(ctx, http.MethodPost, name, nil, nil, struct{}{}, "", http.StatusCreated, nil)
-	if failure, ok := errors.AsType[*ledgerV3Error](err); ok && failure.Status == http.StatusConflict {
-		if _, readErr := l.getLedger(ctx, name); readErr == nil {
-			return nil
-		}
-	}
-	return err
 }
 
 func v3HasError(err error, status int, codes ...string) bool {

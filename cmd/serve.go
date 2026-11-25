@@ -25,15 +25,18 @@ import (
 )
 
 const (
-	StackClientIDFlag     = "stack-client-id"
-	StackClientSecretFlag = "stack-client-secret"
-	StackURLFlag          = "stack-url"
-	LedgerNameFlag        = "ledger"
-	LedgerAPIVersionFlag  = "ledger-api-version"
-	LedgerV3CursorKeyFlag = "ledger-v3-cursor-key"
-	LedgerURLFlag         = "ledger-url"
-	AccountPrefixFlag     = "account-prefix"
-	ListenFlag            = "listen"
+	LedgerV3CursorKeyFlag       = "ledger-v3-cursor-key"
+	StackClientIDFlag           = "stack-client-id"
+	StackClientSecretFlag       = "stack-client-secret"
+	StackURLFlag                = "stack-url"
+	LedgerNameFlag              = "ledger"
+	LedgerAPIVersionFlag        = "ledger-api-version"
+	LedgerURLFlag               = "ledger-url"
+	LedgerV3ProvisioningFlag    = "ledger-v3-provisioning"
+	LedgerV3IndexStatusURLsFlag = "ledger-v3-index-status-urls"
+	LedgerV3IndexedMetadataFlag = "ledger-v3-indexed-metadata-keys"
+	AccountPrefixFlag           = "account-prefix"
+	ListenFlag                  = "listen"
 )
 
 func newServeCommand() *cobra.Command {
@@ -49,6 +52,9 @@ func newServeCommand() *cobra.Command {
 			ledgerVersion, _ := cmd.Flags().GetString(LedgerAPIVersionFlag)
 			cursorKey, _ := cmd.Flags().GetString(LedgerV3CursorKeyFlag)
 			ledgerURL, _ := cmd.Flags().GetString(LedgerURLFlag)
+			v3Provisioning, _ := cmd.Flags().GetString(LedgerV3ProvisioningFlag)
+			indexStatusURLs, _ := cmd.Flags().GetStringSlice(LedgerV3IndexStatusURLsFlag)
+			indexedMetadata, _ := cmd.Flags().GetStringSlice(LedgerV3IndexedMetadataFlag)
 			accountPrefix, _ := cmd.Flags().GetString(AccountPrefixFlag)
 			listen, _ := cmd.Flags().GetString(ListenFlag)
 			auditEnabled, _ := cmd.Flags().GetBool(audit.AuditEnabledFlag)
@@ -65,9 +71,12 @@ func newServeCommand() *cobra.Command {
 					)
 				}),
 				wallet.ModuleWithLedgerOptions(cmd.Context(), stackURL, ledgerName, accountPrefix, wallet.LedgerOptions{
-					APIVersion:  ledgerVersion,
-					V3CursorKey: cursorKey,
-					URL:         ledgerURL,
+					V3CursorKey:         cursorKey,
+					APIVersion:          ledgerVersion,
+					URL:                 ledgerURL,
+					V3Provisioning:      v3Provisioning,
+					IndexedMetadataKeys: indexedMetadata,
+					V3IndexStatusURLs:   indexStatusURLs,
 				}),
 				api.Module(sharedapi.ServiceInfo{
 					Version: Version,
@@ -90,6 +99,9 @@ func newServeCommand() *cobra.Command {
 	cmd.Flags().String(LedgerAPIVersionFlag, "v2", "Ledger API version (v2, v3, or auto)")
 	cmd.Flags().String(LedgerV3CursorKeyFlag, "", "Shared Ledger v3 cursor signing secret (minimum 32 bytes)")
 	cmd.Flags().String(LedgerURLFlag, "", "Ledger service URL, including its gateway mount if applicable")
+	cmd.Flags().String(LedgerV3ProvisioningFlag, "managed", "Ledger v3 provisioning mode (managed or verify)")
+	cmd.Flags().StringSlice(LedgerV3IndexStatusURLsFlag, nil, "Individual Ledger v3 replica URLs to include in index readiness checks")
+	cmd.Flags().StringSlice(LedgerV3IndexedMetadataFlag, nil, "Custom account metadata keys to index on Ledger v3")
 	cmd.Flags().String(AccountPrefixFlag, "", "Account prefix flag")
 	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
 	cmd.Flags().Bool(audit.AuditEnabledFlag, false, "Enable HTTP audit")

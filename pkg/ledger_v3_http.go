@@ -14,6 +14,7 @@ type ledgerV3 struct {
 	cursorKey []byte
 	client    *http.Client
 	base      *url.URL
+	provision v3Provisioning
 }
 
 type ledgerV3Error struct {

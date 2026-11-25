@@ -22,6 +22,11 @@ type LedgerOptions struct {
 	URL string
 	// V3CursorKey is a shared signing secret of at least 32 bytes.
 	V3CursorKey string
+	// V3Provisioning accepts managed or verify. An empty value uses managed.
+	V3Provisioning      string
+	IndexedMetadataKeys []string
+	// V3IndexStatusURLs lists additional individual Ledger replica service URLs.
+	V3IndexStatusURLs []string
 }
 
 func selectLedger(ctx context.Context, client *http.Client, stackURL string, options LedgerOptions) (Ledger, error) {
