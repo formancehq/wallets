@@ -151,11 +151,12 @@ type v3ListQuery struct {
 }
 
 type v3Cursor struct {
-	Backend string      `json:"backend"`
-	Ledger  string      `json:"ledger"`
-	Scope   string      `json:"scope"`
-	Query   v3ListQuery `json:"query"`
-	Token   string      `json:"token"`
+	Backend  string      `json:"backend"`
+	Ledger   string      `json:"ledger"`
+	Scope    string      `json:"scope"`
+	Query    v3ListQuery `json:"query"`
+	Token    string      `json:"token"`
+	Prepared string      `json:"prepared,omitempty"`
 }
 
 const v3CursorPrefix = "wallets-v3."
@@ -294,7 +295,7 @@ func (l *ledgerV3) ListAccounts(ctx context.Context, ledger string, q ListAccoun
 	if err := l.validateCustomFilters(cursor.Query.Metadata); err != nil {
 		return nil, err
 	}
-	page, err := v3List[v3Account](ctx, l, "accounts", cursor)
+	page, err := v3WalletList[v3Account](ctx, l, "accounts", &cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +322,7 @@ func (l *ledgerV3) ListTransactions(ctx context.Context, ledger string, q ListTr
 			return nil, err
 		}
 	}
-	page, err := v3List[v3Transaction](ctx, l, "transactions", cursor)
+	page, err := v3WalletList[v3Transaction](ctx, l, "transactions", &cursor)
 	if err != nil {
 		return nil, err
 	}
