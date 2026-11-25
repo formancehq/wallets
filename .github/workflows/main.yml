@@ -28,6 +28,7 @@ jobs:
     uses: formancehq/ci/.github/workflows/go-test.yml@v1
     with:
       runner-profile: namespace-profile-linux-amd64-4vcpu
+      extra-test-targets: tests-ledger-v3-ci
 
   GoReleaser:
     needs: [Dirty]
