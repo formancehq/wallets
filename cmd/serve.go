@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/audit"
 	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
@@ -28,6 +29,9 @@ const (
 	StackClientSecretFlag = "stack-client-secret"
 	StackURLFlag          = "stack-url"
 	LedgerNameFlag        = "ledger"
+	LedgerAPIVersionFlag  = "ledger-api-version"
+	LedgerV3CursorKeyFlag = "ledger-v3-cursor-key"
+	LedgerURLFlag         = "ledger-url"
 	AccountPrefixFlag     = "account-prefix"
 	ListenFlag            = "listen"
 )
@@ -42,6 +46,9 @@ func newServeCommand() *cobra.Command {
 			stackClientSecret, _ := cmd.Flags().GetString(StackClientSecretFlag)
 			stackURL, _ := cmd.Flags().GetString(StackURLFlag)
 			ledgerName, _ := cmd.Flags().GetString(LedgerNameFlag)
+			ledgerVersion, _ := cmd.Flags().GetString(LedgerAPIVersionFlag)
+			cursorKey, _ := cmd.Flags().GetString(LedgerV3CursorKeyFlag)
+			ledgerURL, _ := cmd.Flags().GetString(LedgerURLFlag)
 			accountPrefix, _ := cmd.Flags().GetString(AccountPrefixFlag)
 			listen, _ := cmd.Flags().GetString(ListenFlag)
 			auditEnabled, _ := cmd.Flags().GetBool(audit.AuditEnabledFlag)
@@ -57,11 +64,11 @@ func newServeCommand() *cobra.Command {
 						service.IsDebug(cmd),
 					)
 				}),
-				wallet.Module(
-					stackURL,
-					ledgerName,
-					accountPrefix,
-				),
+				wallet.ModuleWithLedgerOptions(cmd.Context(), stackURL, ledgerName, accountPrefix, wallet.LedgerOptions{
+					APIVersion:  ledgerVersion,
+					V3CursorKey: cursorKey,
+					URL:         ledgerURL,
+				}),
 				api.Module(sharedapi.ServiceInfo{
 					Version: Version,
 					Debug:   service.IsDebug(cmd),
@@ -80,6 +87,9 @@ func newServeCommand() *cobra.Command {
 	cmd.Flags().String(StackClientSecretFlag, "", "Client Secret")
 	cmd.Flags().String(StackURLFlag, "", "Token URL")
 	cmd.Flags().String(LedgerNameFlag, "wallets-002", "Target ledger")
+	cmd.Flags().String(LedgerAPIVersionFlag, "v2", "Ledger API version (v2, v3, or auto)")
+	cmd.Flags().String(LedgerV3CursorKeyFlag, "", "Shared Ledger v3 cursor signing secret (minimum 32 bytes)")
+	cmd.Flags().String(LedgerURLFlag, "", "Ledger service URL, including its gateway mount if applicable")
 	cmd.Flags().String(AccountPrefixFlag, "", "Account prefix flag")
 	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
 	cmd.Flags().Bool(audit.AuditEnabledFlag, false, "Enable HTTP audit")
@@ -94,6 +104,10 @@ func newServeCommand() *cobra.Command {
 }
 
 func GetHTTPClient(ctx context.Context, clientID, clientSecret, stackURL string, debug bool) (*http.Client, error) {
+	return getHTTPClient(ctx, clientID, clientSecret, stackURL, debug, 5*time.Second)
+}
+
+func getHTTPClient(ctx context.Context, clientID, clientSecret, stackURL string, debug bool, tokenTimeout time.Duration) (*http.Client, error) {
 	httpClient := &http.Client{
 		Transport: observe.NewRoundTripper(http.DefaultTransport, debug),
 	}
@@ -109,5 +123,11 @@ func GetHTTPClient(ctx context.Context, clientID, clientSecret, stackURL string,
 		Scopes:       []string{"openid ledger:read ledger:write"},
 	}
 
-	return clientCredentialsConfig.Client(context.WithValue(ctx, oauth2.HTTPClient, httpClient)), nil
+	// The OAuth token source inherits the service context, so bound token HTTP
+	// calls independently of the Ledger request awaiting the token.
+	tokenClient := *httpClient
+	tokenClient.Timeout = tokenTimeout
+	authenticated := clientCredentialsConfig.Client(context.WithValue(ctx, oauth2.HTTPClient, &tokenClient))
+	authenticated.Timeout = httpClient.Timeout
+	return authenticated, nil
 }

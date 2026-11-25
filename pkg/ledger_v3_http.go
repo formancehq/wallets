@@ -23,7 +23,7 @@ type ledgerV3Error struct {
 }
 
 func (e *ledgerV3Error) Error() string {
-	return fmt.Sprintf("Ledger v3 HTTP %d %s: %s", e.Status, e.Code, e.Message)
+	return fmt.Sprintf("Ledger HTTP %d %s: %s", e.Status, e.Code, e.Message)
 }
 
 func (l *ledgerV3) request(ctx context.Context, method, ledger string, path []string, query url.Values, body any,

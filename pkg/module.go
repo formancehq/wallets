@@ -1,23 +1,22 @@
 package wallet
 
 import (
+	"context"
 	"net/http"
-
-	sdk "github.com/formancehq/formance-sdk-go/v3"
 
 	"go.uber.org/fx"
 )
 
 func Module(ledgerURL string, ledgerName, chartPrefix string) fx.Option {
+	return ModuleWithLedgerOptions(context.Background(), ledgerURL, ledgerName, chartPrefix, LedgerOptions{})
+}
+
+func ModuleWithLedgerOptions(ctx context.Context, stackURL, ledgerName, chartPrefix string, options LedgerOptions) fx.Option {
 	return fx.Module(
 		"wallet",
-		fx.Provide(fx.Annotate(func(httpClient *http.Client) *DefaultLedger {
-			sdk := sdk.New(
-				sdk.WithClient(httpClient),
-				sdk.WithServerURL(ledgerURL),
-			)
-			return NewDefaultLedger(sdk)
-		}, fx.As(new(Ledger)))),
+		fx.Provide(func(httpClient *http.Client) (Ledger, error) {
+			return selectLedger(ctx, httpClient, stackURL, options)
+		}),
 		fx.Provide(func() *Chart {
 			return NewChart(chartPrefix)
 		}),

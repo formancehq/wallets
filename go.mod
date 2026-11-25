@@ -5,6 +5,7 @@ go 1.26.0
 replace github.com/formancehq/wallets/pkg/client => ./pkg/client
 
 require (
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/formancehq/formance-sdk-go/v3 v3.8.1
 	github.com/formancehq/go-libs/v5 v5.6.1
@@ -29,7 +30,6 @@ require (
 	github.com/ClickHouse/ch-go v0.71.0 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0 // indirect
 	github.com/IBM/sarama v1.46.3 // indirect
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ThreeDotsLabs/watermill-aws v1.0.1 // indirect
